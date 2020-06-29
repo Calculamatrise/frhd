@@ -1,0 +1,15 @@
+{
+  "name": "frhd",
+  "version": "1.4.6",
+  "description": "An app to communicacte with FRHD",
+  "main": "./src/api",
+  "author": "Calculus",
+  "license": "GNU General Public License v3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Calculus0972/frhd-api.git"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.0"
+  }
+}
