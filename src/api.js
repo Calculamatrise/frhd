@@ -350,5 +350,5 @@ module.exports = {
             this.drawPowerups()
             return this.black.join(",") + "#" + this.grey.join(",") + "#" + this.powerup.join(",")
         }
-    },
+    }
 }
