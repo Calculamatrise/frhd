@@ -1,6 +1,6 @@
 {
   "name": "frhd",
-  "version": "1.6.6",
+  "version": "0.0.7",
   "description": "An app to communicacte with FRHD",
   "main": "./src/api",
   "author": "Calculus",
