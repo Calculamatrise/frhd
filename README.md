@@ -14,7 +14,7 @@ frhd.user(username, (data) => {
 ```
 Expected Output:
 
-```json
+```js
 {
   user: {
     u_id: 117248,
@@ -77,7 +77,7 @@ frhd.track(track_id, (data) => {
 ```
 Expected Output:
 
-```json
+```js
 {
   track: {
     id: 1001,
