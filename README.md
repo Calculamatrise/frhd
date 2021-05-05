@@ -4,7 +4,7 @@ This api requests data from Free Rider HD
 
 Example 1 - Getting User Info:
 
-```
+```javascript
 const frhd = require('frhd');
 
 let username = "Guest";
