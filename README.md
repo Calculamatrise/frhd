@@ -14,7 +14,7 @@ frhd.user(username, (data) => {
 ```
 Expected Output:
 
-```
+```json
 {
   user: {
     u_id: 117248,
@@ -67,7 +67,7 @@ Expected Output:
 
 Example 2 - Getting Track Data:
 
-```
+```js
 const frhd = require('frhd');
 
 let track_id = "1001";
@@ -77,7 +77,7 @@ frhd.track(track_id, (data) => {
 ```
 Expected Output:
 
-```
+```json
 {
   track: {
     id: 1001,
