@@ -1,9 +1,10 @@
 {
     "name": "frhd",
-    "version": "0.1.4",
+    "version": "0.2.1",
     "description": "An app to communicacte with FRHD",
-    "main": "./src/api",
+    "main": "./src/index",
     "author": "Calculus",
+    "type": "module",
     "license": "GNU General Public License v3.0-or-later",
     "repository": {
         "type": "git",

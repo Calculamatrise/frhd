@@ -5,12 +5,10 @@ This api requests data from Free Rider HD
 Example 1 - Getting User Info:
 
 ```js
-const frhd = require('frhd');
+import frhd from "frhd";
 
 let username = "Guest";
-frhd.user(username, (data) => {
-    console.log(data)
-});
+frhd.getUser(username, /* Method 1 */ data => console.log(data)).then(/* Method 2 */ data => console.log(data));
 ```
 Expected Output:
 
@@ -68,12 +66,10 @@ Expected Output:
 Example 2 - Getting Track Data:
 
 ```js
-const frhd = require('frhd');
+import frhd from "frhd";
 
-let track_id = "1001";
-frhd.track(track_id, (data) => {
-    console.log(data.user)
-});
+let track = "1001";
+frhd.getTrack(track, /* Method 1 */ data => console.log(data)).then(/* Method 2 */ data => console.log(data));
 ```
 Expected Output:
 
