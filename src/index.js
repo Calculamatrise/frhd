@@ -60,3 +60,8 @@ export default {
     User,
     Track
 }
+
+export {
+    User,
+    Track
+}
