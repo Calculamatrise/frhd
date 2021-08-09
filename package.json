@@ -1,8 +1,8 @@
 {
     "name": "frhd",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "description": "An app to communicacte with FRHD",
-    "main": "./src",
+    "main": "./src/bootstrap.js",
     "author": "Calculus",
     "type": "module",
     "license": "GNU General Public License v3.0-or-later",
