@@ -29,6 +29,7 @@ export default class extends EventEmitter {
         });
     }
     listen() {
+        if (!token) return new Error("INVALID_TOKEN");
         this.datapoll(t => {
             if (t.notification_count > 0) {
                 this.getNotifications(e => {
