@@ -5,61 +5,45 @@ This api requests data from Free Rider HD
 Example 1 - Getting User Info:
 
 ```js
-import frhd from "frhd";
+import frhd, { getUser } from "frhd";
 
-let username = "Guest";
-frhd.getUser(username, /* Method 1 */ data => console.log(data)).then(/* Method 2 */ data => console.log(data));
+getUser("Guest", /* Callback Option */ data => console.log(data)).then(data => console.log(data)); // or frhd.getUser(...)
 ```
 Expected Output:
 
 ```js
 {
-  user: {
-    u_id: 117248,
-    u_name: 'guest',
-    d_name: 'Guest',
-    img_url_medium: 'https://secure.gravatar.com/avatar/16f000fecd4582f8aa6f424b2d9789c9/?s=100&d=mm&r=pg',
-    current_user: false,
+    id: 0000000,
+    username: 'guest',
+    displayName: 'Guest',
+    avatar: 'https://secure.gravatar.com/avatar/16f000fecd4582f8aa6f424b2d9789c9/?s=100&d=mm&r=pg',
     classic: false,
     admin: false,
     plus: false,
-    cosmetics: { head: [Object] }
-  },
-  user_stats: {
-    u_id: 117248,
-    tot_pts: 2,
-    cmpltd: 1,
-    rtd: 0,
-    cmmnts: 0,
-    crtd: 0,
-    head_cnt: 1,
-    total_head_cnt: 200
-  },
-  user_info: false,
-  user_mobile_stats: { lvl: '--', wins: '--', headCount: '--', connected: '1' },
-  user_notification: false,
-  user_verify_reminder: false,
-  is_profile_owner: false,
-  recently_played_tracks_active: false,
-  recently_played_tracks: { track_list_1_ad: false, tracks: [ [Object] ] },
-  recently_ghosted_tracks_active: true,
-  recently_ghosted_tracks: { track_list_1_ad: true, tracks: [ [Object] ] },
-  created_tracks_active: false,
-  created_tracks: { track_list_1_ad: false, tracks: [] },
-  show_liked_tracks: false,
-  liked_active: false,
-  liked_tracks: { tracks: [] },
-  friends_active: false,
-  friends: { friend_cnt: 0, friends_data: [] },
-  friend_requests: { request_cnt: 0, request_data: [] },
-  has_max_friends: false,
-  show_friends: true,
-  subscribe: false,
-  total_head_count: 200,
-  social_forum_url: 'http://community.freeriderhd.com',
-  app_title: 'Guest | Free Rider HD',
-  header_title: 'Guest',
-  app_version: 'd633437bb6'
+    cosmetics: { head: [Object] },
+    stats: {
+        u_id: 0000000,
+        tot_pts: 2,
+        cmpltd: 1,
+        rtd: 0,
+        cmmnts: 0,
+        crtd: 0,
+        head_cnt: 1,
+        total_head_cnt: 200
+    },
+    bio: null,
+    mobileStats: { lvl: '--', wins: '--', headCount: '--', connected: '1' },
+    verifiedEmail: false,
+    recentlyPlayed: [ [Object] ],
+    recentlyGhosted: [ [Object] ],
+    createdTracks: [ [Object] ],
+    likedTracks: [ [Object] ],
+    friendCount: 0,
+    friends: [],
+    friendRequestCount: 0,
+    friendRequests: [],
+    friendLimitReached: false,
+    subscriberCount: false
 }
 ```
 
@@ -93,7 +77,7 @@ Expected Output:
     vehicles: [ 'BMX', 'MTB' ],
     uploadDateAgo: '7 years ago',
     featured: false,
-    hidden: 0
+    hidden: 0,
     stats: {
         likes: 223,
         dislikes: 62,
