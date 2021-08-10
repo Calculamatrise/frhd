@@ -1,6 +1,6 @@
 {
     "name": "frhd",
-    "version": "0.2.4",
+    "version": "0.3.0",
     "description": "An app to communicacte with FRHD",
     "main": "./src/bootstrap.js",
     "author": "Calculus",

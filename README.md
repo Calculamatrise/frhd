@@ -66,119 +66,87 @@ Expected Output:
 Example 2 - Getting Track Data:
 
 ```js
-import frhd from "frhd";
+import frhd, { getTrack } from "frhd";
 
-let track = "1001";
-frhd.getTrack(track, /* Method 1 */ data => console.log(data)).then(/* Method 2 */ data => console.log(data));
+getTrack(1001, /* Callback Option */ data => console.log(data)).then(data => console.log(data)); // or frhd.getTrack(...)
 ```
 Expected Output:
 
 ```js
 {
-  track: {
     id: 1001,
     title: 'Wild West',
     descr: 'Wild West is a Free Rider community classic track by weewam.',
     slug: '1001-wild-west',
     u_id: 1001,
-    author_is_user: true,
-    u_url: 'weewam',
-    author: 'weewam',
-    author_slug: 'weewam',
-    author_img_small: 'https://cdn.freeriderhd.com/free_rider_hd/sprites/guest_profile_v2.png',
+    author: {
+        id: 1001,
+        username: 'weewam',
+        displayName: 'weewam',
+        avatar: 'https://cdn.freeriderhd.com/free_rider_hd/sprites/guest_profile_v2.png'
+    },
     vehicle: 'MTB',
     cdn: 'https://cdn.freeriderhd.com/free_rider_hd/tracks/prd/b/8c/1001/track-data-v1.js',
-    date: '11/19/13',
-    img: 'https://cdn.freeriderhd.com/free_rider_hd/tracks/prd/b/8c/1001/250x150-v5.png',
-    img_768x250: 'https://cdn.freeriderhd.com/free_rider_hd/tracks/prd/b/8c/1001/768x250-v5.png',
-    kb_size: 66,
+    uploadDate: '11/19/13',
+    thumbnail: 'https://cdn.freeriderhd.com/free_rider_hd/tracks/prd/b/8c/1001/250x150-v5.png',
+    size: 66,
     vehicles: [ 'BMX', 'MTB' ],
-    date_ago: '7 years ago',
+    uploadDateAgo: '7 years ago',
     featured: false,
-    hide: 0
-  },
-  track_stats: {
-    up_votes: 223,
-    dwn_votes: 62,
-    votes: 285,
-    vote_percent: 78,
-    plays: '36.0k',
-    runs: 371,
-    frst_runs: 163,
-    avg_time: '0:33.97',
-    cmpltn_rate: 0.03
-  },
-  race_leaderboard: false,
-  show_race_leaderboard: false,
-  right_side_content: {
-    tracks: [
-      [Object], [Object],
-      [Object], [Object],
-      [Object], [Object],
-      [Object], [Object],
-      [Object], [Object],
-      [Object], [Object]
-    ],
-    title: false,
-    list_only: true,
-    hide_ads: false,
-    ads_override: false
-  },
-  track_comments: [
-    { user: [Object], comment: [Object] },
-    { user: [Object], comment: [Object] },
-    { user: [Object], comment: [Object] },
-    { user: [Object], comment: [Object] }
-  ],
-  track_comments_load_more: true,
-  max_comment_length: 500,
-  logged_in_user: false,
-  user_track_stats: false,
-  campaign: false,
-  show_preroll_ads: false,
-  hide_ads: false,
-  ads_override: false,
-  is_admin: false,
-  totd: { gems: 500, lives: 30, refill_cost: 10, entries: [] },
-  subscribe: { is_subscribed: false, count: 51 },
-  race_uids: [],
-  game_settings: {
-    user: { d_name: 'Guest', u_id: false, cosmetics: [Object], guest: true },
-    showHelpControls: true,
-    isCampaign: false,
-    track: {
-      id: 1001,
-      title: 'Wild West',
-      descr: 'Wild West is a Free Rider community classic track by weewam.',
-      url: '1001-wild-west',
-      vehicle: 'MTB',
-      vehicles: [Array],
-      size: 65606,
-      cdn: 'https://cdn.freeriderhd.com/free_rider_hd/tracks/prd/b/8c/1001/track-data-v1.js',
-      pwrups: [Object],
-      u_id: 1001,
-      author_is_user: true,
-      u_url: 'weewam',
-      author: 'weewam',
-      img: 'https://cdn.freeriderhd.com/free_rider_hd/tracks/prd/b/8c/1001/250x150-v5.png',
-      ft_ts: 0,
-      featured: false,
-      p_ts: 1384895497,
-      hide: 0,
-      admin: false
+    hidden: 0
+    stats: {
+        likes: 223,
+        dislikes: 62,
+        votes: 285,
+        likesAverage: 78,
+        plays: '36.0k',
+        runs: 371,
+        firstRuns: 163,
+        averageTime: '0:33.97',
+        completionRate: 0.03
     },
-    userTrackStats: false,
-    campaignData: false,
-    trackUploadCost: 25,
-    raceUids: [],
-    raceData: false,
-    soundsEnabled: true,
-    bestGhostEnabled: false,
-    requireTrackVerification: true
-  },
-  app_title: 'Wild West by weewam | Free Rider HD Track',
-  header_title: 'Wild West',
-  app_version: 'd633437bb6'
+    comments: [
+        [Object],
+        [Object],
+        [Object],
+        [Object]
+    ],
+    isCampaign: false,
+    daily: { gems: 500, lives: 30, refillCost: 10, entries: [] },
+    game_settings: {
+        user: { d_name: 'Guest', u_id: false, cosmetics: [Object], guest: true },
+        showHelpControls: true,
+        isCampaign: false,
+        track: {
+            id: 1001,
+            title: 'Wild West',
+            descr: 'Wild West is a Free Rider community classic track by weewam.',
+            url: '1001-wild-west',
+            vehicle: 'MTB',
+            vehicles: [Array],
+            size: 65606,
+            cdn: 'https://cdn.freeriderhd.com/free_rider_hd/tracks/prd/b/8c/1001/track-data-v1.js',
+            pwrups: [Object],
+            u_id: 1001,
+            author_is_user: true,
+            u_url: 'weewam',
+            author: 'weewam',
+            img: 'https://cdn.freeriderhd.com/free_rider_hd/tracks/prd/b/8c/1001/250x150-v5.png',
+            ft_ts: 0,
+            featured: false,
+            p_ts: 1384895497,
+            hide: 0,
+            admin: false
+        },
+        userTrackStats: false,
+        campaignData: false,
+        trackUploadCost: 25,
+        raceUids: [],
+        raceData: false,
+        soundsEnabled: true,
+        bestGhostEnabled: false,
+        requireTrackVerification: true
+    }
 }
 ```
 
@@ -227,19 +195,19 @@ Expected Output:
         title: 'Wild West'
     },
     user: {
-        u_id: 0000000,
-        u_name: 'guest',
-        d_name: 'Guest',
-        img_url_small: 'https://www.freeriderhd.com/u/guest/pic?size=50'
+        id: 0000000,
+        username: 'guest',
+        displayNname: 'Guest',
+        avatar: 'https://www.freeriderhd.com/u/guest/pic?size=50'
     },
     comment: {
         id: 0000000,
-        msg: '<a href="https://www.freeriderhd.com/u/guest">Guest</a> Hello World!',
+        message: '<a href="https://www.freeriderhd.com/u/guest">Guest</a> Hello World!',
         time: 'just now',
-        can_delete: false,
+        deletable: false,
         flagged: false
     },
-    time: 'just now',
+    timeAgo: 'just now',
     timestamp: 1628538002
 }
 ```

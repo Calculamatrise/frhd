@@ -1,8 +1,9 @@
-import User from "./utils/client.js";
+import Client from "./utils/client.js";
+import Track from "./utils/track.js";
 
 export default async function(trackId, callback = t => t) {
-    return await User.ajax({
+    return await Client.ajax({
         path: `/t/${trackId}?ajax=!0`,
         method: "get"
-    }, callback);
+    }).then(t => new Track(t)).then(callback);
 }

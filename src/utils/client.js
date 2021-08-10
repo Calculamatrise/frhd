@@ -1,13 +1,20 @@
 import EventEmitter from "events";
 import https from "https";
 
+import User from "./user.js";
+import Track from "./track.js";
+import Comment from "./comment.js";
+import Notifications from "./notification.js";
+import Response from "./response.js";
+
+export let token = null;
+
 export default class extends EventEmitter {
     constructor() {
         super();
-        this.token = null;
-        this.activity_time_ago = null;
+        this.user = null;
     }
-    static async ajax({ host, method = "GET", path, headers = { "content-type": "application/json" }, body }, callback = t => t) {
+    static async ajax({ host, method = "GET", path, headers = { "content-type": "application/x-www-form-urlencoded; charset=UTF-8" }, body }, callback = t => t) {
         return await new Promise(function(resolve, reject) {
             const req = https.request({
                 hostname: host || "www.freeriderhd.com",
@@ -29,11 +36,11 @@ export default class extends EventEmitter {
         });
     }
     listen() {
-        if (!this.token) return new Error("INVALID_TOKEN");
+        if (!token) return new Error("INVALID_TOKEN");
         this.datapoll(t => {
             if (t.notification_count > 0) {
                 this.getNotifications(e => {
-                    const notifications = e.notification_days[0].notifications.sort((t, e) => e.ts - t.ts);
+                    const notifications = e.sort((t, e) => e.ts - t.ts);
                     for (const notification in notifications) {
                         if (notification >= t.notification_count) return;
                         this.handle(notifications[notification]);
@@ -43,63 +50,21 @@ export default class extends EventEmitter {
         });
         setTimeout(() => this.listen(), 3000);
     }
-    async handle(notification) {
-        if (notification.t_uname_mention) {
-            this.emit("commentMention", {
-                track: notification.track,
-                user: notification.user,
-                comment: await this.getComment(notification.track.id, notification.comment.id).then(t => t.comment),
-                time: notification.time,
-                timestamp: notification.ts
-            });
-        } else if (notification.track_lb_passed) {
-            this.emit("raceBeaten", {
-                track: notification.track,
-                user: notification.user,
-                time: notification.time,
-                timestamp: notification.ts
-            });
-        } else if (notification.friend_t_challenge) {
-            this.emit("challenge", {
-                track: notification.track,
-                user: notification.user,
-                message: notification.msg,
-                time: notification.time,
-                timestamp: notification.ts
-            });
-        } else if (notification.friend_req_rcvd) {
-            this.emit("friendRequestReceived", {
-                user: notification.user,
-                me: notification.to_user,
-                time: notification.time,
-                timestamp: notification.ts
-            });
-        } else if (notification.friend_req_accptd) {
-            this.emit("friendRequestAccepted", {
-                user: notification.user,
-                time: notification.time,
-                timestamp: notification.ts
-            });
-        }
+    handle(notification) {
+        if (!notification.id) return console.warn(new Error("UNKNOWN_NOTIFICATION_ID"));
+        this.emit(notification.id, notification);
     }
-    login(token) {
-        if (!token || typeof token !== "string") throw new Error("INVALID_TOKEN");
-        this.token = token;
+    async login(appSignedRequest) {
+        if (!appSignedRequest || typeof appSignedRequest !== "string") throw new Error("INVALID_TOKEN");
+        token = appSignedRequest;
+        this.user = await this.getMyUser();
         this.emit("ready");
         this.listen();
         return this;
     }
-    logout() {
-        this.token = null;
-        this.user = null;
-        return this;
-    }
     async defaultLogin(username, password, callback = t => t) {
         return await this.constructor.ajax({
-            path: `/auth/standard_login`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/auth/standard_login",
             body: {
                 login: username,
                 password,
@@ -108,415 +73,383 @@ export default class extends EventEmitter {
                 t_2: "desk"
             },
             method: "post"
-        }, callback).then(t => {
-            this.user = t.data.user;
-            this.token = t.app_signed_request;
-            return t;
-        });
+        }, callback).then(async t => await this.login(t.app_signed_request));
     }
     async verifyLogin(callback = t => t) {
-        if (!this.token) return console.error('You are not logged in');
+        if (!token) return console.error(new Error("You are not logged in"));
         return await this.constructor.ajax({
-            path: `/?ajax=!0&app_signed_request=${this.token}`,
+            path: `/?ajax=true&app_signed_request=${token}`,
             method: "get"
         }, callback);
     }
-    async getUser(u, callback = t => t) {
+    async datapoll(callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
-            path: `/u/${u}?ajax=!0`,
-            method: "get"
+            path: "/datapoll/poll_request",
+            body: {
+                notifications: true,
+                app_signed_request: token
+            },
+            method: "post"
         }, callback);
+    }
+    async getUser(username, callback = t => t) {
+        return await this.constructor.ajax({
+            path: `/u/${username}?ajax=true`,
+            method: "get"
+        }).then(t => new User(t)).then(callback);
     }
     async getMyUser(callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
-        return await this.verifyLogin().then(t => this.getUser(this.user.u_name, callback));
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.verifyLogin().then(t => this.getUser(t.user.d_name)).then(callback);
     }
-    async getTrack(t, callback = t => t) {
+    async getTrack(trackId, callback = t => t) {
         return await this.constructor.ajax({
-            path: `/t/${t}?ajax=!0`,
+            path: `/t/${trackId}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
             method: "get"
+        }).then(t => new Track(t)).then(callback);
+    }
+    async getTrackLeaderboard(trackId, callback = t => t) {
+        return await this.constructor.ajax({
+            path: "/track_api/load_leaderboard",
+            body: {
+                t_id: trackId,
+                app_signed_request: token
+            },
+            method: "post"
         }, callback);
     }
     async getNotifications(callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
-            path: `/notifications?ajax=true&app_signed_request=${this.token}&t_1=ref&t_2=desk`,
+            path: `/notifications?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
             method: "get"
-        }, callback);
+        }).then(t => t.notification_days && t.notification_days[0] && t.notification_days[0].notifications.map(t => new Notifications(t))).then(callback);
     }
     async getComment(trackId, commentId, callback = t => t) {
         return await this.getTrack(trackId).then(t => {
-            for (const e of t.track_comments) {
-                if (e.comment.id == commentId) {
-                    callback(e);
-                    return e;
+            for (const e of t.comments) {
+                if (e.id == commentId) {
+                    return new Comment(e);
                 }
             }
-        });
+            return null;
+        }).then(callback);
     }
-    async datapoll(callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async postComment(trackId, message, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
-            path: `/datapoll/poll_request`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/track_comments/post",
             body: {
-                notifications: true,
-                app_signed_request: this.token
+                t_id: trackId,
+                msg: message,
+                app_signed_request: token
             },
             method: "post"
+        }).then(async t => t.result ? new Comment(t.data.track_comments[0]) : new Error(t.msg)).then(callback);
+    }
+    async deleteComment(trackId, commentId, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.constructor.ajax({
+            path: `/track_comments/delete/${trackId}/${commentId}?ajax=true&app_signed_request=true&t_1=ref&t_2=desk`,
+            method: "get"
         }, callback);
     }
-    async changeName(t, callback = t => t) {
-        if (!t) return callback("False arguments");
-        if (!this.token) return callback('You are not logged in');
+    async changeUsername(username, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!username) throw new Error("INVALID_USERNAME");
         return await this.constructor.ajax({
-            path: `/account/edit_profile`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/account/edit_profile",
             body: {
                 name: "u_name",
-                value: encodeURIComponent(t.replace(/[^A-Z0-9]/ig, "")),
-                app_signed_request: this.token
+                value: encodeURIComponent(username.replace(/[^A-Z0-9]/ig, "")),
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async changeDesc(t, callback = t => t) {
-        if (!t) return callback("False arguments");
-        if (!this.token) return callback('You are not logged in');
+    async changeDescription(description, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!description) throw new Error("INVALID_DESCRIPTION");
         return await this.constructor.ajax({
-            path: `/account/edit_profile`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/account/edit_profile",
             body: {
                 name: "about",
-                value: encodeURIComponent(t.replace("%20", "+")),
-                app_signed_request: this.token
+                value: encodeURIComponent(description.replace("%20", "+")),
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async changePassword(t, e, callback = t => t) {
-        if (!t || !e) return callback('False arguments');
-        if (!this.token) return callback('You are not logged in');
+    async changePassword(oldPassword, newPassword, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!oldPassword || !newPassword) throw new Error("INVALID_PASSWORD");
         return await this.constructor.ajax({
-            path: `/account/change_password`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/account/change_password",
             body: {
-                old_password: encodeURIComponent(t).replace("%20", "+"),
-                new_password: encodeURIComponent(e.replace("%20", "+")),
-                app_signed_request: this.token
+                old_password: encodeURIComponent(oldPassword).replace("%20", "+"),
+                new_password: encodeURIComponent(newPassword.replace("%20", "+")),
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async changeForumsPassword(p, callback = t => t) {
-        if (!p) return callback('False arguments');
-        if (!this.token) return callback('You are not logged in');
+    async setForumPassword(password, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!password) throw new Error("INVALID_PASSWORD");
         return await this.constructor.ajax({
-            path: `/account/update_forum_account`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/account/update_forum_account",
             body: {
-                password: encodeURIComponent(t.replace("%20", "+")),
-                app_signed_request: this.token
+                password: encodeURIComponent(password.replace("%20", "+")),
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
     async buyHead(callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
-            path: `/store/buy`,
+            path: "/store/buy",
             method: "post"
         }, callback);
     }
-    async equipHead(t, callback = t => t) {
-        if (!t) return callback('False arguments');
-        if (!this.token) return callback('You are not logged in');
+    async setHead(itemId, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!itemId) throw new Error("INVALID_COSMETIC");
         return await this.constructor.ajax({
-            path: `/store/equip`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/store/equip",
             body: {
-                item_id: t,
-                app_signed_request: this.token
+                item_id: itemId,
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async addFriend(t, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
-        return await this.constructor.ajax({
-            path: `/friends/send_friend_request`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
-            body: {
-                u_name: t,
-                app_signed_request: this.token
-            },
-            method: "post"
-        }, callback);
-    }
-    async removeFriend(t, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
-        return await this.constructor.ajax({
-            path: `/friends/remove_friend`,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
-            body: {
-                u_id: t,
-                app_signed_request: this.token
-            },
-            method: "post"
-        }, callback);
-    }
-    async acceptFriend(i, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
-        return await this.constructor.ajax({
-            path: "/friends/respond_to_friend_request",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
-            body: {
-                u_name: t,
-                action: "accept",
-                app_signed_request: this.token
-            },
-            method: "post"
-        }, callback);
-    }
-    async challenge(t, e, i, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
-        return await this.constructor.ajax({
-            path: "/challenge/send",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
-            body: {
-                "users%5B%5D": t.join("&users%5B%5D="),
-                msg: e,
-                track_slug: i,
-                app_signed_request: this.token
-            },
-            method: "post"
-        }, callback);
-    }
-    async comment(t, e, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
-        return await this.constructor.ajax({
-            path: "/track_comments/post",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
-            body: {
-                t_id: t,
-                msg: encodeURIComponent(e).replace("%20", "+"),
-                app_signed_request: this.token
-            },
-            method: "post"
-        }, callback);
-    }
-    async vote(t, e, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
-        return await this.constructor.ajax({
-            path: "/track_api/vote",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
-            body: {
-                t_id: t,
-                vote: e,
-                app_signed_request: this.token
-            },
-            method: "post"
-        }, callback);
-    }
-    async subscribe(t, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async addFriend(username, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
             path: "/friends/send_friend_request",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                sub_uid: t,
-                subscribe: 1,
-                app_signed_request: this.token
+                u_name: username,
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async hideTrack(t, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async acceptFriend(username, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
-            path: "/moderator/hide_track/" + t,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/friends/respond_to_friend_request",
             body: {
-                ajax: true,
-                app_signed_request: this.token
+                u_name: username,
+                action: "accept",
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async removeRace(t, e, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async removeFriend(user, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
+        return await this.constructor.ajax({
+            path: "/friends/remove_friend",
+            body: {
+                u_id: user,
+                app_signed_request: token
+            },
+            method: "post"
+        }, callback);
+    }
+    async challenge(users, message, trackId, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.constructor.ajax({
+            path: "/challenge/send",
+            body: {
+                "users%5B%5D": users.join("&users%5B%5D="),
+                msg: message,
+                track_slug: trackId,
+                app_signed_request: token
+            },
+            method: "post"
+        }, callback);
+    }
+    async vote(trackId, vote, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.constructor.ajax({
+            path: "/track_api/vote",
+            body: {
+                t_id: trackId,
+                vote: vote,
+                app_signed_request: token
+            },
+            method: "post"
+        }, callback);
+    }
+    async subscribe(user, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
+        return await this.constructor.ajax({
+            path: "/track_api/subscribe",
+            body: {
+                sub_uid: user,
+                subscribe: 1,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t)).then(callback);
+    }
+    async unsubscribe(user, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        return await this.constructor.ajax({
+            path: "/track_api/subscribe",
+            body: {
+                sub_uid: user,
+                subscribe: 0,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t)).then(callback);
+    }
+    async hideTrack(trackId, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.constructor.ajax({
+            path: `/moderator/hide_track/${trackId}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
+            method: "get"
+        }, callback);
+    }
+    async removeRace(trackId, user, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
         return await this.constructor.ajax({
             path: "/moderator/remove_race",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                t_id: t,
-                u_id: e || this.user.u_id,
+                t_id: trackId,
+                u_id: user || this.user.id,
                 ajax: true,
-                app_signed_request: this.token
+                app_signed_request: token
             },
             method: "post"
-        }, callback);
+        }).then(t => new Response(t)).then(callback);
     }
-    async toggleOA(t, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async toggleOA(user, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
         return await this.constructor.ajax({
-            path: "/moderator/toggle_official_author/" + t,
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
+            path: "/moderator/toggle_official_author/" + user,
             body: {
                 ajax: true,
-                app_signed_request: this.token
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async addDailyTrack(track, lives, refill_cost, gems, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async addDailyTrack(trackId, lives, refillCost, gems, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
             path: "/moderator/add_track_of_the_day",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                t_id: track,
+                t_id: trackId,
                 lives,
-                rfll_cst: refill_cost,
+                rfll_cst: refillCost,
                 gems,
                 ajax: true,
-                app_signed_request: this.token
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async banUser(t, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async banUser(user, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
         return await this.constructor.ajax({
             path: "/moderator/ban_user",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                u_id: t,
+                u_id: user,
                 ajax: true,
-                app_signed_request: this.token
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async changeUsername(t, e, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async setUsername(user, username, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
         return await this.constructor.ajax({
             path: "/moderator/change_username",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                u_id: t,
-                username: e,
+                u_id: user,
+                username,
                 ajax: true,
-                app_signed_request: this.token
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async changeEmail(t, e, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async setEmail(user, email, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
         return await this.constructor.ajax({
             path: "/moderator/change_email",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                u_id: t,
-                email: e,
+                u_id: user,
+                email,
                 ajax: true,
-                app_signed_request: this.token
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async redeemCoupon(t, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async redeemCoupon(coupon, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
             path: "/store/redeemCouponCode",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                coupon_code: t,
-                app_signed_request: this.token
+                coupon_code: coupon,
+                app_signed_request: token
             },
             method: "post"
         }, callback);
     }
-    async signup(t, e, i, callback = t => t) {
+    async signup(username, email, password, recaptcha, callback = t => t) {
         return await this.constructor.ajax({
             path: "/auth/standard_signup",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                username: encodeURIComponent(t),
-                email: encodeURIComponent(e).replace("%20", "+"),
-                password: encodeURIComponent(i).replace("%20", "+"),
-                recaptcha: "03AGdBq252AkaYfc0P6E9u_GQq4aruILoiMcMMMZgxXfGKa-Y2nASs5BEjB-df6V6fSyYuBG8xs4nlcwb5ASfsJL98W1Pq2HUXyR5QyFT-FgZ8ljubncpwK92q5XKnaXWthEfbA0EvH1qV2Rh4a6WQSpoo01kgteHf5C3dvK6c8rhM1nZThunHUNAgld1_AljlDS7cYXGsPSAdLXOFcMwz_TtcliBTei_f3TiQTasfNIFWfrgdWCyWSARj5LGbrciLS_-65cgoMbuh9rSLqOAduwn_RCcVoteCX6RlfVT3DPsVr1v7uJseYuTvgrVGpsrrrBx87O3pO_n0zGnRZpYU65qfx8Z7hjVvrohuvJgmDE7qtDsshmsmwo-OiJ0yc5WwRV2m63XrC9I-1JA8ZjAGg5xhPhh0NkCAQrMKSkUrkdgPg2VpEc9ZJZalUOdex8GpzDQ23gwqmh_gknLC2dhr8C5QpFCLfIl8eA",
-                app_signed_request: this.token
+                username: encodeURIComponent(username),
+                email: encodeURIComponent(email).replace("%20", "+"),
+                password: encodeURIComponent(password).replace("%20", "+"),
+                recaptcha,
+                app_signed_request: token
             },
             method: "post"
-        }, callback).then(t => {
-            this.user = t.data.user;
-            this.token = t.app_signed_request;
-            return t;
-        });
+        }).then(async t => await this.login(t.app_signed_request)).then(callback);
     }
-    async publish(t, e, i, s, n, o, callback = t => t) {
-        if (!this.token) return callback('You are not logged in');
+    async publish(title, description, defaultVehicle, MTBALlowed, BMXAllowed, code, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
             path: "/create/submit",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
             body: {
-                name: encodeURIComponent(t).replace('%20', '+'),
-                desc: encodeURIComponent(e).replace('%20', '+'),
-                default_vehicle: i,
-                "allowed_vehicles%5BMTB%5D": s,
-                "allowed_vehicles%5BBMX%5D": n,
-                code: encodeURIComponent(c).replace('%20', '+'),
-                app_signed_request: this.token
+                name: encodeURIComponent(title).replace('%20', '+'),
+                desc: encodeURIComponent(description).replace('%20', '+'),
+                default_vehicle: defaultVehicle,
+                "allowed_vehicles%5BMTB%5D": MTBALlowed,
+                "allowed_vehicles%5BBMX%5D": BMXAllowed,
+                code: encodeURIComponent(code).replace('%20', '+'),
+                app_signed_request: token
             },
             method: "post"
-        }, callback);
+        }).then(t => new Response(t)).then(callback);
+    }
+    logout() {
+        this.user = null;
+        token = null;
+        return this;
     }
 }
