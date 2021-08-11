@@ -3,7 +3,7 @@ import frhd, { Client } from "./src/bootstrap.js";
 const client = new Client();
 
 client.on("ready", function() {
-    this.removeRace("1001", this.user.id).then(console.log);
+    console.log("Ready!");
 });
 
 client.on("challenge", function(t) {

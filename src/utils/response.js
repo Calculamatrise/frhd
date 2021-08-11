@@ -9,7 +9,7 @@ export default class {
             switch(t) {
                 case "msg":
                     this.message = data[t];
-                    if (this.result)
+                    if (this.result && !this.message)
                         this.message = "Success!";
                 break;
 

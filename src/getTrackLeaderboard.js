@@ -1,7 +1,7 @@
-import User from "./utils/client.js";
+import Client from "./utils/client.js";
 
 export default async function(trackId, callback = t => t) {
-    return await User.ajax({
+    return await Client.ajax({
         path: "/track_api/load_leaderboard",
         headers: {
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8"

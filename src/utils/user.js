@@ -1,4 +1,5 @@
 import Client, { token } from "./client.js";
+import Response from "./response.js";
 
 export default class {
     constructor(data) {
@@ -116,5 +117,100 @@ export default class {
                 break;
             }
         }
+    }
+    async addFriend() {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await Client.ajax({
+            path: "/friends/send_friend_request",
+            body: {
+                u_name: this.username,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async removeFriend() {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await Client.ajax({
+            path: "/friends/remove_friend",
+            body: {
+                u_id: this.id,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async subscribe() {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await Client.ajax({
+            path: "/track_api/subscribe",
+            body: {
+                sub_uid: this.id,
+                subscribe: 1,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async unsubscribe() {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await Client.ajax({
+            path: "/track_api/subscribe",
+            body: {
+                sub_uid: this.id,
+                subscribe: 0,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async setUsername(username) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.constructor.ajax({
+            path: "/moderator/change_username",
+            body: {
+                u_id: this.id,
+                username,
+                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async setEmail(email) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.constructor.ajax({
+            path: "/moderator/change_email",
+            body: {
+                u_id: this.id,
+                email,
+                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async toggleOA() {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await Client.ajax({
+            path: "/moderator/toggle_official_author/" + this.id,
+            body: {
+                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async ban() {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await Client.ajax({
+            path: "/moderator/ban_user",
+            body: {
+                u_id: this.id,
+                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
     }
 }

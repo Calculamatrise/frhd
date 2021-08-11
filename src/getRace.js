@@ -1,8 +1,9 @@
-import User from "./utils/client.js";
+import Client from "./utils/client.js";
+import Race from "./utils/race.js";
 
 export default async function(trackId, username, callback = t => t) {
-    return await User.ajax({
-        path: `/t/${trackId}/r/${username}?ajax=!0`,
+    return await Client.ajax({
+        path: `/t/${trackId}/r/${username}?ajax=true`,
         method: "get"
-    }, callback);
+    }).then(t => new Race(t.race_leaderboard[0], t.game_settings.raceData[0])).then(callback);
 }

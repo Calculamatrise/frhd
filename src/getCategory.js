@@ -1,7 +1,7 @@
-import User from "./utils/client.js";
+import Client from "./utils/client.js";
 
 export default async function(category, callback = t => t) {
-    return await User.ajax({
+    return await Client.ajax({
         path: `/${category}?ajax=!0`,
         method: "get"
     }, callback);

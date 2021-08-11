@@ -37,7 +37,20 @@ export default class {
             }
         }
     }
+    async reply(message) {
+        if (!message) throw new Error("INVALID_MESSAGE");
+        return await Client.ajax({
+            path: "/track_comments/post",
+            body: {
+                t_id: this.trackId,
+                msg: `@${this.author.displayName}, ${message.toString().replace(/\s+/g, "+")}`,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(async t => t.result ? new this.constructor(t.data.track_comments[0]) : new Error(t.msg));
+    }
     delete({ timeout = 0 }) {
+        if (isNaN(timeout)) throw new Error("INVALID_TIMEOUT");
         setTimeout(() => {
             Client.ajax({
                 path: `/track_comments/delete/${this.trackId}/${this.id}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,

@@ -1,4 +1,7 @@
+import Client from "./client.js";
 import Comment from "./comment.js";
+import Response from "./response.js";
+import Race from "./race.js";
 
 export default class {
     constructor(data) {
@@ -64,6 +67,7 @@ export default class {
                 break;
 
                 case "track_comments":
+                    data[t].forEach(t => t.track = { id: this.id });
                     this.comments = data[t].map(t => new Comment(t));
                 break;
 
@@ -85,5 +89,111 @@ export default class {
                 break;
             }
         }
+    }
+    async getLeaderboard() {
+        return await Client.ajax({
+            path: "/track_api/load_leaderboard",
+            body: {
+                t_id: this.id,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+    async getComment(commentId) {
+        for (const t of this.comments) {
+            if (t.id == commentId) {
+                return t;
+            }
+        }
+        return null;
+    }
+    async postComment(message) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!message) throw new Error("INVALID_MESSAGE");
+        return await Client.ajax({
+            path: "/track_comments/post",
+            body: {
+                t_id: this.id,
+                msg: message.toString().replace(/\s+/g, "+"),
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(async t => t.result ? new Comment(t.data.track_comments[0]) : new Error(t.msg));
+    }
+    async deleteComment(commentId) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.getComment(commentId).then(t => t.delete());
+    }
+    async sendChallenge(message, users) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!message || typeof message !== "string") throw new Error("INVALID_MESSAGE");
+        if (!users || typeof users !== "object") throw new Error("INVALID_USERS");
+        return await Client.ajax({
+            path: "/challenge/send",
+            body: {
+                "users%5B%5D": users.join("&users%5B%5D="),
+                msg: message,
+                track_slug: this.id,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async vote(vote) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!vote || isNaN(vote)) throw new Error("INVALID_VOTE");
+        return await Client.ajax({
+            path: "/track_api/vote",
+            body: {
+                t_id: this.id,
+                vote,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async getRace(username) {
+        return await Client.ajax({
+            path: `/t/${this.id}/r/${username}?ajax=true`,
+            method: "get"
+        }).then(t => new Race(t.race_leaderboard[0], t.game_settings.raceData[0]));
+    }
+    async removeRace(user) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
+        return await Client.ajax({
+            path: "/moderator/remove_race",
+            body: {
+                t_id: this.id,
+                u_id: user || this.user.id,
+                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async addDaily(lives, refillCost, gems) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await Client.ajax({
+            path: "/moderator/add_track_of_the_day",
+            body: {
+                t_id: this.id,
+                lives,
+                rfll_cst: refillCost,
+                gems,
+                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    async hide() {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await Client.ajax({
+            path: `/moderator/hide_track/${this.id}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
+            method: "get"
+        }).then(t => new Response(t));;
     }
 }

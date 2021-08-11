@@ -4,7 +4,7 @@ import https from "https";
 import User from "./user.js";
 import Track from "./track.js";
 import Comment from "./comment.js";
-import Notifications from "./notification.js";
+import Notification from "./notification.js";
 import Response from "./response.js";
 
 export let token = null;
@@ -27,8 +27,8 @@ export default class extends EventEmitter {
                     data += d;
                 });
                 res.on("end", () => {
-                    callback(JSON.parse(data));
-                    resolve(JSON.parse(data));
+                    callback(JSON.parsable(data) ? JSON.parse(data) : data);
+                    resolve(JSON.parsable(data) ? JSON.parse(data) : data);
                 });
             });
             body && req.write(headers["content-type"] == "application/json" ? JSON.stringify(body) : new URLSearchParams(body).toString());
@@ -61,6 +61,19 @@ export default class extends EventEmitter {
         this.emit("ready");
         this.listen();
         return this;
+    }
+    async signup(username, email, password, recaptcha, callback = t => t) {
+        return await this.constructor.ajax({
+            path: "/auth/standard_signup",
+            body: {
+                username: encodeURIComponent(username),
+                email: encodeURIComponent(email).replace("%20", "+"),
+                password: encodeURIComponent(password).replace("%20", "+"),
+                recaptcha,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(async t => await this.login(t.app_signed_request)).then(callback);
     }
     async defaultLogin(username, password, callback = t => t) {
         return await this.constructor.ajax({
@@ -104,56 +117,47 @@ export default class extends EventEmitter {
         return await this.verifyLogin().then(t => this.getUser(t.user.d_name)).then(callback);
     }
     async getTrack(trackId, callback = t => t) {
+        if (!trackId || isNaN(trackId)) throw new Error("INVALID_TRACK");
         return await this.constructor.ajax({
             path: `/t/${trackId}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
             method: "get"
         }).then(t => new Track(t)).then(callback);
     }
-    async getTrackLeaderboard(trackId, callback = t => t) {
+    async postComment(trackId, message, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!message) throw new Error("INVALID_MESSAGE");
         return await this.constructor.ajax({
-            path: "/track_api/load_leaderboard",
+            path: "/track_comments/post",
             body: {
                 t_id: trackId,
+                msg: message.toString().replace(/\s+/g, "+"),
                 app_signed_request: token
             },
             method: "post"
-        }, callback);
+        }).then(async t => t.result ? new Comment(t.data.track_comments[0]) : new Error(t.msg)).then(callback);
+    }
+    async postTrack(title, description, defaultVehicle, MTBALlowed, BMXAllowed, code, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        return await this.constructor.ajax({
+            path: "/create/submit",
+            body: {
+                name: encodeURIComponent(title).replace('%20', '+'),
+                desc: encodeURIComponent(description).replace('%20', '+'),
+                default_vehicle: defaultVehicle,
+                "allowed_vehicles%5BMTB%5D": MTBALlowed,
+                "allowed_vehicles%5BBMX%5D": BMXAllowed,
+                code: encodeURIComponent(code).replace('%20', '+'),
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t)).then(callback);
     }
     async getNotifications(callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
             path: `/notifications?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
             method: "get"
-        }).then(t => t.notification_days && t.notification_days[0] && t.notification_days[0].notifications.map(t => new Notifications(t))).then(callback);
-    }
-    async getComment(trackId, commentId, callback = t => t) {
-        return await this.getTrack(trackId).then(t => {
-            for (const e of t.comments) {
-                if (e.id == commentId) {
-                    return new Comment(e);
-                }
-            }
-            return null;
-        }).then(callback);
-    }
-    async postComment(trackId, message, callback = t => t) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        return await this.constructor.ajax({
-            path: "/track_comments/post",
-            body: {
-                t_id: trackId,
-                msg: message,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(async t => t.result ? new Comment(t.data.track_comments[0]) : new Error(t.msg)).then(callback);
-    }
-    async deleteComment(trackId, commentId, callback = t => t) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        return await this.constructor.ajax({
-            path: `/track_comments/delete/${trackId}/${commentId}?ajax=true&app_signed_request=true&t_1=ref&t_2=desk`,
-            method: "get"
-        }, callback);
+        }).then(t => t.notification_days && t.notification_days[0] && t.notification_days[0].notifications.map(t => new Notification(t))).then(callback);
     }
     async changeUsername(username, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
@@ -175,7 +179,7 @@ export default class extends EventEmitter {
             path: "/account/edit_profile",
             body: {
                 name: "about",
-                value: encodeURIComponent(description.replace("%20", "+")),
+                value: encodeURIComponent(description.replace(/\s+/g, "+")),
                 app_signed_request: token
             },
             method: "post"
@@ -246,7 +250,7 @@ export default class extends EventEmitter {
                 app_signed_request: token
             },
             method: "post"
-        }, callback);
+        }).then(t => new Response(t)).then(callback);
     }
     async removeFriend(user, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
@@ -259,32 +263,7 @@ export default class extends EventEmitter {
                 app_signed_request: token
             },
             method: "post"
-        }, callback);
-    }
-    async challenge(users, message, trackId, callback = t => t) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        return await this.constructor.ajax({
-            path: "/challenge/send",
-            body: {
-                "users%5B%5D": users.join("&users%5B%5D="),
-                msg: message,
-                track_slug: trackId,
-                app_signed_request: token
-            },
-            method: "post"
-        }, callback);
-    }
-    async vote(trackId, vote, callback = t => t) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        return await this.constructor.ajax({
-            path: "/track_api/vote",
-            body: {
-                t_id: trackId,
-                vote: vote,
-                app_signed_request: token
-            },
-            method: "post"
-        }, callback);
+        }).then(t => new Response(t)).then(callback);
     }
     async subscribe(user, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
@@ -313,13 +292,6 @@ export default class extends EventEmitter {
             method: "post"
         }).then(t => new Response(t)).then(callback);
     }
-    async hideTrack(trackId, callback = t => t) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        return await this.constructor.ajax({
-            path: `/moderator/hide_track/${trackId}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
-            method: "get"
-        }, callback);
-    }
     async removeRace(trackId, user, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
         if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
@@ -335,19 +307,6 @@ export default class extends EventEmitter {
             method: "post"
         }).then(t => new Response(t)).then(callback);
     }
-    async toggleOA(user, callback = t => t) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
-        if (!user) throw new Error("INVALID_USER");
-        return await this.constructor.ajax({
-            path: "/moderator/toggle_official_author/" + user,
-            body: {
-                ajax: true,
-                app_signed_request: token
-            },
-            method: "post"
-        }, callback);
-    }
     async addDailyTrack(trackId, lives, refillCost, gems, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
@@ -361,21 +320,14 @@ export default class extends EventEmitter {
                 app_signed_request: token
             },
             method: "post"
-        }, callback);
+        }).then(t => new Response(t)).then(callback);
     }
-    async banUser(user, callback = t => t) {
+    async hideTrack(trackId, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
-        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
-        if (!user) throw new Error("INVALID_USER");
         return await this.constructor.ajax({
-            path: "/moderator/ban_user",
-            body: {
-                u_id: user,
-                ajax: true,
-                app_signed_request: token
-            },
-            method: "post"
-        }, callback);
+            path: `/moderator/hide_track/${trackId}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
+            method: "get"
+        }).then(t => new Response(t)).then(callback);
     }
     async setUsername(user, username, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
@@ -407,6 +359,33 @@ export default class extends EventEmitter {
             method: "post"
         }, callback);
     }
+    async toggleOA(user, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
+        return await this.constructor.ajax({
+            path: "/moderator/toggle_official_author/" + user,
+            body: {
+                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(t => new Response(t)).then(callback);
+    }
+    async banUser(user, callback = t => t) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
+        return await this.constructor.ajax({
+            path: "/moderator/ban_user",
+            body: {
+                u_id: user,
+                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        }, callback);
+    }
     async redeemCoupon(coupon, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
@@ -418,38 +397,18 @@ export default class extends EventEmitter {
             method: "post"
         }, callback);
     }
-    async signup(username, email, password, recaptcha, callback = t => t) {
-        return await this.constructor.ajax({
-            path: "/auth/standard_signup",
-            body: {
-                username: encodeURIComponent(username),
-                email: encodeURIComponent(email).replace("%20", "+"),
-                password: encodeURIComponent(password).replace("%20", "+"),
-                recaptcha,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(async t => await this.login(t.app_signed_request)).then(callback);
-    }
-    async publish(title, description, defaultVehicle, MTBALlowed, BMXAllowed, code, callback = t => t) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        return await this.constructor.ajax({
-            path: "/create/submit",
-            body: {
-                name: encodeURIComponent(title).replace('%20', '+'),
-                desc: encodeURIComponent(description).replace('%20', '+'),
-                default_vehicle: defaultVehicle,
-                "allowed_vehicles%5BMTB%5D": MTBALlowed,
-                "allowed_vehicles%5BBMX%5D": BMXAllowed,
-                code: encodeURIComponent(code).replace('%20', '+'),
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(t => new Response(t)).then(callback);
-    }
     logout() {
         this.user = null;
         token = null;
         return this;
     }
+}
+
+JSON.__proto__.parsable = function(string) {
+    try {
+        this.parse(string);
+    } catch (e) {
+        return false;
+    }
+    return true;
 }
