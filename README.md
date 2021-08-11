@@ -1,3 +1,65 @@
+# FRHD API Wrapper
+
+```js
+import frhd, { Client } from "frhd";
+
+const client = new Client(); // or new frhd.Client()
+
+client.on("ready", function() {
+    console.log("Ready!");
+});
+
+client.on("commentMention", function(data) {
+    console.log(data);
+});
+
+client.login("TOKEN");
+```
+Expected Output:
+
+```js
+{
+    track: {
+        id: 1001,
+        url: '1001-wild-west',
+        title: 'Wild West'
+    },
+    user: {
+        id: 0000000,
+        username: 'guest',
+        displayNname: 'Guest',
+        avatar: 'https://www.freeriderhd.com/u/guest/pic?size=50'
+    },
+    comment: {
+        id: 0000000,
+        message: '<a href="https://www.freeriderhd.com/u/guest">Guest</a> Hello World!',
+        time: 'just now',
+        deletable: false,
+        flagged: false
+    },
+    timeAgo: 'just now',
+    timestamp: 1628538002
+}
+```
+
+# Track API
+
+```js
+import frhd, { Track } from "frhd";
+
+const track = new Track(); // or new frhd.Track()
+
+track.moveTo(-40, 50);
+track.lineTo(40, 50);
+
+console.log(track.export);
+```
+Expected Output:
+
+```js
+"-18 1i 18 1i##"
+```
+
 # Data Retrievers
 
 This api requests data from Free Rider HD
@@ -131,67 +193,5 @@ Expected Output:
         bestGhostEnabled: false,
         requireTrackVerification: true
     }
-}
-```
-
-# Track API
-
-```js
-import frhd, { Track } from "frhd";
-
-const track = new Track(); // or new frhd.Track()
-
-track.moveTo(-40, 50);
-track.lineTo(40, 50);
-
-console.log(track.export);
-```
-Expected Output:
-
-```js
-"-18 1i 18 1i##"
-```
-
-# FRHD API Wrapper
-
-```js
-import frhd, { Client } from "frhd";
-
-const client = new Client(); // or new frhd.Client()
-
-client.on("ready", function() {
-    console.log("Ready!");
-});
-
-client.on("commentMention", function(data) {
-    console.log(data);
-});
-
-client.login("TOKEN");
-```
-Expected Output:
-
-```js
-{
-    track: {
-        id: 1001,
-        url: '1001-wild-west',
-        title: 'Wild West'
-    },
-    user: {
-        id: 0000000,
-        username: 'guest',
-        displayNname: 'Guest',
-        avatar: 'https://www.freeriderhd.com/u/guest/pic?size=50'
-    },
-    comment: {
-        id: 0000000,
-        message: '<a href="https://www.freeriderhd.com/u/guest">Guest</a> Hello World!',
-        time: 'just now',
-        deletable: false,
-        flagged: false
-    },
-    timeAgo: 'just now',
-    timestamp: 1628538002
 }
 ```
