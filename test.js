@@ -1,17 +1,17 @@
-import frhd, { Client } from "./src/bootstrap.js";
+import frhd, { Client, Track } from "./src/bootstrap.js";
 
 const client = new Client();
 
-client.on("ready", function() {
-    console.log("Ready!");
-});
+client.on("ready", async function() {
+    const track = new Track();
 
-client.on("challenge", function(t) {
-    console.log(t)
-});
+    track.beginPath();
+    track.moveTo(-40, 50);
+    track.lineTo(40, 50);
+    track.lineTo(40, 100);
+    track.closePath();
 
-client.on("commentMention", function(t) {
-    console.log(t)
+    console.log(track.code)
 });
 
 client.login("TOKEN");

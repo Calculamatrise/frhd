@@ -121,7 +121,7 @@ export default class extends EventEmitter {
         return await this.constructor.ajax({
             path: `/t/${trackId}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
             method: "get"
-        }).then(t => new Track(t)).then(callback);
+        }).then(t => new Track(t, this.user.id)).then(callback);
     }
     async postComment(trackId, message, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
@@ -328,6 +328,16 @@ export default class extends EventEmitter {
             path: `/moderator/hide_track/${trackId}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`,
             method: "get"
         }).then(t => new Response(t)).then(callback);
+    }
+    async deepClean({ users, startingTrackId = 1001, endingTrackId = 836350 }, callback = t => t) {
+        for (let t_id = startingTrackId; t_id <= endingTrackId; t_id++) {
+            await this.getTrack(t_id).then(t => {
+                for (const u_id of users) {
+                    t.removeRace(u_id);
+                }
+                return t;
+            }).then(t => callback(t.id));
+        }
     }
     async setUsername(user, username, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");

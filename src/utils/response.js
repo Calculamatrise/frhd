@@ -14,12 +14,9 @@ export default class {
                 break;
 
                 case "data":
+                    this.data = data[t];
                     if (data[t].subscriber_cnt)
                         this.subscriberCount = data[t].subscriber_cnt;
-                break;
-
-                default:
-                    this[t] = data[t];
                 break;
             }
         }

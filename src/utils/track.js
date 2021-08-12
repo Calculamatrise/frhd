@@ -1,10 +1,12 @@
-import Client from "./client.js";
+import S from "./sha256.js";
+
+import Client, { token } from "./client.js";
 import Comment from "./comment.js";
 import Response from "./response.js";
 import Race from "./race.js";
 
 export default class {
-    constructor(data) {
+    constructor(data, userId) {
         if (!data || typeof data !== "object") throw new Error("INVALID_DATA_TYPE");
         this.id = null,
         this.title = null,
@@ -25,6 +27,7 @@ export default class {
         this.isCampaign = false,
         this.daily = null,
         this.gameSettings = null,
+        this.userId = userId,
         this.init(data);
     }
     init(data) {
@@ -153,11 +156,59 @@ export default class {
             method: "post"
         }).then(t => new Response(t));
     }
-    async getRace(username) {
+    async getRace(user) {
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
         return await Client.ajax({
-            path: `/t/${this.id}/r/${username}?ajax=true`,
+            path: `/track_api/load_races?t_id=${this.id}&u_ids=${user}&ajax=true`,
             method: "get"
-        }).then(t => new Race(t.race_leaderboard[0], t.game_settings.raceData[0]));
+        }).then(t => new Race(t.data[0]));
+    }
+    /**
+     * 
+     * @param {object|string} code 
+     * @param {string} vehicle 
+     * @param {number} ticks 
+     * @returns {object}
+     * @private
+     */
+    async postRace(code, vehicle = "MTB", ticks) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (!this.userId) throw new Error("INVALID_CLIENT");
+        if (!code) throw new Error("INVALID_RACE_DATA");
+        if (!ticks || isNaN(ticks)) throw new Error("INVALID_TIME");
+        if (typeof code == "object")
+            code = JSON.stringify(code);
+        return await Client.ajax({
+            path: "/track_api/track_run_complete",
+            body: {
+                t_id: this.id,
+                u_id: this.userId,
+                code: encodeURIComponent(code),
+                vehicle,
+                run_ticks: ticks,
+                fps: 25,
+                time: encodeURIComponent(t2t(ticks)),
+                sig: S.SHA256(`${this.id}|${this.userId}|${code}|${ticks}|${vehicle}|25|erxrHHcksIHHksktt8933XhwlstTekz`).toString(),
+                ajax: true,
+                app_signed_request: token,
+                t_1: "ref",
+                t_2: "desk"
+            },
+            method: "post"
+        }).then(t => new Response(t));
+    }
+    /**
+     * 
+     * @param {string|number,object} user 
+     * @returns {object}
+     * @private
+     */
+    async copyRace(user) {
+        if (!token) throw new Error("INVALID_TOKEN");
+        if (isNaN(user)) await this.getUser(user).then(t => (user = t.id));
+        if (!user) throw new Error("INVALID_USER");
+        return this.getRace(user).then(async t => await this.postRace(t.race.code, t.race.vehicle, t.race.runTicks));
     }
     async removeRace(user) {
         if (!token) throw new Error("INVALID_TOKEN");
@@ -167,7 +218,7 @@ export default class {
             path: "/moderator/remove_race",
             body: {
                 t_id: this.id,
-                u_id: user || this.user.id,
+                u_id: user,
                 ajax: true,
                 app_signed_request: token
             },
@@ -196,4 +247,15 @@ export default class {
             method: "get"
         }).then(t => new Response(t));;
     }
+}
+
+function t2t(ticks) {
+    let t = ticks / 30 * 1e3;
+    t = parseInt(t, 10);
+    let e = Math.floor(t / 6e4)
+        , i = (t - 6e4 * e) / 1e3;
+    return i = i.toFixed(2),
+        10 > e && (e = e),
+        10 > i && (i = "0" + i),
+        e + ":" + i
 }
