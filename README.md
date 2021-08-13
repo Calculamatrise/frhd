@@ -49,10 +49,12 @@ import frhd, { Track } from "frhd";
 
 const track = new Track(); // or new frhd.Track()
 
+track.beginPath();
 track.moveTo(-40, 50);
 track.lineTo(40, 50);
+track.closePath();
 
-console.log(track.export);
+console.log(track.code);
 ```
 Expected Output:
 
