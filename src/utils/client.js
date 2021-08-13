@@ -27,8 +27,8 @@ export default class extends EventEmitter {
                     data += d;
                 });
                 res.on("end", () => {
-                    callback(JSON.parsable(data) ? JSON.parse(data) : data);
-                    resolve(JSON.parsable(data) ? JSON.parse(data) : data);
+                    callback(parsable(data) ? JSON.parse(data) : data);
+                    resolve(parsable(data) ? JSON.parse(data) : data);
                 });
             });
             body && req.write(headers["content-type"] == "application/json" ? JSON.stringify(body) : new URLSearchParams(body).toString());
@@ -414,9 +414,9 @@ export default class extends EventEmitter {
     }
 }
 
-JSON.__proto__.parsable = function(string) {
+function parsable(string) {
     try {
-        this.parse(string);
+        JSON.parse(string);
     } catch (e) {
         return false;
     }

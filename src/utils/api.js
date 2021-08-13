@@ -25,10 +25,6 @@ export default class {
         this.x = 0;
         this.y = 0;
     }
-    snapPoint = {
-        x: 0,
-        y: 0
-    }
     import(t) {
         if (typeof t === "string")
             t = t.split(/\u0023/g).map(t => t.split(/\u002C+/g).map(t => t.split(/\s+/g)));;
@@ -90,6 +86,7 @@ export default class {
                             this._powerups.vehicles.glider.push(e.slice(1).map(t => parseInt(t, 32)));
                         break;
                     }
+                break;
             }
         }
         return this;
@@ -268,49 +265,45 @@ export default class {
         return this;
     }
     move(x, y) {
-        for(var a in this._physics) {
-            for(var i = 0; i < this._physics[a].length; i += 2) {
-                this._physics[a][i] += x;
-                this._physics[a][i + 1] += y;
+        for (const t of this._physics) {
+            for (let e = 0; e < t.length; e += 2) {
+                t[e] += x;
+                t[e + 1] += y;
             }
         }
-        for(var a in this._scenery) {
-            for(var i = 0; i < this._scenery[a].length; i += 2) {
-                this._scenery[a][i] += x;
-                this._scenery[a][i + 1] += y;
+        for (const t of this._scenery) {
+            for (let e = 0; e < t.length; e += 2) {
+                t[e] += x;
+                t[e + 1] += y;
             }
         }
-        for(var a in this._powerups) {
-            switch(a) {
-                case "targets":
-                case "boosters":
-                case "gravity":
-                case "slomos":
-                case "bombs":
-                case "checkpoints":
-                case "antigravity":
-                    for(var b in this._powerups[a]) {
-                        this._powerups[a][b][1] += x;
-                        this._powerups[a][b][2] += y;
-                    }
+        for(const t in this._powerups) {
+            for (const e in this._powerups[t]) {
+                switch(t) {
+                    case "teleporters":
+                        this._powerups[t][e][2] += x;
+                        this._powerups[t][e][3] += y;
+                    case "targets":
+                    case "boosters":
+                    case "gravity":
+                    case "slomos":
+                    case "bombs":
+                    case "checkpoints":
+                    case "antigravity":
+                        this._powerups[t][e][0] += x;
+                        this._powerups[t][e][1] += y;
                     break;
-                case "teleporters":
-                    for(var b in this._powerups[a]) {
-                        this._powerups[a][b][2] += x;
-                        this._powerups[a][b][3] += y;
-                    }
-                    break;
-                case "vehicles":
-                    for(var b in this._powerups.vehicles) {
-                        for(var c in this._powerups.vehicles[b]) {
-                            this._powerups.vehicles[b][c][1] += x;
-                            this._powerups.vehicles[b][c][2] += y;
+                    
+                    case "vehicles":
+                        for (const i in this._powerups[t][e]) {
+                            this._powerups[t][e][i][0] += x;
+                            this._powerups[t][e][i][1] += y;
                         }
-                    }
                     break;
+                }
             }
         }
-        return this
+        return this;
     }
     rotate(x) {
         x *= Math.PI / 180;
@@ -330,52 +323,48 @@ export default class {
                 this._scenery[a][i + 2] -= x;
             }
         }
-        return this
+        return this;
     }
-    scale(x, y) {
-        for(var a in this._physics) {
-            for(var i = 0; i < this._physics[a].length; i += 2) {
-                this._physics[a][i] += this._physics[a][i] * x;
-                this._physics[a][i + 1] += this._physics[a][i + 1] * y;
+    scale(x = 1, y = 1) {
+        for (const t of this._physics) {
+            for (let e = 0; e < t.length; e += 2) {
+                t[e] += t[e] * x;
+                t[e + 1] += t[e + 1] * y;
             }
         }
-        for(var a in this._scenery) {
-            for(var i = 0; i < this._scenery[a].length; i += 2) {
-                this._scenery[a][i] += this._scenery[a][i] * x;
-                this._scenery[a][i + 1] += this._scenery[a][i + 1] * y;
+        for (const t of this._scenery) {
+            for (let e = 0; e < t.length; e += 2) {
+                t[e] += t[e] * x;
+                t[e + 1] += t[e + 1] * y;
             }
         }
-        for(var a in this._powerups) {
-            switch(a) {
-                case "targets":
-                case "boosters":
-                case "gravity":
-                case "slomos":
-                case "bombs":
-                case "checkpoints":
-                case "antigravity":
-                    for(var b in this._powerups[a]) {
-                        this._powerups[a][b][1] += this._powerups[a][b][1] * x;
-                        this._powerups[a][b][2] += this._powerups[a][b][2] * y;
-                    }
+        for (const t in this._powerups) {
+            for(const e in this._powerups[t]) {
+                switch(t) {
+                    case "teleporters":
+                        this._powerups[t][e][2] += this._powerups[t][e][2] * x;
+                        this._powerups[t][e][3] += this._powerups[t][e][3] * y;
+                    case "targets":
+                    case "boosters":
+                    case "gravity":
+                    case "slomos":
+                    case "bombs":
+                    case "checkpoints":
+                    case "antigravity":
+                        this._powerups[t][e][0] += this._powerups[t][e][0] * x;
+                        this._powerups[t][e][1] += this._powerups[t][e][1] * y;
                     break;
-                case "teleporters":
-                    for(var b in this._powerups[a]) {
-                        this._powerups[a][b][2] += this._powerups[a][b][2] * x;
-                        this._powerups[a][b][3] += this._powerups[a][b][3] * y;
-                    }
-                    break;
-                case "vehicles":
-                    for(var b in this._powerups.vehicles) {
-                        for(var c in this._powerups.vehicles[b]) {
-                            this._powerups.vehicles[b][c][1] += this._powerups.vehicles[b][c][1] * x;
-                            this._powerups.vehicles[b][c][2] += this._powerups.vehicles[b][c][2] * y;
+
+                    case "vehicles":
+                        for (const i in this._powerups[t][e]) {
+                            this._powerups[t][e][i][0] += this._powerups[t][e][i][0] * x;
+                            this._powerups[t][e][i][1] += this._powerups[t][e][i][1] * y;
                         }
-                    }
                     break;
+                }
             }
         }
-        return this
+        return this;
     }
     clear() {
         this._physics = [],
@@ -397,7 +386,7 @@ export default class {
                 glider: []
             }
         }
-        return this
+        return this;
     }
     get physics() {
         return this._physics.map(t => t.map(t => t.toString(32)).join(" ")).join(",");
@@ -459,10 +448,8 @@ export default class {
 
                 case "vehicles":
                     for (const e in this._powerups[t]) {
-                        if (typeof this._powerups[t][e] === "object") {
-                            for (const i of this._powerups[t][e]) {
-                                powerups += `V ${i.map(t => t.toString(32)).join(" ")},`;
-                            } 
+                        for (const i of this._powerups[t][e]) {
+                            powerups += `V ${i.map(t => t.toString(32)).join(" ")},`;
                         }
                     }
                 break;
