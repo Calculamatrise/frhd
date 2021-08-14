@@ -1,5 +1,11 @@
 export default class {
     constructor() {
+        this.x = 0,
+        this.y = 0,
+        this.snapTo = !0,
+        this.temp = null,
+        this.strokeStyle = "#000000",
+        this.fillStyle = "#000000",
         this._physics = [],
         this._scenery = [],
         this._powerups = {
@@ -19,11 +25,27 @@ export default class {
                 glider: []
             }
         }
-        this.strokeStyle = "#000000";
-        this.fillStyle = "#000000";
-        this.snapTo = !0;
-        this.x = 0;
-        this.y = 0;
+        this._temp = {
+            physics: [],
+            scenery: [],
+            powerups: {
+                targets: [],
+                boosters: [],
+                gravity: [],
+                slowmos: [],
+                bombs: [],
+                checkpoints: [],
+                antigravity: [],
+                teleporters: [],
+                vehicles: {
+                    heli: [],
+                    truck: [],
+                    balloon: [],
+                    blob: [],
+                    glider: []
+                }
+            }
+        }
     }
     import(t) {
         if (typeof t === "string")
@@ -97,12 +119,36 @@ export default class {
         return this;
     }
     moveTo(x, y) {
+        if (x === void 0 || isNaN(x) || y === void 0 || isNaN(y)) throw new Error("INVALID_VALUE");
         this.x = x;
         this.y = y;
         return this;
     }
     lineTo(x, y) {
-        this.strokeStyle.match(/(#000|black|physics)+/gi) ? this._physics.push([this.x, this.y, x, y]) : this._scenery.push([this.x, this.y, x, y]);
+        if (x === void 0 || isNaN(x) || y === void 0 || isNaN(y)) throw new Error("INVALID_VALUE");
+        if (Array.isArray(arguments[0])) {
+            for (const t of arguments) {
+                const [ x, y ] = t;
+                this.lines.push([this.x, this.y, x, y]);
+                if (this.snapTo) {
+                    this.x = x;
+                    this.y = y;
+                }
+            }
+            return this;
+        } else if (arguments[2]) {
+            for (let t = 0, e = 1; t < arguments.length; t += 2, e += 2) {
+                if (!arguments[t] || isNaN(arguments[t])) throw new Error("INVALID_VALUE");
+                if (!arguments[e] || isNaN(arguments[e])) throw new Error("INVALID_VALUE");
+                this.lines.push([this.x, this.y, arguments[t], arguments[e]]);
+                if (this.snapTo) {
+                    this.x = arguments[t];
+                    this.y = arguments[e];
+                }
+            }
+            return this;
+        }
+        this.lines.push([this.x, this.y, x, y]);
         if (this.snapTo) {
             this.x = x;
             this.y = y;
@@ -110,52 +156,85 @@ export default class {
         return this;
     }
     curveTo(p1x, p1y, p2x, p2y) {
-        var p0 = {x: this.x, y: this.y},
+        if (p1x === void 0 || isNaN(p1x) || p1y === void 0 || isNaN(p1y) || p2x === void 0 || isNaN(p2x) || p2y === void 0 || isNaN(p2y)) throw new Error("INVALID_VALUE");
+        if (Array.isArray(arguments[0])) {
+            for (const t of arguments) {
+                const [ p1x, p1y, p2x, p2y ] = t;
+                let p0 = {x: this.x, y: this.y},
+                    p1 = {x: p1x, y: p1y},
+                    p2 = {x: p2x, y: p2y};
+                for (let i = 0; i < 1; i += 1 / 10) {
+                    this.lineTo(Math.pow((1 - i), 2) * p0.x + 2 * (1 - i) * i * p1.x + Math.pow(i, 2) * p2.x,
+                    Math.pow((1 - i), 2) * p0.y + 2 * (1 - i) * i * p1.y + Math.pow(i, 2) * p2.y);
+                }
+            }
+            return this;
+        }
+        const p0 = {x: this.x, y: this.y},
             p1 = {x: p1x, y: p1y},
             p2 = {x: p2x, y: p2y};
-        for(let i = 0; i < 1; i+=1/10) {
-            var x = Math.pow((1 - i), 2) * p0.x + 2 * (1 - i) * i * p1.x + Math.pow(i, 2) * p2.x;
-            var y = Math.pow((1 - i), 2) * p0.y + 2 * (1 - i) * i * p1.y + Math.pow(i, 2) * p2.y;
-            this.lineTo(x, y)
+        for (let i = 0; i < 1; i += 1 / 10) {
+            this.lineTo(Math.pow((1 - i), 2) * p0.x + 2 * (1 - i) * i * p1.x + Math.pow(i, 2) * p2.x,
+            Math.pow((1 - i), 2) * p0.y + 2 * (1 - i) * i * p1.y + Math.pow(i, 2) * p2.y);
         }
         return this;
     }
     bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y) {
-        var p0 = {x: this.x, y: this.y},
+        if (p1x === void 0 || isNaN(p1x) || p1y === void 0 || isNaN(p1y) || p2x === void 0 || isNaN(p2x) || p2y === void 0 || isNaN(p2y) || p3x === void 0 || isNaN(p3x) || p3y === void 0 || isNaN(p3y)) throw new Error("INVALID_VALUE");
+        if (Array.isArray(arguments[0])) {
+            for (const t of arguments) {
+                const [ p1x, p1y, p2x, p2y, p3x, p3y ] = t;
+                let p0 = {x: this.x, y: this.y},
+                    p1 = {x: p1x, y: p1y},
+                    p2 = {x: p2x, y: p2y},
+                    p3 = {x: p3x, y: p3y};
+                for (let i = 0, cX, bX, aX, cY, bY, aY; i < 1; i += 1 / 10) {
+                    cX = 3 * (p1.x - p0.x),
+                    bX = 3 * (p2.x - p1.x) - cX,
+                    aX = p3.x - p0.x - cX - bX,
+                    cY = 3 * (p1.y - p0.y),
+                    bY = 3 * (p2.y - p1.y) - cY,
+                    aY = p3.y - p0.y - cY - bY,
+                    this.lineTo((aX * Math.pow(i, 3)) + (bX * Math.pow(i, 2)) + (cX * i) + p0.x,
+                    (aY * Math.pow(i, 3)) + (bY * Math.pow(i, 2)) + (cY * i) + p0.y);
+                }
+            }
+            return this;
+        }
+        let p0 = {x: this.x, y: this.y},
             p1 = {x: p1x, y: p1y},
             p2 = {x: p2x, y: p2y},
             p3 = {x: p3x, y: p3y};
-        for(let i = 0; i < 1; i+=1/10) {
-            var cX = 3 * (p1.x - p0.x),
-                bX = 3 * (p2.x - p1.x) - cX,
-                aX = p3.x - p0.x - cX - bX;
-    
-            var cY = 3 * (p1.y - p0.y),
-                bY = 3 * (p2.y - p1.y) - cY,
-                aY = p3.y - p0.y - cY - bY;
-    
-            var x = (aX * Math.pow(i, 3)) + (bX * Math.pow(i, 2)) + (cX * i) + p0.x;
-            var y = (aY * Math.pow(i, 3)) + (bY * Math.pow(i, 2)) + (cY * i) + p0.y;
-            this.lineTo(x, y)
+        for (let i = 0, cX, bX, aX, cY, bY, aY; i < 1; i += 1 / 10) {
+            cX = 3 * (p1.x - p0.x),
+            bX = 3 * (p2.x - p1.x) - cX,
+            aX = p3.x - p0.x - cX - bX,
+            cY = 3 * (p1.y - p0.y),
+            bY = 3 * (p2.y - p1.y) - cY,
+            aY = p3.y - p0.y - cY - bY,
+            this.lineTo((aX * Math.pow(i, 3)) + (bX * Math.pow(i, 2)) + (cX * i) + p0.x,
+            (aY * Math.pow(i, 3)) + (bY * Math.pow(i, 2)) + (cY * i) + p0.y);
         }
         return this;
     }
     arc(x, y, radius, s) {
-        var arr = [];
+        if (x === void 0 || isNaN(x) || y === void 0 || isNaN(y) || radius === void 0 || isNaN(radius)) throw new Error("INVALID_VALUE");
+        let arr = [];
         if (s === void 0) s = 5;
-        for(let i = 0; i <= 360; i += s) {
+        for (let i = 0; i <= 360; i += s) {
             arr.push(x + radius * Math.cos(i * Math.PI / 180), y + radius * Math.sin(i * Math.PI / 180))
         }
-        this.strokeStyle.match(/(#000|black|physics)+/gi) ? this._physics.push(arr) : this._scenery.push(arr);
+        this.lines.push(arr);
         return this;
     }
     circle(x, y, radius, s) {
+        if (x === void 0 || isNaN(x) || y === void 0 || isNaN(y) || radius === void 0 || isNaN(radius)) throw new Error("INVALID_VALUE");
         var arr = [];
         if (s === void 0) s = 5;
         for(let i = 0; i <= 360; i += s) {
             arr.push(x + radius * Math.cos(i * Math.PI / 180), y + radius * Math.sin(i * Math.PI / 180))
         }
-        this.strokeStyle.match(/(#000|black|physics)+/gi) ? this._physics.push(arr) : this._scenery.push(arr);
+        this.lines.push(arr);
         return this;
     }
     filledCircle(xx, yy, radius) {
@@ -164,7 +243,7 @@ export default class {
             while(Math.hypot(x, y) <= radius) {
                 x++
             }
-            this.fillStyle.match(/(#000|black|physics)+/gi) ? this._physics.push([xx - x, yy + y, xx + x, yy + y]) : this._scenery.push([xx - x, yy + y, xx + x, yy + y]);
+            this.lines.push([xx - x, yy + y, xx + x, yy + y]);
         }
         return this;
     }
@@ -183,22 +262,94 @@ export default class {
         for(let i = 0; i <= 360; i += s) {
             arr.push(x + width * Math.cos(i * Math.PI / 180), y + height * Math.sin(i * Math.PI / 180))
         }
-        this.strokeStyle.match(/(#000|black|physics)+/gi) ? this._physics.push(arr) : this._scenery.push(arr);
+        this.lines.push(arr);
         return this;
     }
-    rect(x, y, width, h) {
-        this.strokeStyle.match(/(#000|black|physics)+/gi) ? this._physics.push([x, y, x + width, y, x + width, y + h, x, y + h, x, y]) : this._scenery.push([x, y, x + width, y, x + width, y + h, x, y + h, x, y]);
+    rect(x, y, width, height) {
+        if (x === void 0 || isNaN(x) || y === void 0 || isNaN(y) || width === void 0 || isNaN(width) || height === void 0 || isNaN(height)) throw new Error("INVALID_VALUE");
+        this.lines.push([x, y, x + width, y, x + width, y + height, x, y + height, x, y]);
         return this;
     }
-    filledRect(x, y, width, h) {
-        for (let i = y; i < y + h; i++) {
-            this.fillStyle.match(/(#000|black|physics)+/gi) ? this._physics.push([x, i, x + width, i]) : this._scenery.push([x, i, x + width, i]);
+    filledRect(x, y, width, height) {
+        if (x === void 0 || isNaN(x) || y === void 0 || isNaN(y) || width === void 0 || isNaN(width) || height === void 0 || isNaN(height)) throw new Error("INVALID_VALUE");
+        for (let i = y; i < y + height; i++) {
+            this.lines.push([x, i, x + width, i]);
         }
         return this;
     }
     closePath() {
-        let [ x, y ] = this[this.fillStyle.match(/(#000|black|physics)+/gi) ? "_physics" : "_scenery"][0];
+        if (!this.lines[0]) return this;
+        let [ x, y ] = this.lines[0];
         this.lineTo(x, y);
+        return this;
+    }
+    stroke() {
+        for (const t in this._temp) {
+            switch(t) {
+                case "physics":
+                    this._physics.push(...this._temp[t]);
+                break;
+                
+                case "scenery":
+                    this._scenery.push(...this._temp[t]);
+                break;
+
+                case "powerups":
+                    for (const e in this._temp[t]) {
+                        switch(e) {
+                            case "vehicles":
+                                for (const i in this._temp[t][e])
+                                    this.powerups[e][i].push(...this._temp[t][e][i]);
+                            break;
+
+                            default:
+                                this._powerups[e].push(...this._temp[t][e]);
+                            break;
+                        } 
+                    }
+                break;
+            }
+        }
+        this._temp = {
+            physics: [],
+            scenery: [],
+            powerups: {
+                targets: [],
+                boosters: [],
+                gravity: [],
+                slowmos: [],
+                bombs: [],
+                checkpoints: [],
+                antigravity: [],
+                teleporters: [],
+                vehicles: {
+                    heli: [],
+                    truck: [],
+                    balloon: [],
+                    blob: [],
+                    glider: []
+                }
+            }
+        }
+        return this;
+    }
+    fill() {
+        return this;
+    }
+    save() {
+        this.temp = {
+            x: this.x,
+            y: this.y,
+            snapTo: this.snapTo,
+            strokeStyle: this.strokeStyle,
+            fillStyle: this.fillStyle
+        }
+        return this;
+    }
+    restore() {
+        for (const t in this.temp)
+            this[t] = this.temp[t];
+        this.temp = null;
         return this;
     }
     drawDefaultLine() {
@@ -258,13 +409,12 @@ export default class {
         this._powerups.vehicles.glider.push([x, y, 5, t]);
         return this;
     }
-    drawVehicle(x, y, v, t) {
-        v = v.toLowerCase();
-        if (!this._powerups.vehicles[v]) throw new Error("INVALID_VEHICLE");
-        this._powerups.vehicles[v].push("V " + [x, y, (v == "heli" ? 1 : v == "truck" ? 2 : v == "balloon" ? 3 : v == "blob" ? 4 : v == "glider" ? 5 : ""), t]);
+    drawVehicle(x, y, vehicle, t) {
+        if (!vehicle || isNaN(vehicle)) throw new Error("INVALID_VEHICLE");
+        this._powerups.vehicles[vehicle].push("V " + [x, y, vehicle, t]);
         return this;
     }
-    move(x, y) {
+    move(x = 0, y = 0) {
         for (const t of this._physics) {
             for (let e = 0; e < t.length; e += 2) {
                 t[e] += x;
@@ -305,22 +455,19 @@ export default class {
         }
         return this;
     }
-    rotate(x) {
+    rotate(x = 0) {
+        let rotationFactor = x;
         x *= Math.PI / 180;
-        for(var a in this._physics) {
-            for(var i = 0; i < this._physics[a].length; i += 2) {
-                let xx = this._physics[a][i];
-                let yy = this._physics[a][i + 1];
-                xx = xx * Math.cos(x) + yy * Math.sin(x);
-                yy = yy * Math.cos(x) - xx * Math.sin(x);
-                this._physics[a][i] = xx;
-                this._physics[a][i + 1] = yy;
+        for (const t of this._physics) {
+            for (let e = 0; e < t.length; e += 2) {
+                t[e] = t[e] * Math.cos(x) + t[e + 1] * Math.sin(x);
+                t[e + 1] = t[e + 1] * Math.cos(x) - t[e] * Math.sin(x);
             }
         }
-        for(var a in this._scenery) {
-            for(var i = 0; i < this._scenery[a].length; i += 5) {
-                this._scenery[a][i] += x;
-                this._scenery[a][i + 2] -= x;
+        for (const t of this._scenery) {
+            for (let e = 0; e < t.length; e += 2) {
+                t[e] = t[e] * Math.cos(x) + t[e + 1] * Math.sin(x);
+                t[e + 1] = t[e + 1] * Math.cos(x) - t[e] * Math.sin(x);
             }
         }
         return this;
@@ -386,7 +533,41 @@ export default class {
                 glider: []
             }
         }
+        this._temp = {
+            physics: [],
+            scenery: [],
+            powerups: {
+                targets: [],
+                boosters: [],
+                gravity: [],
+                slowmos: [],
+                bombs: [],
+                checkpoints: [],
+                antigravity: [],
+                teleporters: [],
+                vehicles: {
+                    heli: [],
+                    truck: [],
+                    balloon: [],
+                    blob: [],
+                    glider: []
+                }
+            }
+        }
         return this;
+    }
+    close() {
+        this.x = 0,
+        this.y = 0,
+        this.snapTo = !0,
+        this.temp = null,
+        this.strokeStyle = "#000000",
+        this.fillStyle = "#000000",
+        this.clear();
+        return null;
+    }
+    get lines() {
+        return this.strokeStyle.match(/(#000|black|physics)+/gi) ? this._physics : this._scenery;
     }
     get physics() {
         return this._physics.map(t => t.map(t => t.toString(32)).join(" ")).join(",");

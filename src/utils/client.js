@@ -123,19 +123,6 @@ export default class extends EventEmitter {
             method: "get"
         }).then(t => new Track(t, this.user.id)).then(callback);
     }
-    async postComment(trackId, message, callback = t => t) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        if (!message) throw new Error("INVALID_MESSAGE");
-        return await this.constructor.ajax({
-            path: "/track_comments/post",
-            body: {
-                t_id: trackId,
-                msg: message.toString().replace(/\s+/g, "+"),
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(async t => t.result ? new Comment(t.data.track_comments[0]) : new Error(t.msg)).then(callback);
-    }
     async postTrack(title, description, defaultVehicle, MTBALlowed, BMXAllowed, code, callback = t => t) {
         if (!token) throw new Error("INVALID_TOKEN");
         return await this.constructor.ajax({
