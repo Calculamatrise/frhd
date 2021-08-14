@@ -41,7 +41,7 @@ export default class {
                 break;
 
                 case "G":
-                    this._powerups.targets.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this._powerups.gravity.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
 
                 case "S":

@@ -38,7 +38,7 @@ export default class {
                     this.id = data[t].u_id,
                     this.username = data[t].u_name,
                     this.displayName = data[t].d_name,
-                    this.avatar = data[t].img_url_medium,
+                    this.avatar = data[t].img_url_medium || data[t].img_url_small,
                     this.classic = data[t].classic,
                     this.admin = data[t].admin,
                     this.plus = data[t].plus,
@@ -100,7 +100,16 @@ export default class {
 
                 case "friends":
                     this.friendCount = data[t].friend_cnt,
-                    this.friends = data[t].friends_data;
+                    this.friends = data[t].friends_data.map(t => {
+                        return {
+                            id: t.u_id,
+                            username: t.u_name,
+                            displayName: t.d_name,
+                            avatar: t.img_url_small,
+                            lastPlayed: t.activity_time_ago,
+                            timestamp: t.a_ts
+                        }
+                    });
                 break;
 
                 case "friend_requests":
