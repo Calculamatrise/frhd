@@ -9,17 +9,29 @@ import getCategory from "../getCategory.js";
 export let token = null;
 
 export default class {
-    constructor() {
-        this.user = null;
-        this.users = new UserManager(this);
-        this.tracks = new TrackManager(this);
-        this.notifications = new NotificationManager(this);
-        this.cosmetics = new CosmeticManager(this);
+    constructor({ listen } = { listen: false }) {
+        this.options = {
+            listen
+        };
     }
+    user = null;
+    users = new UserManager(this);
+    tracks = new TrackManager(this);
+    notifications = new NotificationManager(this);
+    cosmetics = new CosmeticManager(this);
     #api = new RequestHandler();
     #events = new Map();
     get api() {
         return this.#api;
+    }
+    static sleep(time = 0) {
+        let now = Date.now();
+        while(Date.now() - now < time) {
+            continue;
+        }
+    }
+    static wait(time = 0) {
+        return new Promise(resolve => setTimeout(resolve, time));
     }
     on(event, func = function() {}) {
         if (event === void 0 || typeof event !== "string")
@@ -35,7 +47,7 @@ export default class {
 
         event = this.#events.get(event);
         if (event === void 0 && typeof event !== "function")
-            throw new Error("INVALID_FUNCTION");
+            return new Error("INVALID_FUNCTION");
             
         return event(...args);
     }
@@ -52,6 +64,20 @@ export default class {
             method: "post"
         }).then(callback);
     }
+    /**
+     * @readonly
+     * @private
+     */
+     #handle(notification) {
+        if (!notification.id)
+            return console.warn(new Error("UNKNOWN_NOTIFICATION_ID"));
+        
+        this.emit(notification.id, notification);
+    }
+    /**
+     * @readonly
+     * @private
+     */
     #listen() {
         this.datapoll(t => {
             if (t.notification_count > 0) {
@@ -65,13 +91,8 @@ export default class {
                 });
             }
         });
+
         setTimeout(() => this.#listen(), 3000);
-    }
-    #handle(notification) {
-        if (!notification.id)
-            return console.warn(new Error("UNKNOWN_NOTIFICATION_ID"));
-        
-        this.emit(notification.id, notification).catch(console.error);
     }
     async login(asr) {
         if (!asr || typeof asr !== "string")
@@ -389,7 +410,11 @@ export default class {
             await this.tracks.fetch(trackId).then(async function(track) {
                 if (users) {
                     for (const userId of users) {
-                        track.removeRace(userId);
+                        track.removeRace(userId).catch(response => {
+                            console.warn(response);
+
+                            return track.removeRace(userId);
+                        });
                     }
                 } else {
                     await track.getLeaderboard().then(leaderboard => {
@@ -403,7 +428,7 @@ export default class {
 
                 return track.id;
             }).then(callback);
-            await new Promise(resolve => setTimeout(resolve, timeout, resolve));
+            await new Promise(resolve => setTimeout(resolve, timeout));
         }
 
         return "No more cheaters left to exterminate!";

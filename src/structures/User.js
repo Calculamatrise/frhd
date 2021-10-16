@@ -1,140 +1,161 @@
 import RequestHandler from "../utils/RequestHandler.js";
 
-import Track from "./Track.js";
+import getTrack from "../getTrack.js";
 
 import { token } from "../client/Client.js";
 
-export default class {
-    constructor(data) {
-        if (!data || typeof data !== "object")
+export default class User {
+    id = null;
+    username = null;
+    displayName = null;
+    avatar = null;
+    static async create(data) {
+        if (!data || typeof data !== "object") {
             throw new Error("INVALID_DATA_TYPE");
-            
-        this.id = null,
-        this.username = null,
-        this.displayName = null,
-        this.avatar = null;
-        this.init(data);
+        }
+
+        const user = new User();
+
+        await user.init(data);
+
+        return user;
     }
-    init(data) {
-        for (const t in data) {
-            switch(t) {
-                case "u_id":
-                    this.id = data[t];
-                break;
-
-                case "u_name":
-                    this.username = data[t];
-                break;
-
-                case "d_name":
-                    this.displayName = data[t];
-                break;
-
-                case "img_url_small":
-                    this.avatar = data[t];
-                break;
-
-                case "user":
-                    this.id = data[t].u_id,
-                    this.username = data[t].u_name,
-                    this.displayName = data[t].d_name,
-                    this.avatar = data[t].img_url_medium || data[t].img_url_small;
-                    this.classic = data[t].classic,
-                    this.admin = data[t].admin,
-                    this.plus = data[t].plus,
-                    this.forums = data[t].forum_url,
-                    this.cosmetics = {
-                        head: {
-                            image: data[t].cosmetics.head.img,
-                            spriteSheetURL() {
-                                return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${data[t].cosmetics.head.img.replace(/\s(.*)/gi, "")}.png`
-                            }
-                        }
+    async init({
+        u_id,
+        u_name,
+        d_name,
+        img_url_small,
+        img_url_medium,
+        user,
+        user_stats,
+        user_info,
+        user_mobile_stats,
+        user_verify_reminder,
+        recently_played_tracks,
+        recently_ghosted_tracks,
+        created_tracks,
+        liked_tracks,
+        friends,
+        friend_requests,
+        has_max_friends,
+        subscribe,
+        activity_time_ago,
+        a_ts
+    }) {
+        this.id = u_id || user.u_id;
+        this.username = u_name || user.u_name;
+        this.displayName = d_name || user.d_name;
+        this.avatar = img_url_small || img_url_medium || user.img_url_medium;
+        if (user !== void 0) {
+            this.classic = user.classic;
+            this.admin = user.admin;
+            this.plus = user.plus;
+            this.forums = user.forum_url;
+            this.cosmetics = {
+                head: {
+                    image: user.cosmetics.head.img,
+                    spriteSheetURL() {
+                        return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${user.cosmetics.head.img.replace(/\s(.*)/gi, "")}.png`
                     }
-                break;
-
-                case "user_stats":
-                    this.stats = {
-                        totalPoints: data[t].tot_pts,
-                        completed: data[t].cmpltd,
-                        rated: data[t].rtd,
-                        comments: data[t].cmmnts,
-                        created: data[t].crtd,
-                        headCount: data[t].head_cnt,
-                        totalHeadCount: data[t].total_head_cnt
-                    }
-                break;
-
-                case "user_info":
-                    this.bio = data[t].about;
-                break;
-
-                case "user_mobile_stats":
-                    this.mobileStats = {
-                        level: data[t].lvl,
-                        wins: data[t].wins,
-                        headCount: data[t].headCount,
-                        connected: data[t].connected
-                    }
-                break;
-
-                case "user_verify_reminder":
-                    this.verifiedEmail = data[t];
-                break;
-
-                case "recently_played_tracks":
-
-                    this.recentlyPlayed = data[t].tracks.map(function(track) {
-                        return new Track(track);
-                    });
-                break;
-
-                case "recently_ghosted_tracks":
-                    this.recentlyGhosted = data[t].tracks.map(function(track) {
-                        return new Track(track);
-                    });
-                break;
-
-                case "created_tracks":
-                    this.createdTracks = data[t].tracks.map(function(track) {
-                        return new Track(track);
-                    });
-                break;
-
-                case "liked_tracks":
-                    this.likedTracks = data[t].tracks.map(function(track) {
-                        return new Track(track);
-                    });
-                break;
-
-                case "friends":
-                    this.friendCount = data[t].friend_cnt,
-                    this.friends = data[t].friends_data.map(user => {
-                        return new this.constructor(user);
-                    });
-                break;
-
-                case "friend_requests":
-                    this.friendRequestCount = data[t].request_cnt,
-                    this.friendRequests = data[t].request_data;
-                break;
-
-                case "has_max_friends":
-                    this.friendLimitReached = data[t];
-                break;
-
-                case "subscribe":
-                    this.subscriberCount = data[t].count;
-                break;
-
-                case "activity_time_ago":
-                    this.lastPlayed = data[t];
-                break;
-
-                case "a_ts":
-                    this.lastPlayedTimestamp = data[t];
-                break;
+                }
             }
+        }
+
+        if (user_stats !== void 0) {
+            this.stats = {
+                totalPoints: user_stats.tot_pts,
+                completed: user_stats.cmpltd,
+                rated: user_stats.rtd,
+                comments: user_stats.cmmnts,
+                created: user_stats.crtd,
+                headCount: user_stats.head_cnt,
+                totalHeadCount: user_stats.total_head_cnt
+            }
+        }
+
+        if (user_info) {
+            this.bio = user_info.about; 
+        }
+        
+        if (user_mobile_stats !== void 0) {
+            this.mobileStats = {
+                level: user_mobile_stats.lvl,
+                wins: user_mobile_stats.wins,
+                headCount: user_mobile_stats.headCount,
+                connected: user_mobile_stats.connected
+            }
+        }
+
+        if (user_verify_reminder !== void 0) {
+            this.verifiedEmail = user_verify_reminder;
+        }
+
+        if (recently_played_tracks !== void 0) {
+            this.recentlyPlayed = await Promise.all(recently_played_tracks.tracks.map(async function(track) {
+                if (typeof track !== "object" || track["slug"] === void 0) {
+                    return;
+                }
+                
+                return await getTrack(parseInt(track.slug));
+            }));
+        }
+
+        if (recently_ghosted_tracks !== void 0) {
+            this.recentlyCompleted = await Promise.all(recently_ghosted_tracks.tracks.map(async function(track) {
+                if (typeof track !== "object" || track["slug"] === void 0) {
+                    return;
+                }
+                
+                return await getTrack(parseInt(track.slug));
+            }));
+        }
+
+        if (created_tracks !== void 0) {
+            this.createdTracks = await Promise.all(created_tracks.tracks.map(async function(track) {
+                if (typeof track !== "object" || track["id"] === void 0) {
+                    return;
+                }
+                
+                return await getTrack(track.id);
+            }));
+        }
+
+        if (liked_tracks !== void 0) {
+            this.likedTracks = await Promise.all(liked_tracks.tracks.map(async function(track) {
+                if (typeof track !== "object" || track["id"] === void 0) {
+                    return;
+                }
+                
+                return await getTrack(track.id);
+            }));
+        }
+
+        if (friends !== void 0) {
+            this.friendCount = friends.friend_cnt;
+            this.friends = await Promise.all(friends.friends_data.map(function(user) {
+                return User.create(user);
+            }));
+        }
+
+        if (friend_requests !== void 0) {
+            this.friendRequestCount = friend_requests.request_cnt;
+            this.friendRequests = friend_requests.request_data;
+        }
+        
+        if (has_max_friends !== void 0) {
+            this.friendLimitReached = has_max_friends;
+        }
+
+        if (subscribe !== void 0) {
+            this.subscriberCount = subscribe.count;
+        }
+
+        if (activity_time_ago !== void 0) {
+            this.lastPlayed = activity_time_ago;
+        }
+
+        if (a_ts !== void 0) {
+            this.lastPlayedTimestamp = a_ts;
         }
     }
     addFriend() {

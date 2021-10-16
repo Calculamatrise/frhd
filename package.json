@@ -1,6 +1,6 @@
 {
-    "name": "frhd",
-    "version": "2.0.1",
+    "name": "@calculamatrise/frhd",
+    "version": "2.0.1-dev.1e10f3",
     "description": "An app to communicacte with FRHD",
     "main": "./src/bootstrap.js",
     "author": "Calculus",
@@ -8,6 +8,9 @@
     "license": "GNU General Public License v3.0-or-later",
     "repository": {
         "type": "git",
-        "url": "https://github.com/Calculamatrise/frhd.git"
+        "url": "git://github.com/Calculamatrise/frhd.git"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
     }
 }

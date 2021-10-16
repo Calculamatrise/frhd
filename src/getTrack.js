@@ -7,6 +7,6 @@ export default async function(trackId, callback = track => track) {
         path: `/t/${trackId}?ajax=!0`,
         method: "get"
     }).then(function(track) {
-        return new Track(track);
+        return Track.create(track);
     }).then(callback);
 }

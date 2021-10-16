@@ -7,6 +7,7 @@ import { token } from "../client/Client.js";
 export default class extends Array {
     constructor(array, id) {
         super(...array);
+        
         this.id = id;
     }
     get(id) {

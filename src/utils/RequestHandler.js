@@ -31,7 +31,13 @@ export default class {
                     res.on("data", d => {
                         data += d;
                     });
-                    res.on("end", () => resolve(this.#parse(data)));
+                    res.on("end", () => {
+                        try {
+                            data = JSON.parse(data);
+                        } catch(e) {}
+
+                        resolve(data);
+                    });
                 });
                 req.write(headers["content-type"] == "application/json" ? JSON.stringify(body) : new URLSearchParams(body).toString());
                 req.end();
@@ -40,19 +46,12 @@ export default class {
             }
         });
     }
-    static #parse(string) {
-        try {
-            return JSON.parse(string);
-        } catch(e) {
-            return string;
-        }
-    }
     users(username) {
         return this.constructor.ajax(`/u/${username}?ajax=true`).then(function(response) {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))
                 throw new Error("USER_NOT_FOUND");
 
-            return new User(response);
+            return User.create(response);
         });
     }
     tracks(id) {
@@ -60,7 +59,7 @@ export default class {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))
                 throw new Error("TRACK_NOT_FOUND");
             
-            return new Track(response);
+            return Track.create(response);
         });
     }
     notifications(count = Infinity) {

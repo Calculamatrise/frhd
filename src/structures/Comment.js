@@ -2,17 +2,21 @@ import RequestHandler from "../utils/RequestHandler.js";
 
 import { token } from "../client/Client.js";
 
-export default class {
-    constructor(data) {
-        if (!data || typeof data !== "object")
+export default class Comment {
+    id = null;
+    message = null;
+    author = null;
+    timeAgo = null;
+    static async create(data) {
+        if (!data || typeof data !== "object") {
             throw new Error("INVALID_DATA_TYPE");
+        }
 
-        this.id = null,
-        this.message = null,
-        this.timeAgo = null,
-        this.author = null;
-        
-        this.init(data);
+        const comment = new Comment();
+
+        await comment.init(data);
+
+        return comment;
     }
     init(data) {
         for (const t in data) {
@@ -32,6 +36,7 @@ export default class {
                 break;
 
                 case "track":
+                    // this.track = data[t];
                     this.trackId = parseInt(data[t].id);
                 break;
             }

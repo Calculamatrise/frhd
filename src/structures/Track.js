@@ -8,22 +8,28 @@ import Race from "./Race.js";
 import { token } from "../client/Client.js";
 import getUser from "../getUser.js";
 
-export default class {
-    constructor(data, userId) {
-        if (!data || typeof data !== "object")
+export default class Track {
+    id = null;
+    title = null;
+    slug = null;
+    author = null;
+    featured = false;
+    static async create(data, userId) {
+        if (!data || typeof data !== "object") {
             throw new Error("INVALID_DATA_TYPE");
+        }
 
-        this.id = null,
-        this.title = null,
-        this.slug = null,
-        this.author = null,
-        this.featured = false;
-        if (userId)
+        if (userId !== void 0) {
             this.userId = userId;
-            
-        this.init(data);
+        }
+
+        const track = new Track();
+        
+        await track.init(data);
+
+        return track;
     }
-    init(data) {
+    async init(data) {
         for (const t in data) {
             switch(t) {
                 case "id":
@@ -38,6 +44,12 @@ export default class {
                 break;
 
                 case "author":
+                    if (typeof data[t] === "object") {
+                        this.author = data[t];
+
+                        break;
+                    }
+
                     if (!this.author)
                         this.author = {};
 
@@ -97,9 +109,9 @@ export default class {
                         }
                     });
                     
-                    this.comments = new Comments(data[t].map(function(comment) {
-                        return new Comment(comment);
-                    }), this.id);
+                    this.comments = new Comments(await Promise.all(data[t].map(function(comment) {
+                        return Comment.create(comment);
+                    })), this.id);
                 break;
 
                 case "campaign":
@@ -121,7 +133,7 @@ export default class {
             }
         }
     }
-    getLeaderboard() {
+    async getLeaderboard() {
         return RequestHandler.ajax({
             path: "/track_api/load_leaderboard",
             body: {
