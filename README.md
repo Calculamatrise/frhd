@@ -1,4 +1,8 @@
-# FRHD API Wrapper
+# Official Documentation
+
+https://calculamatrise.github.io/frhd/api/docs/
+
+# Demo Code
 
 ```js
 import frhd, { Client } from "frhd";
