@@ -1,4 +1,4 @@
-import Track from "./utils/api.js";
+import Builder from "./utils/Builder.js";
 import Client from "./client/Client.js";
 
 import getHome from "./getHome.js";
@@ -25,8 +25,8 @@ export default {
     getRandom,
     getRace,
     getFeaturedGhosts,
-    Client,
-    Track
+    Builder,
+    Client
 }
 
 export {
@@ -41,6 +41,6 @@ export {
     getRandom,
     getRace,
     getFeaturedGhosts,
-    Client,
-    Track
+    Builder,
+    Client
 }

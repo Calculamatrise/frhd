@@ -1,23 +1,21 @@
-import frhd, { Client, Track, getCategory } from "./src/bootstrap.js";
+import frhd, { Client, Builder, getCategory } from "./src/bootstrap.js";
 
 const client = new Client();
 
 client.on("ready", async function() {
-    let end = await getCategory("recently-added").then(function(response) {
-        return parseInt(response.tracks[0].slug);
-    });
+    const track = this.tracks.create();
 
-    for (let trackId = 759117; trackId < end; trackId++) {
-        await this.tracks.fetch(trackId).then(function(track) {
-            return track.vote(1).catch(error => {
-                console.warn(error);
-                
-                return track.vote(1);
-            });
-        }).then(function(response) {
-            return console.log(trackId, response.result || response.msg);
-        }).catch(console.error);
-    }
+    track.beginPath();
+    track.moveTo(20, 20);
+    track.lineTo(100, 20);
+    track.arcTo(150, 20, 150, 70, 50);
+    track.lineTo(150, 120);
+
+    console.log(track.code);
+
+    const user = await this.users.fetch("char");
+
+    console.log(user);
 });
 
 client.login("TOKEN");

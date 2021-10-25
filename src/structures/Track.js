@@ -243,9 +243,9 @@ export default class Track {
     }
     /**
      * 
-     * @param {string|number,object} user 
-     * @returns {object}
      * @private
+     * @param {number|string|object} user 
+     * @returns {object}
      */
     async copyRace(user) {
         if (isNaN(user))
@@ -260,6 +260,13 @@ export default class Track {
 
         return this.getRace(user).then(response => this.postRace(response.race.code, response.race.vehicle, response.race.runTicks));
     }
+
+    /**
+     * 
+     * @protected requires administrative priviledges
+     * @param {User|number|string} user 
+     * @returns 
+     */
     async removeRace(user) {
         if (isNaN(user))
             user = await getUser(user).then(function(user) {
@@ -282,6 +289,15 @@ export default class Track {
             method: "post"
         });
     }
+
+    /**
+     * 
+     * @protected requires administrative priviledges
+     * @param {number} lives 
+     * @param {number} refillCost 
+     * @param {number} gems 
+     * @returns object
+     */
     addDaily(lives, refillCost, gems) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -299,6 +315,12 @@ export default class Track {
             method: "post"
         });
     }
+
+    /**
+     * 
+     * @protected requires administrative priviledges
+     * @returns object
+     */
     hide() {
         if (!token)
             throw new Error("INVALID_TOKEN");

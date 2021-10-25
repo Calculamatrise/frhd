@@ -158,7 +158,13 @@ export default class User {
             this.lastPlayedTimestamp = a_ts;
         }
     }
-    addFriend() {
+
+    /**
+     * 
+     * @alias addFriend
+     * @returns object
+     */
+    befriend() {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
@@ -171,7 +177,13 @@ export default class User {
             method: "post"
         });
     }
-    removeFriend() {
+
+    /**
+     * 
+     * @alias removeFriend
+     * @returns object
+     */
+    shun() {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
@@ -184,6 +196,8 @@ export default class User {
             method: "post"
         });
     }
+    addFriend = this.befriend;
+    removeFriend = this.shun;
     subscribe() {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -212,6 +226,13 @@ export default class User {
             method: "post"
         });
     }
+
+    /**
+     * 
+     * @protected requires administrative priviledges
+     * @param {string} username 
+     * @returns object
+     */
     setUsername(username) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -227,6 +248,13 @@ export default class User {
             method: "post"
         });
     }
+
+    /**
+     * 
+     * @protected requires administrative priviledges
+     * @param {string} email 
+     * @returns object
+     */
     setEmail(email) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -242,6 +270,12 @@ export default class User {
             method: "post"
         });
     }
+
+    /**
+     * 
+     * @protected requires administrative priviledges
+     * @returns object
+     */
     toggleOA() {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -255,6 +289,12 @@ export default class User {
             method: "post"
         });
     }
+
+    /**
+     * 
+     * @protected requires administrative priviledges
+     * @returns object
+     */
     ban() {
         if (!token)
             throw new Error("INVALID_TOKEN");

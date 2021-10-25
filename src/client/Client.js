@@ -5,14 +5,15 @@ import TrackManager from "../managers/TrackManager.js";
 import NotificationManager from "../managers/NotificationManager.js";
 import CosmeticManager from "../managers/CosmeticManager.js";
 import getCategory from "../getCategory.js";
+import User from "../structures/User.js";
 
 export let token = null;
 
 export default class {
-    constructor({ listen } = { listen: false }) {
+    constructor({ listen = false } = {}) {
         this.options = {
             listen
-        };
+        }
     }
     user = null;
     users = new UserManager(this);
@@ -24,15 +25,13 @@ export default class {
     get api() {
         return this.#api;
     }
-    static sleep(time = 0) {
-        let now = Date.now();
-        while(Date.now() - now < time) {
-            continue;
-        }
-    }
-    static wait(time = 0) {
-        return new Promise(resolve => setTimeout(resolve, time));
-    }
+
+    /**
+     * 
+     * @param {string} event event name
+     * @param {function} func listening function
+     * @returns 
+     */
     on(event, func = function() {}) {
         if (event === void 0 || typeof event !== "string")
             throw new Error("INVALID_EVENT");
@@ -41,6 +40,14 @@ export default class {
 
         return this;
     }
+
+    /**
+     * 
+     * @emits
+     * @param {string} event event name
+     * @param  {...any} args arguments passed through to the listening function
+     * @returns function call
+     */
     emit(event, ...args) {
         if (event === void 0 || typeof event !== "string")
             throw new Error("INVALID_EVENT_ID");
@@ -51,6 +58,12 @@ export default class {
             
         return event(...args);
     }
+
+    /**
+     * 
+     * @param {function} callback simple callback
+     * @returns object
+     */
     async datapoll(callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -64,8 +77,9 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     /**
-     * @readonly
+     * 
      * @private
      */
      #handle(notification) {
@@ -74,8 +88,9 @@ export default class {
         
         this.emit(notification.id, notification);
     }
+
     /**
-     * @readonly
+     * 
      * @private
      */
     #listen() {
@@ -107,7 +122,10 @@ export default class {
         this.user = await this.users.fetch(response.user.d_name);
         
         this.emit("ready");
-        this.#listen();
+
+        if (this.options.listen) {
+            this.#listen();
+        }
 
         return this;
     }
@@ -340,7 +358,17 @@ export default class {
             method: "post"
         }).then(callback);
     }
-    async removeRace(trackId, user, callback = response => response) {
+    
+    /**
+     * 
+     * @async
+     * @protected requires administrative priviledges
+     * @param {number|string} track 
+     * @param {User|number|string} user 
+     * @param {function} callback
+     * @returns object
+     */
+    async removeRace(track, user, callback = response => response) {
         if (isNaN(user))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
@@ -354,7 +382,7 @@ export default class {
         return RequestHandler.ajax({
             path: "/moderator/remove_race",
             body: {
-                t_id: trackId,
+                t_id: track,
                 u_id: user || this.user.id,
                 ajax: true,
                 app_signed_request: token
@@ -362,14 +390,27 @@ export default class {
             method: "post"
         }).then(callback);
     }
-    async addDailyTrack(trackId, lives, refillCost, gems, callback = response => response) {
+
+    /**
+     * 
+     * @async
+     * @protected requires administrative priviledges
+     * @param {number|string} track
+     * @param {number|string} lives
+     * @param {number|string} refillCost
+     * @param {number|string} gems
+     * @param {function} callback
+     * @description removes cheated ghosts on all tracks between the given range
+     * @returns string
+     */
+    async addDailyTrack(track, lives, refillCost, gems, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
         return RequestHandler.ajax({
             path: "/moderator/add_track_of_the_day",
             body: {
-                t_id: trackId,
+                t_id: track,
                 lives,
                 rfll_cst: refillCost,
                 gems,
@@ -379,12 +420,30 @@ export default class {
             method: "post"
         }).then(callback);
     }
-    async hideTrack(trackId, callback = response => response) {
+
+    /**
+     * 
+     * @async
+     * @protected
+     * @param {number|string} track
+     * @description removes cheated ghosts on all tracks between the given range
+     * @returns object
+     */
+    async hideTrack(track, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
-        return RequestHandler.ajax(`/moderator/hide_track/${trackId}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(callback);
+        return RequestHandler.ajax(`/moderator/hide_track/${track}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(callback);
     }
+
+    /**
+     * 
+     * @async
+     * @protected
+     * @param {object} options
+     * @description removes cheated ghosts on all tracks between the given range
+     * @returns string
+     */
     async deepClean({ users, startingTrackId = 1001, endingTrackId, timeout = 0 } = {}, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -428,7 +487,8 @@ export default class {
 
                 return track.id;
             }).then(callback);
-            await new Promise(resolve => setTimeout(resolve, timeout));
+            
+            timeout && await new Promise(resolve => setTimeout(resolve, timeout));
         }
 
         return "No more cheaters left to exterminate!";
@@ -531,9 +591,36 @@ export default class {
             method: "post"
         }).then(callback);
     }
+    
+    /**
+     * 
+     * @returns object
+     */
     logout() {
         this.user = null;
         token = null;
+
         return this;
+    }
+    
+    /**
+     * 
+     * @static
+     * @param {number|string} time number in miliseconds
+     */
+    static sleep(time = 0) {
+        let now = Date.now();
+        while(Date.now() - now < time) {
+            continue;
+        }
+    }
+
+    /**
+     * 
+     * @static
+     * @param {number|string} time number in miliseconds
+     */
+    static wait(time = 0) {
+        return new Promise(resolve => setTimeout(resolve, time));
     }
 }

@@ -1,6 +1,12 @@
 import BaseManager from "./BaseManager.js";
 
 export default class extends BaseManager {
+    /**
+     * 
+     * @async
+     * @param {number|string} id
+     * @returns object
+     */
     async fetch(id) {
         const data = await this.client.api.cosmetics(id);
 
