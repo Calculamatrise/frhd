@@ -278,10 +278,10 @@ export default class {
      * @param {string|number} p2y position y of the end point
      * @returns object
      */
-    cubicCurveTo(p1x, p1y, p2x, p2y) {
+    quadraticCurveTo(p1x, p1y, p2x, p2y) {
         if (Array.isArray(arguments[0])) {
             for (const argument of arguments) {
-                this.cubicCurveTo(...argument);
+                this.quadraticCurveTo(...argument);
             }
 
             return;
@@ -302,7 +302,7 @@ export default class {
 
         return this;
     }
-    curveTo = this.cubicCurveTo;
+    curveTo = this.quadraticCurveTo;
 
     /**
      * 
