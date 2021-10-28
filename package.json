@@ -1,7 +1,7 @@
 {
     "name": "frhd",
     "alias": "@Calculamatrise/frhd",
-    "version": "2.0.1-security",
+    "version": "0.0.2",
     "description": "An app to communicacte with FRHD",
     "main": "./src/bootstrap.js",
     "author": "Calculus",

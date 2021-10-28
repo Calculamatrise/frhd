@@ -10,7 +10,7 @@ client.on("ready", async function() {
     track.lineTo(100, 20);
     track.arcTo(150, 20, 150, 70, 50);
     track.lineTo(150, 120);
-
+    
     console.log(track.code);
 
     const user = await this.users.fetch("char");
@@ -18,4 +18,4 @@ client.on("ready", async function() {
     console.log(user);
 });
 
-client.login("TOKEN");
+client.defaultLogin("precalculus", "nt, nt.");

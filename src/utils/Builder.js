@@ -1,13 +1,31 @@
 export default class {
-    constructor() {
-        this.x = 0,
-        this.y = 0,
-        this.temp = null,
-        this.strokeStyle = "#000000",
-        this.fillStyle = "#000000",
-        this._physics = [],
-        this._scenery = [],
-        this._powerups = {
+    x = 0;
+    y = 0;
+    temp = null;
+    strokeStyle = "#000000";
+    fillStyle = "#000000";
+    #physics = []
+    #scenery = []
+    #powerups = {
+        targets: [],
+        boosters: [],
+        gravity: [],
+        slowmos: [],
+        bombs: [],
+        checkpoints: [],
+        antigravity: [],
+        teleporters: [],
+        vehicles: {
+            heli: [],
+            truck: [],
+            balloon: [],
+            blob: []
+        }
+    }
+    #temp = {
+        physics: [],
+        scenery: [],
+        powerups: {
             targets: [],
             boosters: [],
             gravity: [],
@@ -20,96 +38,75 @@ export default class {
                 heli: [],
                 truck: [],
                 balloon: [],
-                blob: [],
-                glider: []
-            }
-        }
-        this._temp = {
-            physics: [],
-            scenery: [],
-            powerups: {
-                targets: [],
-                boosters: [],
-                gravity: [],
-                slowmos: [],
-                bombs: [],
-                checkpoints: [],
-                antigravity: [],
-                teleporters: [],
-                vehicles: {
-                    heli: [],
-                    truck: [],
-                    balloon: [],
-                    blob: [],
-                    glider: []
-                }
+                blob: []
             }
         }
     }
+    #segment = []
     get lines() {
-        return this.strokeStyle.match(/(#000|black|physics)+/gi) ? this._physics : this._scenery;
+        return this.strokeStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
     }
     get physics() {
-        return this._physics.map(t => t.map(t => t.toString(32)).join(" ")).join(",");
+        return this.#physics.map(t => t.map(t => t.toString(32)).join(" ")).join(",");
     }
     get scenery() {
-        return this._scenery.map(t => t.map(t => t.toString(32)).join(" ")).join(",");
+        return this.#scenery.map(t => t.map(t => t.toString(32)).join(" ")).join(",");
     }
     get powerups() {
         let powerups = "";
-        for (const t in this._powerups) {
+        for (const t in this.#powerups) {
             switch(t) {
                 case "targets":
-                    for (const e of this._powerups[t]) {
+                    for (const e of this.#powerups[t]) {
                         powerups += `T ${e.map(t => t.toString(32)).join(" ")},`;
                     }
                 break;
                 
                 case "boosters":
-                    for (const e of this._powerups[t]) {
+                    for (const e of this.#powerups[t]) {
                         powerups += `B ${e.map(t => t.toString(32)).join(" ")},`;
                     }
                 break;
 
                 case "gravity":
-                    for (const e of this._powerups[t]) {
+                    for (const e of this.#powerups[t]) {
                         powerups += `G ${e.map(t => t.toString(32)).join(" ")},`;
                     }
                 break;
 
                 case "slowmos":
-                    for (const e of this._powerups[t]) {
+                    for (const e of this.#powerups[t]) {
                         powerups += `S ${e.map(t => t.toString(32)).join(" ")},`;
                     }
                 break;
                 
                 case "bombs":
-                    for (const e of this._powerups[t]) {
+                    for (const e of this.#powerups[t]) {
                         powerups += `O ${e.map(t => t.toString(32)).join(" ")},`;
                     }
                 break;
 
                 case "checkpoints":
-                    for (const e of this._powerups[t]) {
+                    for (const e of this.#powerups[t]) {
                         powerups += `C ${e.map(t => t.toString(32)).join(" ")},`;
                     }
                 break;
 
                 case "antigravity":
-                    for (const e of this._powerups[t]) {
+                    for (const e of this.#powerups[t]) {
                         powerups += `A ${e.map(t => t.toString(32)).join(" ")},`;
                     }
                 break;
 
                 case "teleporters":
-                    for (const e of this._powerups[t]) {
+                    for (const e of this.#powerups[t]) {
                         powerups += `W ${e.map(t => t.toString(32)).join(" ")},`;
                     }
                 break;
 
                 case "vehicles":
-                    for (const e in this._powerups[t]) {
-                        for (const i of this._powerups[t][e]) {
+                    for (const e in this.#powerups[t]) {
+                        for (const i of this.#powerups[t][e]) {
                             powerups += `V ${i.map(t => t.toString(32)).join(" ")},`;
                         }
                     }
@@ -124,62 +121,58 @@ export default class {
     import(t) {
         if (typeof t === "string")
             t = t.split(/\u0023/g).map(t => t.split(/\u002C+/g).map(t => t.split(/\s+/g)));;
-        this._physics = t[0] ? t[0].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
-        this._scenery = t[1] ? t[1].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
+        this.#physics = t[0] ? t[0].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
+        this.#scenery = t[1] ? t[1].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
         for (const e of t[2]) {
             switch(e[0]) {
                 case "T":
-                    this._powerups.targets.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.targets.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
                 
                 case "B":
-                    this._powerups.boosters.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.boosters.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
 
                 case "G":
-                    this._powerups.gravity.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.gravity.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
 
                 case "S":
-                    this._powerups.slowmos.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.slowmos.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
 
                 case "O":
-                    this._powerups.bombs.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.bombs.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
 
                 case "C":
-                    this._powerups.checkpoints.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.checkpoints.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
 
                 case "A":
-                    this._powerups.antigravity.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.antigravity.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
 
                 case "W":
-                    this._powerups.teleporters.push(e.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.teleporters.push(e.slice(1).map(t => parseInt(t, 32)));
                 break;
 
                 case "V":
                     switch(e[3]) {
                         case "1":
-                            this._powerups.vehicles.heli.push(e.slice(1).map(t => parseInt(t, 32)));
+                            this.#powerups.vehicles.heli.push(e.slice(1).map(t => parseInt(t, 32)));
                         break;
 
                         case "2":
-                            this._powerups.vehicles.truck.push(e.slice(1).map(t => parseInt(t, 32)));
+                            this.#powerups.vehicles.truck.push(e.slice(1).map(t => parseInt(t, 32)));
                         break;
 
                         case "3":
-                            this._powerups.vehicles.balloon.push(e.slice(1).map(t => parseInt(t, 32)));
+                            this.#powerups.vehicles.balloon.push(e.slice(1).map(t => parseInt(t, 32)));
                         break;
 
                         case "4":
-                            this._powerups.vehicles.blob.push(e.slice(1).map(t => parseInt(t, 32)));
-                        break;
-
-                        case "5":
-                            this._powerups.vehicles.glider.push(e.slice(1).map(t => parseInt(t, 32)));
+                            this.#powerups.vehicles.blob.push(e.slice(1).map(t => parseInt(t, 32)));
                         break;
                     }
                 break;
@@ -190,6 +183,7 @@ export default class {
     beginPath() {
         this.x = 0;
         this.y = 0;
+
         return this;
     }
 
@@ -200,12 +194,14 @@ export default class {
      * @returns object
      */
     moveTo(x, y) {
-        if (isNaN(parseInt(x)) || isNaN(parseInt(y))) {
-            throw new Error("INVALID_VALUE");
+        for (const argument of arguments) {
+            if (isNaN(parseFloat(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
         }
 
-        this.x = parseInt(x);
-        this.y = parseInt(y);
+        this.x = parseFloat(x);
+        this.y = parseFloat(y);
 
         return this;
     }
@@ -225,14 +221,19 @@ export default class {
             return;
         }
 
-        if (isNaN(parseInt(x)) || isNaN(parseInt(y))) {
-            throw new Error("INVALID_VALUE");
+        for (const argument of arguments) {
+            if (isNaN(parseFloat(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
         }
 
-        this.lines.push([this.x, this.y, x, y]);
+        this.#segment.push([
+            this.x, this.y,
+            x, y
+        ]);
         
-        this.x = parseInt(x);
-        this.y = parseInt(y);
+        this.x = parseFloat(x);
+        this.y = parseFloat(y);
 
         return this;
     }
@@ -254,11 +255,16 @@ export default class {
             return;
         }
 
-        if (isNaN(parseInt(x)) || isNaN(parseInt(y)) || isNaN(parseInt(x2)) || isNaN(parseInt(y2))) {
-            throw new Error("INVALID_VALUE");
+        for (const argument of arguments) {
+            if (isNaN(parseFloat(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
         }
 
-        this.lines.push([parseInt(x), parseInt(y), parseInt(x2), parseInt(y2)]);
+        this.#segment.push([
+            parseFloat(x), parseFloat(y),
+            parseFloat(x2), parseFloat(y2)
+        ]);
 
         return this;
     }
@@ -281,8 +287,10 @@ export default class {
             return;
         }
 
-        if (isNaN(parseInt(p1x)) || isNaN(parseInt(p1y)) || isNaN(parseInt(p2x)) || isNaN(parseInt(p2y))) {
-            throw new Error("INVALID_VALUE");
+        for (const argument of arguments) {
+            if (isNaN(parseInt(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
         }
 
         const p0 = { x: this.x, y: this.y }
@@ -315,8 +323,10 @@ export default class {
             return;
         }
 
-        if (isNaN(parseInt(p1x)) || isNaN(parseInt(p1y)) || isNaN(parseInt(p2x)) || isNaN(parseInt(p2y)) || isNaN(parseInt(p3x)) || isNaN(parseInt(p3y))) {
-            throw new Error("INVALID_VALUE");
+        for (const argument of arguments) {
+            if (isNaN(parseInt(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
         }
 
         const p0 = { x: this.x, y: this.y }
@@ -355,23 +365,31 @@ export default class {
             return;
         }
 
-        if (isNaN(parseInt(x)) || isNaN(parseInt(y)) || isNaN(parseInt(radius)) || isNaN(parseInt(startAngle)) || isNaN(parseInt(endAngle))) {
-            throw new Error("INVALID_VALUE");
+        for (const argument of arguments) {
+            if (typeof argument === "boolean") {
+                continue;
+            }
+
+            if (isNaN(parseInt(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
         }
 
         const points = []
-
         if (counterClockwise) {
-            for (let i = 360 - parseFloat(startAngle) * 180 / Math.PI; i > Math.min(parseFloat(endAngle) * 180 / Math.PI, 360); i -= 750 / parseFloat(radius)) {
+            for (let i = parseFloat(startAngle) * 180 / Math.PI % 360; i >= -360 + parseFloat(endAngle) * 180 / Math.PI % 360; i -= 750 / parseFloat(radius)) {
                 points.push(parseFloat(x) + parseFloat(radius) * Math.cos(i * Math.PI / 180), parseFloat(y) + parseFloat(radius) * Math.sin(i * Math.PI / 180));
             }
         } else {
-            for (let i = parseFloat(startAngle) * 180 / Math.PI; i <= Math.min(parseFloat(endAngle) * 180 / Math.PI, 360); i += 750 / parseFloat(radius)) {
+            for (let i = parseFloat(startAngle) * 180 / Math.PI % 360; i <= (parseFloat(endAngle) * 180 / Math.PI % 360 || 360); i += 750 / parseFloat(radius)) {
                 points.push(parseFloat(x) + parseFloat(radius) * Math.cos(i * Math.PI / 180), parseFloat(y) + parseFloat(radius) * Math.sin(i * Math.PI / 180));
             }
         }
 
-        this.lines.push(points);
+        this.x = points[points.length - 2];
+        this.y = points[points.length - 1];
+
+        this.#segment.push(points);
 
         return this;
     }
@@ -394,8 +412,10 @@ export default class {
             return;
         }
 
-        if (isNaN(parseInt(cpx)) || isNaN(parseInt(cpy)) || isNaN(parseInt(x)) || isNaN(parseInt(y)) || isNaN(parseInt(radius))) {
-            throw new Error("INVALID_VALUE");
+        for (const argument of arguments) {
+            if (isNaN(parseInt(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
         }
 
         const p0 = { x: this.x + (parseFloat(cpx) - this.x) - parseFloat(radius), y: this.y }
@@ -411,16 +431,32 @@ export default class {
         return this;
     }
     filledCircle(xx, yy, radius) {
+        for (const argument of arguments) {
+            if (isNaN(parseInt(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
+        }
+
         for (let y = -radius; y < radius; y++) {
             let x = 0;
             while(Math.hypot(x, y) <= radius) {
                 x++
             }
-            this.lines.push([xx - x, yy + y, xx + x, yy + y]);
+            this.#segment.push([
+                xx - x, yy + y,
+                xx + x, yy + y
+            ]);
         }
+
         return this;
     }
     oval(x, y, width, height, s) {
+        for (const argument of arguments) {
+            if (isNaN(parseInt(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
+        }
+
         if (s < 3) {
             switch(s) {
                 case 1:
@@ -430,61 +466,102 @@ export default class {
                     s += 1
             }
         }
+
         var arr = [];
         if (s === void 0) s = 5;
         for(let i = 0; i <= 360; i += s) {
             arr.push(x + width * Math.cos(i * Math.PI / 180), y + height * Math.sin(i * Math.PI / 180))
         }
-        this.lines.push(arr);
+
+        this.#segment.push(arr);
+
         return this;
     }
     rect(x, y, width, height) {
-        if (x === void 0 || isNaN(x) || y === void 0 || isNaN(y) || width === void 0 || isNaN(width) || height === void 0 || isNaN(height)) throw new Error("INVALID_VALUE");
-        this.lines.push([x, y, x + width, y, x + width, y + height, x, y + height, x, y]);
+        for (const argument of arguments) {
+            if (isNaN(parseInt(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
+        }
+
+        this.#segment.push([
+            x, y,
+            x + width, y,
+            x + width, y + height,
+            x, y + height,
+            x, y
+        ]);
+        
         return this;
     }
     filledRect(x, y, width, height) {
-        if (x === void 0 || isNaN(x) || y === void 0 || isNaN(y) || width === void 0 || isNaN(width) || height === void 0 || isNaN(height)) throw new Error("INVALID_VALUE");
-        for (let i = y; i < y + height; i++) {
-            this.lines.push([x, i, x + width, i]);
+        for (const argument of arguments) {
+            if (isNaN(parseInt(argument))) {
+                throw new Error("INVALID_VALUE");
+            }
         }
+
+        for (let i = y; i < y + height; i++) {
+            this.#segment.push([
+                x, i,
+                x + width, i
+            ]);
+        }
+
         return this;
     }
     closePath() {
-        if (!this.lines[0]) return this;
-        let [ x, y ] = this.lines[0];
+        if (!this.#segment[0]) {
+            return this;
+        }
+
+        for (const line of this.#segment) {
+            if (line.length < 1) {
+                return;
+            }
+            
+            for (const argument of line) {
+                if (isNaN(parseFloat(argument))) {
+                    return;
+                }
+            }
+        }
+
+        let [ x, y ] = this.#segment[0];
+
         this.lineTo(x, y);
+
         return this;
     }
     stroke() {
-        for (const t in this._temp) {
+        for (const t in this.#temp) {
             switch(t) {
                 case "physics":
-                    this._physics.push(...this._temp[t]);
+                    this.#physics.push(...this.#temp[t]);
                     break;
                 
                 case "scenery":
-                    this._scenery.push(...this._temp[t]);
+                    this.#scenery.push(...this.#temp[t]);
                     break;
 
                 case "powerups":
                     break;
-                    for (const e in this._temp[t]) {
+                    for (const e in this.#temp[t]) {
                         switch(e) {
                             case "vehicles":
-                                for (const i in this._temp[t][e])
-                                    this.powerups[e][i].push(...this._temp[t][e][i]);
+                                for (const i in this.#temp[t][e])
+                                    this.powerups[e][i].push(...this.#temp[t][e][i]);
                             break;
 
                             default:
-                                this._powerups[e].push(...this._temp[t][e]);
+                                this.#powerups[e].push(...this.#temp[t][e]);
                             break;
                         } 
                     }
                     break;
             }
         }
-        this._temp = {
+        this.#temp = {
             physics: [],
             scenery: [],
             powerups: {
@@ -500,14 +577,17 @@ export default class {
                     heli: [],
                     truck: [],
                     balloon: [],
-                    blob: [],
-                    glider: []
+                    blob: []
                 }
             }
         }
         return this;
     }
     fill() {
+        this.lines.push(...this.#segment);
+
+        this.#segment = []
+
         return this;
     }
     save() {
@@ -517,95 +597,112 @@ export default class {
             strokeStyle: this.strokeStyle,
             fillStyle: this.fillStyle
         }
+
+        return this;
+    }
+    stroke() {
+        this.lines.push(...this.#segment);
+
+        this.#segment = []
+
         return this;
     }
     restore() {
-        for (const t in this.temp)
+        for (const t in this.temp) {
             this[t] = this.temp[t];
+        }
+
         this.temp = null;
+
         return this;
     }
     drawDefaultLine() {
         this.moveTo(-40, 50);
         this.lineTo(40, 50);
+
         return this;
     }
     drawTarget(x, y) {
-        this._powerups.targets.push([x, y]);
+        this.#powerups.targets.push([x, y]);
+
         return this;
     }
     drawBoost(x, y, d) {
-        this._powerups.boosts.push([x, y, d]);
+        this.#powerups.boosts.push([x, y, d]);
+
         return this;
     }
     drawGravity(x, y) {
-        this._powerups.gravity.push([x, y, d]);
+        this.#powerups.gravity.push([x, y, d]);
+
         return this;
     }
     drawSlowmo(x, y) {
-        this._powerups.slowmos.push([x, y]);
+        this.#powerups.slowmos.push([x, y]);
+
         return this;
     }
     drawBomb(x, y) {
-        this._powerups.bombs.push([x, y]);
+        this.#powerups.bombs.push([x, y]);
+
         return this;
     }
     drawCheckpoint(x, y) {
-        this._powerups.checkpoints.push([x, y]);
+        this.#powerups.checkpoints.push([x, y]);
+
         return this;
     }
     drawAntigravity(x, y) {
-        this._powerups.antigravity.push([x, y]);
+        this.#powerups.antigravity.push([x, y]);
+
         return this;
     }
     drawTeleport(x, y, ex, ey) {
-        this._powerups.teleporters.push([x, y, ex, ey]);
+        this.#powerups.teleporters.push([x, y, ex, ey]);
+
         return this;
     }
     drawHeli(x, y, t) {
-        this._powerups.vehicles.heli.push([x, y, 1, t]);
+        this.#powerups.vehicles.heli.push([x, y, 1, t]);
+
         return this;
     }
     drawTruck(x, y, t) {
-        this._powerups.vehicles.truck.push([x, y, 2, t]);
+        this.#powerups.vehicles.truck.push([x, y, 2, t]);
+
         return this;
     }
     drawBalloon(x, y, t) {
-        this._powerups.vehicles.balloon.push([x, y, 3, t]);
+        this.#powerups.vehicles.balloon.push([x, y, 3, t]);
+
         return this;
     }
     drawBlob(x, y, t) {
-        this._powerups.vehicles.blob.push([x, y, 4, t]);
-        return this;
-    }
-    drawGlider(x, y, t) {
-        this._powerups.vehicles.glider.push([x, y, 5, t]);
-        return this;
-    }
-    drawVehicle(x, y, vehicle, t) {
-        if (!vehicle || isNaN(vehicle)) throw new Error("INVALID_VEHICLE");
-        this._powerups.vehicles[vehicle].push("V " + [x, y, vehicle, t]);
+        this.#powerups.vehicles.blob.push([x, y, 4, t]);
+
         return this;
     }
     move(x = 0, y = 0) {
-        for (const t of this._physics) {
+        for (const t of this.#physics) {
             for (let e = 0; e < t.length; e += 2) {
                 t[e] += x;
                 t[e + 1] += y;
             }
         }
-        for (const t of this._scenery) {
+
+        for (const t of this.#scenery) {
             for (let e = 0; e < t.length; e += 2) {
                 t[e] += x;
                 t[e + 1] += y;
             }
         }
-        for(const t in this._powerups) {
-            for (const e in this._powerups[t]) {
+
+        for(const t in this.#powerups) {
+            for (const e in this.#powerups[t]) {
                 switch(t) {
                     case "teleporters":
-                        this._powerups[t][e][2] += x;
-                        this._powerups[t][e][3] += y;
+                        this.#powerups[t][e][2] += x;
+                        this.#powerups[t][e][3] += y;
                     case "targets":
                     case "boosters":
                     case "gravity":
@@ -613,43 +710,49 @@ export default class {
                     case "bombs":
                     case "checkpoints":
                     case "antigravity":
-                        this._powerups[t][e][0] += x;
-                        this._powerups[t][e][1] += y;
+                        this.#powerups[t][e][0] += x;
+                        this.#powerups[t][e][1] += y;
                     break;
                     
                     case "vehicles":
-                        for (const i in this._powerups[t][e]) {
-                            this._powerups[t][e][i][0] += x;
-                            this._powerups[t][e][i][1] += y;
+                        for (const i in this.#powerups[t][e]) {
+                            this.#powerups[t][e][i][0] += x;
+                            this.#powerups[t][e][i][1] += y;
                         }
                     break;
                 }
             }
         }
+
         return this;
     }
     rotate(x = 0) {
-        if (isNaN(x)) throw new Error("INVALID_VALUE");
+        if (isNaN(parseInt(x))) {
+            throw new Error("INVALID_VALUE")
+        }
+
         let rotationFactor = x;
         x *= Math.PI / 180;
-        for (const t of this._physics) {
+        for (const t of this.#physics) {
             for (let e = 0; e < t.length; e += 2) {
                 t[e] = t[e] * Math.cos(x) + t[e + 1] * Math.sin(x),
                 t[e + 1] = t[e + 1] * Math.cos(x) - t[e] * Math.sin(x);
             }
         }
-        for (const t of this._scenery) {
+
+        for (const t of this.#scenery) {
             for (let e = 0; e < t.length; e += 2) {
                 t[e] = t[e] * Math.cos(x) + t[e + 1] * Math.sin(x),
                 t[e + 1] = t[e + 1] * Math.cos(x) - t[e] * Math.sin(x);
             }
         }
-        for (const t in this._powerups) {
-            for(const e in this._powerups[t]) {
+
+        for (const t in this.#powerups) {
+            for(const e in this.#powerups[t]) {
                 switch(t) {
                     case "teleporters":
-                        this._powerups[t][e][2] = this._powerups[t][e][2] * Math.cos(x) + this._powerups[t][e][3] * Math.sin(x),
-                        this._powerups[t][e][3] = this._powerups[t][e][3] * Math.cos(x) - this._powerups[t][e][2] * Math.sin(x);
+                        this.#powerups[t][e][2] = this.#powerups[t][e][2] * Math.cos(x) + this.#powerups[t][e][3] * Math.sin(x),
+                        this.#powerups[t][e][3] = this.#powerups[t][e][3] * Math.cos(x) - this.#powerups[t][e][2] * Math.sin(x);
                     case "targets":
                     case "boosters":
                     case "gravity":
@@ -657,43 +760,46 @@ export default class {
                     case "bombs":
                     case "checkpoints":
                     case "antigravity":
-                        this._powerups[t][e][0] = this._powerups[t][e][0] * Math.cos(x) + this._powerups[t][e][1] * Math.sin(x),
-                        this._powerups[t][e][1] = this._powerups[t][e][1] * Math.cos(x) - this._powerups[t][e][0] * Math.sin(x);
+                        this.#powerups[t][e][0] = this.#powerups[t][e][0] * Math.cos(x) + this.#powerups[t][e][1] * Math.sin(x),
+                        this.#powerups[t][e][1] = this.#powerups[t][e][1] * Math.cos(x) - this.#powerups[t][e][0] * Math.sin(x);
                         if (["boosters", "gravity"].includes(t)) {
-                            this._powerups[t][e][2] += rotationFactor;
+                            this.#powerups[t][e][2] += rotationFactor;
                         }
                     break;
 
                     case "vehicles":
-                        for (const i in this._powerups[t][e]) {
-                            this._powerups[t][e][i][0] = this._powerups[t][e][i][0] * Math.cos(x) + this._powerups[t][e][i][1] * Math.sin(x),
-                            this._powerups[t][e][i][1] = this._powerups[t][e][i][1] * Math.cos(x) - this._powerups[t][e][i][0] * Math.sin(x);
+                        for (const i in this.#powerups[t][e]) {
+                            this.#powerups[t][e][i][0] = this.#powerups[t][e][i][0] * Math.cos(x) + this.#powerups[t][e][i][1] * Math.sin(x),
+                            this.#powerups[t][e][i][1] = this.#powerups[t][e][i][1] * Math.cos(x) - this.#powerups[t][e][i][0] * Math.sin(x);
                         }
                     break;
                 }
             }
         }
+        
         return this;
     }
     scale(x = 1, y = 1) {
-        for (const t of this._physics) {
+        for (const t of this.#physics) {
             for (let e = 0; e < t.length; e += 2) {
                 t[e] += t[e] * x;
                 t[e + 1] += t[e + 1] * y;
             }
         }
-        for (const t of this._scenery) {
+
+        for (const t of this.#scenery) {
             for (let e = 0; e < t.length; e += 2) {
                 t[e] += t[e] * x;
                 t[e + 1] += t[e + 1] * y;
             }
         }
-        for (const t in this._powerups) {
-            for(const e in this._powerups[t]) {
+
+        for (const t in this.#powerups) {
+            for(const e in this.#powerups[t]) {
                 switch(t) {
                     case "teleporters":
-                        this._powerups[t][e][2] += this._powerups[t][e][2] * x;
-                        this._powerups[t][e][3] += this._powerups[t][e][3] * y;
+                        this.#powerups[t][e][2] += this.#powerups[t][e][2] * x;
+                        this.#powerups[t][e][3] += this.#powerups[t][e][3] * y;
                     case "targets":
                     case "boosters":
                     case "gravity":
@@ -701,25 +807,26 @@ export default class {
                     case "bombs":
                     case "checkpoints":
                     case "antigravity":
-                        this._powerups[t][e][0] += this._powerups[t][e][0] * x;
-                        this._powerups[t][e][1] += this._powerups[t][e][1] * y;
+                        this.#powerups[t][e][0] += this.#powerups[t][e][0] * x;
+                        this.#powerups[t][e][1] += this.#powerups[t][e][1] * y;
                     break;
 
                     case "vehicles":
-                        for (const i in this._powerups[t][e]) {
-                            this._powerups[t][e][i][0] += this._powerups[t][e][i][0] * x;
-                            this._powerups[t][e][i][1] += this._powerups[t][e][i][1] * y;
+                        for (const i in this.#powerups[t][e]) {
+                            this.#powerups[t][e][i][0] += this.#powerups[t][e][i][0] * x;
+                            this.#powerups[t][e][i][1] += this.#powerups[t][e][i][1] * y;
                         }
                     break;
                 }
             }
         }
+
         return this;
     }
     clear() {
-        this._physics = [],
-        this._scenery = [],
-        this._powerups = {
+        this.#physics = [],
+        this.#scenery = [],
+        this.#powerups = {
             targets: [],
             slowmos: [],
             bombs: [],
@@ -732,11 +839,10 @@ export default class {
                 heli: [],
                 truck: [],
                 balloon: [],
-                blob: [],
-                glider: []
+                blob: []
             }
         }
-        this._temp = {
+        this.#temp = {
             physics: [],
             scenery: [],
             powerups: {
@@ -752,8 +858,7 @@ export default class {
                     heli: [],
                     truck: [],
                     balloon: [],
-                    blob: [],
-                    glider: []
+                    blob: []
                 }
             }
         }
