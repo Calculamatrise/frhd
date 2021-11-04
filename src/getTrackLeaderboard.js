@@ -1,7 +1,7 @@
 import RequestHandler from "./utils/RequestHandler.js";
 
-export default async function(trackId, callback = t => t) {
-    return await RequestHandler.ajax({
+export default function(trackId, callback = t => t) {
+    return RequestHandler.ajax({
         path: "/track_api/load_leaderboard",
         body: {
             t_id: trackId
