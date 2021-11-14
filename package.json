@@ -1,9 +1,11 @@
 {
     "name": "frhd",
     "alias": "@Calculamatrise/frhd",
-    "version": "0.0.2",
+    "version": "0.0.3-dev.6y2ege",
     "description": "An app to communicacte with FRHD",
     "main": "./src/bootstrap.js",
+    "preferGlobal": true,
+    "bin": "./bin/bootstrap.js",
     "author": "Calculus",
     "type": "module",
     "license": "GNU General Public License v3.0-or-later",

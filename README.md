@@ -46,17 +46,17 @@ Expected Output:
 }
 ```
 
-# Track API
+# Builder API
 
 ```js
-import frhd, { Track } from "frhd";
+import frhd, { Builder } from "frhd";
 
-const track = new Track(); // or new frhd.Track()
+const track = new Builder(); // or new frhd.Builder()
 
 track.beginPath();
 track.moveTo(-40, 50);
 track.lineTo(40, 50);
-track.closePath();
+track.stroke();
 
 console.log(track.code);
 ```
