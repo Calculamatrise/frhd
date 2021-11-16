@@ -423,7 +423,7 @@ export default class {
      * @param {string|number} p2y position y of the second control point
      * @param {string|number} p3x position x of the end point
      * @param {string|number} p3y position y of the end point
-     * @returns object
+     * @returns {Builder} this
      */
     bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y) {
         if (Array.isArray(arguments[0])) {
@@ -505,16 +505,16 @@ export default class {
     }
 
     /**
-     * 
+     * @todo destination image width and height
      * @param {Image} image instance of Image constructor
      * @param {Number|String} sx source image position along the x-axis
      * @param {Number|String} sy source image position along the y-axis
      * @param {Number|String} sWidth source image width
      * @param {Number|String} sHeight source image height
-     * @param {Number|String} dx source image destination along the x-axis
-     * @param {Number|String} dy source image destination along the y-axis
-     * @param {Number|String} dWidth destination image width
-     * @param {Number|String} dHeight destination image height
+     * @param {Number|String} dx image along the x-axis on the canvas
+     * @param {Number|String} dy image along the y-axis on the canvas
+     * @param {Number|String} dWidth image width on the canvas
+     * @param {Number|String} dHeight image height on the canvas
      * @returns {Builder} this
      */
     drawImage(image, sx = 0, sy = 0, sWidth, sHeight, dx = 0, dy = 0, dWidth, dHeight) {
@@ -522,41 +522,47 @@ export default class {
             throw new Error("Invalid Image");
         }
 
-        const pixels = {
-            data: image.data,
-            width: dWidth,
-            height: dHeight
-        }
+        let pixels = new Uint8ClampedArray(image.data.map(function(item, index, data) {
+            if (index % 4 === 0) {
+                let average = item * .2 + data[index + 1] * .7 + data[index + 2] * .1;
+
+                return average <= 85 ? 0 : average <= 170 ? 170 : 255;
+            }
+
+            return false;
+        }).filter((item, index) => index % 4 === 0));
+
+        let width = dWidth;
+        let height = dHeight;
 
         if (arguments.length > 5) {
-            pixels.data = pixels.data.slice(4 * image.width  * parseInt(sy), -(4 * image.width * image.height - 4 * image.width * parseInt(sHeight)));
-            pixels.data = pixels.data.filter((item, index) => index % (image.width * 4) >= (parseInt(sx) * 4) && index % (image.width * 4) < (parseInt(sWidth) * 4));
-            pixels.height -= parseInt(sy);
-            pixels.width -= parseInt(sx);
+            pixels = pixels.slice(image.width * parseInt(sy), -(image.width * image.height - image.width * parseInt(sHeight)));
+            pixels = pixels.filter((item, index) => index % image.width >= parseInt(sx) && index % image.width < parseInt(sWidth));
+            width -= parseInt(sx);
+            height -= parseInt(sy);
         }
 
-        for (let t = 0, e = 0; t in pixels.data; t += 4) {
-            e = pixels.data[t] * .2 + pixels.data[t + 1] * .7 + pixels.data[t + 2] * .1;
-            pixels.data[t] = pixels.data[t + 1] = pixels.data[t + 2] = e <= 85 ? 0 : e <= 170 ? 170 : 255;
-        }
+        for (let y = 0, iy; y < pixels.length / width; y++) {
+            for (let x = 0, ix, dxt, e; x < pixels.length / height; x++) {
+                e = x + y * width;
 
-        for (let y = 0, iy; y <= pixels.height; y++) {
-            for (let x = 0, ix, dxt, e; x <= pixels.width; x++) {
-                e = (x + y * pixels.width) * 4;
+                if (pixels[e] === 255 || pixels[e - 1] === pixels[e] && Math.floor((e - 1) / width) === y) continue;
+
                 ix = x * 2 + parseInt(arguments.length > 5 ? dx : sx);
                 iy = y * 2 + parseInt(arguments.length > 5 ? dy : sy);
                 dxt = ix + 2;
 
-                if (pixels.data[e] === 255 || pixels.data[e - 4] === pixels.data[e] && Math.floor((e - 4) / pixels.width / 4) === y) continue;
-                for (let i = x + 1, s; i <= pixels.width; i++) {
-                    s = (i + y * pixels.width) * 4;
-                    if (i >= pixels.width - 1 || pixels.data[s] != pixels.data[e]) {
+                for (let i = x + 1, s; i <= width; i++) {
+                    s = i + y * width;
+                    
+                    if (i >= width - 1 || pixels[s] != pixels[e]) {
                         dxt = (i - 1) * 2 + parseInt(arguments.length > 5 ? dx : sx);
+
                         break;
                     }
                 }
 
-                if (pixels.data[e] == 0) {
+                if (pixels[e] == 0) {
                     this.#physics.push([ix, iy, dxt, iy], [ix, iy + 2, dxt, iy + 2]);
                 } else {
                     this.#scenery.push([ix, iy, dxt, iy], [ix, iy + 2, dxt, iy + 2]);
