@@ -1,7 +1,7 @@
 {
     "name": "frhd",
     "alias": "@Calculamatrise/frhd",
-    "version": "0.0.3-dev.6y2ege",
+    "version": "0.0.3",
     "description": "An app to communicacte with FRHD",
     "main": "./src/bootstrap.js",
     "preferGlobal": true,
@@ -12,5 +12,8 @@
     "repository": {
         "type": "git",
         "url": "git://github.com/Calculamatrise/frhd.git"
+    },
+    "dependencies": {
+        "pngjs": "^6.0.0"
     }
 }

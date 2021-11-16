@@ -1,4 +1,5 @@
 import https from "https";
+import { readFileSync } from "fs";
 
 import User from "../structures/User.js";
 import Track from "../structures/Track.js";
@@ -7,17 +8,41 @@ import Cosmetic from "../structures/Cosmetic.js";
 
 import { token } from "../client/Client.js";
 
-export default class {
-    static ajax(option, options = typeof option === "string" ? { path: option } : option) {
+export default class RequestHandler {
+    /**
+     * 
+     * @param {String} option URI or options object
+     * @param {Object} options Options
+     * @returns 
+     */
+    static ajax(option, options = typeof option === "object" ? option : {}) {
         const {
-            host,
+            host = option.replace(/(?:^(.+)?:\/\/|(\.?\/.+)|(?!.*\/).*)/gi, ""),
             method = "GET",
-            path,
+            path = option.replace(/^((.+)?:\/\/)?/gi, "").replace(/^[^\/]+([^\/]+)\//gi, "/"),
             headers = {
                 "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
             },
             body = {}
-        } = options;
+        } = options;  
+
+        if (path.match(/^\.?\/?/) && !host) {
+            const body = readFileSync(path);
+
+            if (headers["content-type"].startsWith("image/png")) {
+                if (headers["content-type"].includes("base64")) {
+                    return "data:image/png; base64, " + body.toString("base64");
+                }
+
+                return body;
+            }
+            
+            try {
+                return JSON.parse(body);
+            } catch(e) {}
+
+            return body.toString("utf8");
+        }
         
         return new Promise((resolve, reject) => {
             try {
@@ -27,22 +52,35 @@ export default class {
                     method,
                     headers
                 }, res => {
-                    let data = "";
-                    res.on("data", d => {
-                        data += d;
+                    let data = [];
+
+                    res.on("data", function(buffer) {
+                        data.push(buffer);
                     });
-                    res.on("end", () => {
+                    res.on("end", function() {
+                        data = Buffer.concat(data);
+
+                        if (headers["content-type"].startsWith("image/png")) {
+                            if (headers["content-type"].includes("base64")) {
+                                data = "data:image/png; base64, " + data.toString("base64");
+                            }
+
+                            return resolve(data);
+                        }
+
                         try {
                             data = JSON.parse(data);
-                        } catch(e) {}
+                        } catch(e) {
+                            data = data.toString("utf8");
+                        }
 
                         resolve(data);
                     });
                 });
-                req.write(headers["content-type"] == "application/json" ? JSON.stringify(body) : new URLSearchParams(body).toString());
+                req.write(headers["content-type"] === "application/json" ? JSON.stringify(body) : new URLSearchParams(body).toString());
                 req.end();
-            } catch(e) {
-                return reject(e);
+            } catch(error) {
+                return reject(error);
             }
         });
     }

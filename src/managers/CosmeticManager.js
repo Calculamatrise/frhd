@@ -4,7 +4,7 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {number|string} id
+     * @param {Number|String} id
      * @returns object
      */
     async fetch(id) {

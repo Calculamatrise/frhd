@@ -28,9 +28,9 @@ export default class {
 
     /**
      * 
-     * @param {string} event event name
-     * @param {function} func listening function
-     * @returns 
+     * @param {String} event event name
+     * @param {Function} func listening function
+     * @returns {Client}
      */
     on(event, func = function() {}) {
         if (event === void 0 || typeof event !== "string")
@@ -44,9 +44,9 @@ export default class {
     /**
      * 
      * @emits
-     * @param {string} event event name
+     * @param {String} event event name
      * @param  {...any} args arguments passed through to the listening function
-     * @returns function call
+     * @returns {any} function call
      */
     emit(event, ...args) {
         if (event === void 0 || typeof event !== "string")
@@ -61,10 +61,10 @@ export default class {
 
     /**
      * 
-     * @param {function} callback simple callback
-     * @returns object
+     * @param {Function} callback simple callback
+     * @returns {Object} object
      */
-    async datapoll(callback = response => response) {
+    datapoll(callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
@@ -109,6 +109,12 @@ export default class {
 
         setTimeout(() => this.#listen(), 3000);
     }
+
+    /**
+     * 
+     * @param {String} asr app signed request token
+     * @returns {Client}
+     */
     async login(asr) {
         if (!asr || typeof asr !== "string")
             throw new Error("INVALID_TOKEN");
@@ -129,6 +135,13 @@ export default class {
 
         return this;
     }
+
+    /**
+     * 
+     * @param {String} username login username
+     * @param {String|Number} password login password
+     * @returns {Client}
+     */
     async defaultLogin(username, password) {
         return RequestHandler.ajax({
             path: "/auth/standard_login",
@@ -365,7 +378,7 @@ export default class {
      * @protected requires administrative priviledges
      * @param {number|string} track 
      * @param {User|number|string} user 
-     * @param {function} callback
+     * @param {Function} callback
      * @returns object
      */
     async removeRace(track, user, callback = response => response) {
@@ -399,7 +412,7 @@ export default class {
      * @param {number|string} lives
      * @param {number|string} refillCost
      * @param {number|string} gems
-     * @param {function} callback
+     * @param {Function} callback
      * @description removes cheated ghosts on all tracks between the given range
      * @returns string
      */
@@ -440,7 +453,7 @@ export default class {
      * 
      * @async
      * @protected
-     * @param {object} options
+     * @param {Object} options
      * @description removes cheated ghosts on all tracks between the given range
      * @returns string
      */

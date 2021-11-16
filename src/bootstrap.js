@@ -1,5 +1,6 @@
 import Builder from "./utils/Builder.js";
 import Client from "./client/Client.js";
+import Image from "./utils/Image.js";
 
 import getHome from "./getHome.js";
 import getCategory from "./getCategory.js";
@@ -26,7 +27,8 @@ export default {
     getRace,
     getFeaturedGhosts,
     Builder,
-    Client
+    Client,
+    Image
 }
 
 export {
@@ -42,5 +44,6 @@ export {
     getRace,
     getFeaturedGhosts,
     Builder,
-    Client
+    Client,
+    Image
 }

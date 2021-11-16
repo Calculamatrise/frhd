@@ -17,7 +17,7 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {number|string} id
+     * @param {Number|String} id
      * @returns object
      */
     async fetch(id) {
@@ -32,7 +32,7 @@ export default class extends BaseManager {
      * 
      * @async
      * @private
-     * @param {object} options
+     * @param {Object} options
      * @description rates all tracks between
      * @returns string
      */

@@ -203,10 +203,10 @@ export default class Track {
     }
     /**
      * 
-     * @param {object|string} code 
-     * @param {string} vehicle 
-     * @param {number} ticks 
-     * @returns {object}
+     * @param {Object|String} code 
+     * @param {String} vehicle 
+     * @param {Number} ticks 
+     * @returns {Object}
      * @private
      */
     async postRace(code, vehicle = "MTB", ticks) {
@@ -245,7 +245,7 @@ export default class Track {
      * 
      * @private
      * @param {number|string|object} user 
-     * @returns {object}
+     * @returns {Object}
      */
     async copyRace(user) {
         if (isNaN(user))
@@ -293,9 +293,9 @@ export default class Track {
     /**
      * 
      * @protected requires administrative priviledges
-     * @param {number} lives 
-     * @param {number} refillCost 
-     * @param {number} gems 
+     * @param {Number} lives 
+     * @param {Number} refillCost 
+     * @param {Number} gems 
      * @returns object
      */
     addDaily(lives, refillCost, gems) {

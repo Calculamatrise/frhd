@@ -4,7 +4,7 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {number|string} count
+     * @param {Number|String} count
      * @returns object
      */
     async fetch(count) {

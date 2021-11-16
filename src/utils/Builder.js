@@ -1,3 +1,8 @@
+import RequestHandler from "./RequestHandler.js";
+
+import { PNG } from "pngjs";
+import Image from "./Image.js";
+
 const position = {
     x: null,
     y: null
@@ -12,6 +17,22 @@ let cache = {}
 
 export default class {
     /**
+     * 
+     * @param {String} URI image location or URI
+     */
+    static image(URI) {
+        const image = new Image();
+
+        image.src = URI;
+
+        return new Promise(function(resolve, reject) {
+            image.addEventListener("load", function(image) {
+                resolve(image);
+            });
+        });
+    }
+    
+    /**
      * @private
      */
     #fillStyle = "#000000";
@@ -19,7 +40,7 @@ export default class {
         return this.#fillStyle;
     }
     /**
-     * @param {string} value
+     * @param {String} value
      */
     set fillStyle(value) {
         if (value.match(/^(#([a-f0-9]{3,4}|[a-f0-9]{6,8})|rgba?\((\d+(,\s+)?){3,4}\))$/gi)) {
@@ -37,7 +58,7 @@ export default class {
         return this.#font;
     }
     /**
-     * @param {string} value
+     * @param {String} value
      */
     set font(value) {
         // 10px Arial
@@ -52,7 +73,7 @@ export default class {
         return this.#globalCompositeOperation;
     }
     /**
-     * @param {string} value
+     * @param {String} value
      */
     set globalCompositeOperation(value) {
         this.#globalCompositeOperation = value;
@@ -71,7 +92,7 @@ export default class {
         return this.#lineDashOffset;
     }
     /**
-     * @param {number} value
+     * @param {Number|String} value
      */
     set lineDashOffset(value) {
         if (isNaN(parseInt(value))) {
@@ -89,7 +110,7 @@ export default class {
         return this.#lineWidth;
     }
     /**
-     * @param {number} value
+     * @param {Number|String} value
      */
     set lineWidth(value) {
         if (isNaN(parseInt(value))) {
@@ -107,7 +128,7 @@ export default class {
         return this.#strokeStyle;
     }
     /**
-     * @param {string} value
+     * @param {String} value
      */
     set strokeStyle(value) {
         if (value.match(/^(#[a-f0-9]{3,4}|#[a-f0-9]{6,8}|rgba?\((\d+(,\s+)?){3,4}\))/gi)) {
@@ -125,7 +146,7 @@ export default class {
         return this.#textAlign;
     }
     /**
-     * @param {string} value
+     * @param {String} value
      */
     set textAlign(value) {
         this.#textAlign = value;
@@ -139,7 +160,7 @@ export default class {
         return this.#textBaseline;
     }
     /**
-     * @param {string} value
+     * @param {String} value
      */
     set textBaseline(value) {
         this.#textBaseline = value;
@@ -304,12 +325,12 @@ export default class {
 
     /**
      * 
-     * @param {number|string} x position x
-     * @param {number|string} y position y
-     * @param {number|string} radius 
-     * @param {number|string} startAngle angle in radians
-     * @param {number|string} endAngle angle in radians
-     * @param {boolean} counterClockwise 
+     * @param {Number|String} x position x
+     * @param {Number|String} y position y
+     * @param {Number|String} radius radius of the arc
+     * @param {Number|String} startAngle angle in radians
+     * @param {Number|String} endAngle angle in radians
+     * @param {boolean} counterClockwise decide the direction at which the arc is drawn
      * @returns object
      */
      arc(x, y, radius, startAngle, endAngle, counterClockwise = false) {
@@ -352,11 +373,11 @@ export default class {
 
     /**
      * 
-     * @param {number|string} cpx position x of the control point
-     * @param {number|string} cpy position y of the control point
-     * @param {number|string} x position x of the end point
-     * @param {number|string} y position y of the end point
-     * @param {number|string} radius 
+     * @param {Number|String} cpx position x of the control point
+     * @param {Number|String} cpy position y of the control point
+     * @param {Number|String} x position x of the end point
+     * @param {Number|String} y position y of the end point
+     * @param {Number|String} radius radius of the arc
      * @returns object
      */
     arcTo(cpx, cpy, x, y, radius) {
@@ -395,15 +416,15 @@ export default class {
     }
 
     /**
-         * 
-         * @param {string|number} p1x position x of the first control point
-         * @param {string|number} p1y position y of the first control point
-         * @param {string|number} p2x position x of the second control point
-         * @param {string|number} p2y position y of the second control point
-         * @param {string|number} p3x position x of the end point
-         * @param {string|number} p3y position y of the end point
-         * @returns object
-         */
+     * 
+     * @param {string|number} p1x position x of the first control point
+     * @param {string|number} p1y position y of the first control point
+     * @param {string|number} p2x position x of the second control point
+     * @param {string|number} p2y position y of the second control point
+     * @param {string|number} p3x position x of the end point
+     * @param {string|number} p3y position y of the end point
+     * @returns object
+     */
     bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y) {
         if (Array.isArray(arguments[0])) {
             for (const argument of arguments) {
@@ -438,10 +459,10 @@ export default class {
 
     /**
      * 
-     * @param {number|string} x 
-     * @param {number|string} y 
-     * @param {number|string} width 
-     * @param {number|string} height 
+     * @param {Number|String} x rectangle clip position along the x-axis
+     * @param {Number|String} y rectangle clip position along the y-axis
+     * @param {Number|String} width clip rectangle width
+     * @param {Number|String} height clip rectangle height
      */
     clearRect(x, y, width, height) {
         // Remove all lines between x and width AND y and height. Maybe use Math.abs
@@ -480,20 +501,79 @@ export default class {
     }
 
     createImageData() {
-        // Maybe create an offsceen canvas, draw segments and get image data.
-    }
-
-    drawImage() {
-        // Image to track????
+        return new this.constructor();
     }
 
     /**
      * 
-     * @param {number|string} x 
-     * @param {number|string} y 
-     * @param {number|string} radiusX 
-     * @param {number|string} radiusY 
-     * @param {number|string} rotation 
+     * @param {Image} image instance of Image constructor
+     * @param {Number|String} sx source image position along the x-axis
+     * @param {Number|String} sy source image position along the y-axis
+     * @param {Number|String} sWidth source image width
+     * @param {Number|String} sHeight source image height
+     * @param {Number|String} dx source image destination along the x-axis
+     * @param {Number|String} dy source image destination along the y-axis
+     * @param {Number|String} dWidth destination image width
+     * @param {Number|String} dHeight destination image height
+     * @returns {Builder} this
+     */
+    drawImage(image, sx = 0, sy = 0, sWidth, sHeight, dx = 0, dy = 0, dWidth, dHeight) {
+        if (!(image instanceof Image)) {
+            throw new Error("Invalid Image");
+        }
+
+        const pixels = {
+            data: image.data,
+            width: dWidth,
+            height: dHeight
+        }
+
+        if (arguments.length > 5) {
+            pixels.data = pixels.data.slice(4 * image.width  * parseInt(sy), -(4 * image.width * image.height - 4 * image.width * parseInt(sHeight)));
+            pixels.data = pixels.data.filter((item, index) => index % (image.width * 4) >= (parseInt(sx) * 4) && index % (image.width * 4) < (parseInt(sWidth) * 4));
+            pixels.height -= parseInt(sy);
+            pixels.width -= parseInt(sx);
+        }
+
+        for (let t = 0, e = 0; t in pixels.data; t += 4) {
+            e = pixels.data[t] * .2 + pixels.data[t + 1] * .7 + pixels.data[t + 2] * .1;
+            pixels.data[t] = pixels.data[t + 1] = pixels.data[t + 2] = e <= 85 ? 0 : e <= 170 ? 170 : 255;
+        }
+
+        for (let y = 0, iy; y <= pixels.height; y++) {
+            for (let x = 0, ix, dxt, e; x <= pixels.width; x++) {
+                e = (x + y * pixels.width) * 4;
+                ix = x * 2 + parseInt(arguments.length > 5 ? dx : sx);
+                iy = y * 2 + parseInt(arguments.length > 5 ? dy : sy);
+                dxt = ix + 2;
+
+                if (pixels.data[e] === 255 || pixels.data[e - 4] === pixels.data[e] && Math.floor((e - 4) / pixels.width / 4) === y) continue;
+                for (let i = x + 1, s; i <= pixels.width; i++) {
+                    s = (i + y * pixels.width) * 4;
+                    if (i >= pixels.width - 1 || pixels.data[s] != pixels.data[e]) {
+                        dxt = (i - 1) * 2 + parseInt(arguments.length > 5 ? dx : sx);
+                        break;
+                    }
+                }
+
+                if (pixels.data[e] == 0) {
+                    this.#physics.push([ix, iy, dxt, iy], [ix, iy + 2, dxt, iy + 2]);
+                } else {
+                    this.#scenery.push([ix, iy, dxt, iy], [ix, iy + 2, dxt, iy + 2]);
+                }
+            }
+        }
+
+        return this;
+    }
+
+    /**
+     * 
+     * @param {Number|String} x 
+     * @param {Number|String} y 
+     * @param {Number|String} radiusX 
+     * @param {Number|String} radiusY 
+     * @param {Number|String} rotation 
      */
     ellipse(x, y, radiusX, radiusY, rotation) {}
 
@@ -507,10 +587,10 @@ export default class {
 
     /**
      * 
-     * @param {number|string} x 
-     * @param {number|string} y 
-     * @param {number|string} width
-     * @param {number|string} height 
+     * @param {Number|String} x position of the rectangle along the x-axis
+     * @param {Number|String} y position of the rectangle along the y-axis
+     * @param {Number|String} width width of the rectangle
+     * @param {Number|String} height height of the rectangle
      */
     fillRect(x, y, width, height) {
         for (const argument of arguments) {
@@ -531,13 +611,15 @@ export default class {
 
     /**
      * 
-     * @param {string} content 
-     * @param {number|string} x 
-     * @param {number|string} y 
+     * @param {String} content 
+     * @param {Number|String} x 
+     * @param {Number|String} y 
      */
     fillText(content, x, y) {}
 
-    getImageData() {}
+    getImageData() {
+        return this.code;
+    }
 
     getLineDash() {
         return this.#lineDash.split(/\s+/g);
@@ -545,8 +627,8 @@ export default class {
 
     /**
      * 
-     * @param {number|string} x position x of the end point
-     * @param {number|string} y position y of the end point
+     * @param {Number|String} x position x of the end point
+     * @param {Number|String} y position y of the end point
      * @returns object
      */
     lineTo(x, y) {
@@ -577,7 +659,7 @@ export default class {
 
     /**
      * 
-     * @param {string} text 
+     * @param {String} text 
      */
     measureText(text) {
         return {
@@ -590,8 +672,8 @@ export default class {
 
     /**
      * 
-     * @param {number|string} x position x of the starting point
-     * @param {number|string} y position y of the starting point
+     * @param {Number|String} x position x of the starting point
+     * @param {Number|String} y position y of the starting point
      * @returns object
      */
     moveTo(x, y) {
@@ -636,6 +718,7 @@ export default class {
     }
 
     putImageData(data) {
+        this.import(data);
         // Replace image data with new data
     }
 
@@ -675,10 +758,10 @@ export default class {
 
     /**
      * 
-     * @param {number|string} x 
-     * @param {number|string} y 
-     * @param {number|string} width 
-     * @param {number|string} height 
+     * @param {Number|String} x 
+     * @param {Number|String} y 
+     * @param {Number|String} width 
+     * @param {Number|String} height 
      * @returns 
      */
     rect(x, y, width, height) {
@@ -850,10 +933,10 @@ export default class {
     /**
      * 
      * @deprecated this method may be removed in the near future
-     * @param {number|string} x position x of the starting point
-     * @param {number|string} y position y of the starting point
-     * @param {number|string} x2 position x of the end point
-     * @param {number|string} y2 position y of the end point
+     * @param {Number|String} x position x of the starting point
+     * @param {Number|String} y position y of the starting point
+     * @param {Number|String} x2 position x of the end point
+     * @param {Number|String} y2 position y of the end point
      * @returns object
      */
     strokeLine(x, y, x2, y2) {
@@ -881,10 +964,10 @@ export default class {
 
     /**
      * 
-     * @param {number|string} x 
-     * @param {number|string} y 
-     * @param {number|string} width 
-     * @param {number|string} height 
+     * @param {Number|String} x 
+     * @param {Number|String} y 
+     * @param {Number|String} width 
+     * @param {Number|String} height 
      * @returns 
      */
     strokeRect(x, y, width, height) {
@@ -908,9 +991,9 @@ export default class {
     /**
      * 
      * @throws this method is incomplete.
-     * @param {string} content 
-     * @param {number|string} x 
-     * @param {number|string} y 
+     * @param {String} content 
+     * @param {Number|String} x 
+     * @param {Number|String} y 
      */
     strokeText(content, x, y) {
         throw new Error("Incomplete method.");
@@ -934,150 +1017,77 @@ export default class {
         }
     }
     
-    strokeStar(x, y) {
+    star(x, y) {
         this.#powerups.targets.push([x, y]);
 
         return this;
     }
 
-    /**
-     * 
-     * @method
-     * @deprecated use Builder#strokeStar
-     */
-    drawTarget = this.strokeStar;
-
-    strokeBoost(x, y, d) {
+    boost(x, y, d) {
         this.#powerups.boosts.push([x, y, d]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#strokeBoost
-     */
-    drawBoost = this.strokeBoost;
-
-    strokeGravity(x, y) {
+    gravity(x, y) {
         this.#powerups.gravity.push([x, y, d]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#strokeGravity
-     */
-    drawGravity = this.strokeGravity;
-
-    strokeSlowmo(x, y) {
+    slowmo(x, y) {
         this.#powerups.slowmos.push([x, y]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#strokeSlowmo
-     */
-    drawSlowmo = this.strokeSlowmo;
-
-    strokeBomb(x, y) {
+    bomb(x, y) {
         this.#powerups.bombs.push([x, y]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#strokeBomb
-     */
-    drawBomb = this.strokeBomb;
-
-    strokeCheckpoint(x, y) {
+    checkpoint(x, y) {
         this.#powerups.checkpoints.push([x, y]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#strokeCheckpoint
-     */
-    drawCheckpoint = this.strokeCheckpoint;
-
-    strokeAntigravity(x, y) {
+    antigravity(x, y) {
         this.#powerups.antigravity.push([x, y]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#strokeAntigravity
-     */
-    drawAntigravity = this.strokeAntigravity;
-
-    strokeTeleport(x, y, ex, ey) {
+    teleport(x, y, ex, ey) {
         this.#powerups.teleporters.push([x, y, ex, ey]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#strokeTeleport
-     */
-    drawTeleport = this.strokeTeleport;
-
-    placeHeli(x, y, t) {
+    heli(x, y, t) {
         this.#powerups.vehicles.heli.push([x, y, 1, t]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#placeHeli
-     */
-    drawHeli = this.placeHeli;
-
-    placeTruck(x, y, t) {
+    truck(x, y, t) {
         this.#powerups.vehicles.truck.push([x, y, 2, t]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#placeTruck
-     */
-    drawTruck = this.placeTruck;
-
-    placeBalloon(x, y, t) {
+    balloon(x, y, t) {
         this.#powerups.vehicles.balloon.push([x, y, 3, t]);
 
         return this;
     }
 
-    /**
-     * 
-     * @deprecated use Builder#placeBalloon
-     */
-    drawBalloon = this.placeBalloon;
-
-    placeBlob(x, y, t) {
+    blob(x, y, t) {
         this.#powerups.vehicles.blob.push([x, y, 4, t]);
 
         return this;
     }
-
-    /**
-     * 
-     * @deprecated use Builder#placeBlob
-     */
-    drawBlob = this.placeBlob;
 
     translate(x = 0, y = 0) {
         // translate canvas to reposition the origin

@@ -4,7 +4,7 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {string} username
+     * @param {String} username
      * @returns object
      */
     async fetch(username) {

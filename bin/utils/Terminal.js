@@ -48,7 +48,7 @@ export default class {
     - clearRect
     - closePath
     - createImageData (disabled)
-    - drawImage (disabled)
+    - drawImage
     - fill
     - fillRect
     - getImageData (disabled)
@@ -68,18 +68,18 @@ export default class {
     - stroke
     - strokeLine
     - strokeRect
-    - strokeStar
-    - strokeBoost
-    - strokeGravity
-    - strokeSlowmo
-    - strokeBomb
-    - strokeCheckpoint
-    - strokeAntigravity
-    - strokeTeleport
-    - placeHeli
-    - placeTruck
-    - placeBalloon
-    - placeBlob
+    - star
+    - boost
+    - gravity
+    - slowmo
+    - bomb
+    - checkpoint
+    - antigravity
+    - teleport
+    - heli
+    - truck
+    - balloon
+    - blob
     - translate (disabled)
     - scale
     
