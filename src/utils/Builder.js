@@ -562,10 +562,14 @@ export default class {
                     }
                 }
 
+
+                /**
+                 * ADDED DESTINATION IMAGE WIDTH AND HEIGHT
+                 */
                 if (pixels[e] == 0) {
-                    this.#physics.push([ix, iy, dxt, iy], [ix, iy + 2, dxt, iy + 2]);
+                    this.#physics.push([ix, iy, dxt + parseInt(arguments.length > 5 ? dWidth : 0), iy + parseInt(arguments.length > 5 ? dHeight : 0)], [ix, iy + 2, dxt + parseInt(arguments.length > 5 ? dWidth : 0), iy + 2  + parseInt(arguments.length > 5 ? dHeight : 0)]);
                 } else {
-                    this.#scenery.push([ix, iy, dxt, iy], [ix, iy + 2, dxt, iy + 2]);
+                    this.#scenery.push([ix, iy, dxt + parseInt(arguments.length > 5 ? dWidth : 0), iy + parseInt(arguments.length > 5 ? dHeight : 0)], [ix, iy + 2, dxt + parseInt(arguments.length > 5 ? dWidth : 0), iy + 2 + parseInt(arguments.length > 5 ? dHeight : 0)]);
                 }
             }
         }
