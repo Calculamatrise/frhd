@@ -1,6 +1,3 @@
-import RequestHandler from "./RequestHandler.js";
-
-import { PNG } from "pngjs";
 import Image from "./Image.js";
 
 const position = {
@@ -505,7 +502,7 @@ export default class {
     }
 
     /**
-     * @todo destination image width and height
+     * 
      * @param {Image} image instance of Image constructor
      * @param {Number|String} sx source image position along the x-axis
      * @param {Number|String} sy source image position along the y-axis
@@ -532,8 +529,8 @@ export default class {
             return false;
         }).filter((item, index) => index % 4 === 0));
 
-        let width = dWidth;
-        let height = dHeight;
+        let width = sWidth || image.width;
+        let height = sHeight || image.height;
 
         if (arguments.length > 5) {
             pixels = pixels.slice(image.width * parseInt(sy), -(image.width * image.height - image.width * parseInt(sHeight)));
@@ -543,33 +540,42 @@ export default class {
         }
 
         for (let y = 0, iy; y < pixels.length / width; y++) {
-            for (let x = 0, ix, dxt, e; x < pixels.length / height; x++) {
+            for (let x = 0, ix, dxt, e, n; x < pixels.length / height; x++) {
                 e = x + y * width;
 
-                if (pixels[e] === 255 || pixels[e - 1] === pixels[e] && Math.floor((e - 1) / width) === y) continue;
+                if (pixels[e] === 255 || pixels[e - 1] === pixels[e] && Math.floor((e - 1) / width) === y) {
+                    continue;
+                }
 
-                ix = x * 2 + parseInt(arguments.length > 5 ? dx : sx);
-                iy = y * 2 + parseInt(arguments.length > 5 ? dy : sy);
-                dxt = ix + 2;
+                ix = x * (arguments.length > 5 ? (parseInt(dWidth) / width) * 2 : 2) + parseInt(arguments.length > 5 ? dx : sx);
+                iy = y * (arguments.length > 5 ? (parseInt(dHeight) / height) * 2 : 2) + parseInt(arguments.length > 5 ? dy : sy);
 
                 for (let i = x + 1, s; i <= width; i++) {
                     s = i + y * width;
                     
-                    if (i >= width - 1 || pixels[s] != pixels[e]) {
-                        dxt = (i - 1) * 2 + parseInt(arguments.length > 5 ? dx : sx);
+                    if (i >= width - 1 || pixels[e] !== pixels[s]) {
+                        dxt = (i - 1) * (arguments.length > 5 ? dWidth / width + parseInt(dWidth) / width : 2) + parseInt(arguments.length > 5 ? dx : sx);
 
                         break;
                     }
                 }
 
-
-                /**
-                 * ADDED DESTINATION IMAGE WIDTH AND HEIGHT
-                 */
                 if (pixels[e] == 0) {
-                    this.#physics.push([ix, iy, dxt + parseInt(arguments.length > 5 ? dWidth : 0), iy + parseInt(arguments.length > 5 ? dHeight : 0)], [ix, iy + 2, dxt + parseInt(arguments.length > 5 ? dWidth : 0), iy + 2  + parseInt(arguments.length > 5 ? dHeight : 0)]);
+                    this.#physics.push([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
+                    n = arguments.length > 5 ? (parseInt(dHeight) / height) * 2 : 2;
+                    while(n > 0) {
+                        this.#physics.push([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
+
+                        n -= 2;
+                    }
                 } else {
-                    this.#scenery.push([ix, iy, dxt + parseInt(arguments.length > 5 ? dWidth : 0), iy + parseInt(arguments.length > 5 ? dHeight : 0)], [ix, iy + 2, dxt + parseInt(arguments.length > 5 ? dWidth : 0), iy + 2 + parseInt(arguments.length > 5 ? dHeight : 0)]);
+                    this.#scenery.push([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
+                    n = arguments.length > 5 ? (parseInt(dHeight) / height) * 2 : 2;
+                    while(n > 0) {
+                        this.#scenery.push([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
+
+                        n -= 2;
+                    }
                 }
             }
         }
