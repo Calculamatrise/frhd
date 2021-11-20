@@ -527,13 +527,15 @@ export default class {
             }
 
             return false;
-        }).filter((item, index) => index % 4 === 0));
+        }).filter((item, index) => {
+            return index % 4 === 0
+        }));
 
         let width = sWidth || image.width;
         let height = sHeight || image.height;
 
         if (arguments.length > 5) {
-            pixels = pixels.slice(image.width * parseInt(sy), -(image.width * image.height - image.width * parseInt(sHeight)));
+            pixels = pixels.slice(image.width * parseInt(sy), image.width * parseInt(sHeight));
             pixels = pixels.filter((item, index) => index % image.width >= parseInt(sx) && index % image.width < parseInt(sWidth));
             width -= parseInt(sx);
             height -= parseInt(sy);
@@ -554,7 +556,7 @@ export default class {
                     s = i + y * width;
                     
                     if (i >= width - 1 || pixels[e] !== pixels[s]) {
-                        dxt = (i - 1) * (arguments.length > 5 ? dWidth / width + parseInt(dWidth) / width : 2) + parseInt(arguments.length > 5 ? dx : sx);
+                        dxt = (i - 1) * (arguments.length > 5 ? (parseInt(dWidth) / width) * 2 : 2) + parseInt(arguments.length > 5 ? dx : sx);
 
                         break;
                     }
