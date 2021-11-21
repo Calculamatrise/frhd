@@ -1,5 +1,5 @@
 import RequestHandler from "../utils/RequestHandler.js";
-import S from "../sha256/index.js";
+import S from "../libs/sha256/index.js";
 
 import Comments from "./Comments.js";
 import Comment from "./Comment.js";

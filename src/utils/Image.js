@@ -1,7 +1,7 @@
 let src;
 let data;
 
-import { PNG } from "pngjs";
+import read from "../libs/pngjs/parser-sync.js";
 
 import RequestHandler from "./RequestHandler.js";
 
@@ -42,7 +42,7 @@ export default class {
         });
 
         const then = (image) => {
-            image = PNG.sync.read(image);
+            image = read(image);
 
             this.width = image.width;
             this.height = image.height;
