@@ -1,7 +1,7 @@
 let src;
 let data;
 
-import read from "../libs/pngjs/parser-sync.js";
+import read from "../libs/pngjs/index.js";
 
 import RequestHandler from "./RequestHandler.js";
 

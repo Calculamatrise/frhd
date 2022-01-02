@@ -17,16 +17,16 @@ export default class RequestHandler {
      */
     static ajax(option, options = typeof option === "object" ? option : {}) {
         const {
-            host = option.replace(/(?:^(.+)?:\/\/|(\.?\/.+)|(?!.*\/).*)/gi, ""),
+            host = (options.path || option).replace(/(?:^(.+)?:\/\/|(\.?\/.+)|(?!.*\/).*)/gi, ""),
             method = "GET",
-            path = option.replace(/^((.+)?:\/\/)?/gi, "").replace(/^[^\/]+([^\/]+)\//gi, "/"),
+            path = (options.path || option).replace(/^((.+)?:\/\/)?/gi, "").replace(/^[^\/]+([^\/]+)\//gi, "/"),
             headers = {
                 "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
             },
             body = {}
-        } = options;  
+        } = options;
 
-        if (path.match(/^\.?\/?/) && !host) {
+        if (path.match(/^\.?\/?/) && host === "local") {
             const body = readFileSync(path);
 
             if (headers["content-type"].startsWith("image/png")) {

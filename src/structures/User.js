@@ -20,6 +20,7 @@ export default class User {
 
         return user;
     }
+    
     async init({
         u_id,
         u_name,
@@ -196,6 +197,7 @@ export default class User {
             method: "post"
         });
     }
+
     addFriend = this.befriend;
     removeFriend = this.shun;
     subscribe() {
@@ -212,6 +214,7 @@ export default class User {
             method: "post"
         });
     }
+
     unsubscribe() {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -229,9 +232,51 @@ export default class User {
 
     /**
      * 
-     * @protected requires administrative priviledges
-     * @param {string} username 
-     * @returns object
+     * @protected requires administrative priviledges.
+     * @param {Number} coins 
+     * @returns {Promise}
+     */
+    addWonCoins(coins) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/moderator/change_username",
+            body: {
+                coins_username: this.username,
+                num_coins: coins,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative priviledges.
+     * @returns {Promise}
+     */
+    addPlusDays(days, remove) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/add_plus_days",
+            body: {
+                add_plus_days: days,
+                username: this.username,
+                add_plus_remove: remove,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative priviledges.
+     * @param {String} username 
+     * @returns {Promise}
      */
     setUsername(username) {
         if (!token)
@@ -242,7 +287,6 @@ export default class User {
             body: {
                 u_id: this.id,
                 username,
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
@@ -251,9 +295,29 @@ export default class User {
 
     /**
      * 
-     * @protected requires administrative priviledges
-     * @param {string} email 
-     * @returns object
+     * @protected requires administrative priviledges.
+     * @returns {Promise}
+     */
+    setUsernameAsAdmin(username) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/change_username",
+            body: {
+                change_username_current: this.username,
+                change_username_new: username,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative priviledges.
+     * @param {String} email 
+     * @returns {Promise}
      */
     setEmail(email) {
         if (!token)
@@ -264,7 +328,6 @@ export default class User {
             body: {
                 u_id: this.id,
                 email,
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
@@ -273,8 +336,29 @@ export default class User {
 
     /**
      * 
-     * @protected requires administrative priviledges
-     * @returns object
+     * @protected requires administrative priviledges.
+     * @param {String} email 
+     * @returns {Promise}
+     */
+    async setEmailAsAdmin(email) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/change_user_email",
+            body: {
+                username: this.username,
+                email,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative priviledges.
+     * @returns {Promise}
      */
     toggleOA() {
         if (!token)
@@ -283,7 +367,6 @@ export default class User {
         return RequestHandler.ajax({
             path: "/moderator/toggle_official_author/" + this.id,
             body: {
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
@@ -292,8 +375,55 @@ export default class User {
 
     /**
      * 
-     * @protected requires administrative priviledges
-     * @returns object
+     * @protected requires administrative priviledges.
+     * @returns {Promise}
+     */
+    toggleClassicAuthorAsAdmin() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/toggle_classic_user/",
+            body: {
+                toggle_classic_uname: this.username,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    messagingBan() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/user_ban_messaging",
+            body: {
+                messaging_ban_uname: this.username,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    uploadingBan() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/user_ban_messaging",
+            body: {
+                messaging_ban_uname: this.username,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative priviledges.
+     * @returns {Promise}
      */
     ban() {
         if (!token)
@@ -303,7 +433,50 @@ export default class User {
             path: "/moderator/ban_user",
             body: {
                 u_id: this.id,
-                ajax: true,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    banAsAdmin(time = 0, deleteRaces = false) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/ban_user",
+            body: {
+                ban_secs: time,
+                delete_race_stats: deleteRaces,
+                username: this.username,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    deactive() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/deactivate_user",
+            body: {
+                username: this.username,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    delete() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/delete_user_account",
+            body: {
+                username: this.username,
                 app_signed_request: token
             },
             method: "post"

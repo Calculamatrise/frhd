@@ -2,17 +2,17 @@ import Builder from "./utils/Builder.js";
 import Client from "./client/Client.js";
 import Image from "./utils/Image.js";
 
-import getHome from "./getHome.js";
-import getCategory from "./getCategory.js";
-import getTrackLeaderboard from "./getTrackLeaderboard.js";
-import getPlayerLeaderboard from "./getPlayerLeaderboard.js";
-import getAuthorLeaderboard from "./getAuthorLeaderboard.js";
-import getUser from "./getUser.js";
-import getTrack from "./getTrack.js";
-import getComment from "./getComment.js";
-import getRandom from "./getRandom.js";
-import getRace from "./getRace.js";
-import getFeaturedGhosts from "./getFeaturedGhosts.js";
+import { default as getHome } from "./getHome.js";
+import { default as getCategory } from "./getCategory.js";
+import { default as getTrackLeaderboard } from "./getTrackLeaderboard.js";
+import { default as getPlayerLeaderboard } from "./getPlayerLeaderboard.js";
+import { default as getAuthorLeaderboard } from "./getAuthorLeaderboard.js";
+import { default as getUser } from "./getUser.js";
+import { default as getTrack } from "./getTrack.js";
+import { default as getComment } from "./getComment.js";
+import { default as getRandom } from "./getRandom.js";
+import { default as getRace } from "./getRace.js";
+import { default as getFeaturedGhosts } from "./getFeaturedGhosts.js";
 
 export default {
     getHome,
@@ -32,17 +32,6 @@ export default {
 }
 
 export {
-    getHome,
-    getTrackLeaderboard,
-    getPlayerLeaderboard,
-    getAuthorLeaderboard,
-    getCategory,
-    getUser,
-    getTrack,
-    getComment,
-    getRandom,
-    getRace,
-    getFeaturedGhosts,
     Builder,
     Client,
     Image

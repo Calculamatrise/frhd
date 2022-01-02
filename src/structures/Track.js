@@ -14,6 +14,19 @@ export default class Track {
     slug = null;
     author = null;
     featured = false;
+    set featured(value) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        this.featured = value;
+
+        RequestHandler.ajax(`/track_api/feature_track/${this.id}/${+value}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).catch((error) => {
+            this.featured = !value;
+
+            throw "Failed to feature the track! " + error;
+        });
+    }
+
     static async create(data, userId) {
         if (!data || typeof data !== "object") {
             throw new Error("INVALID_DATA_TYPE");
@@ -29,6 +42,7 @@ export default class Track {
 
         return track;
     }
+
     async init(data) {
         for (const t in data) {
             switch(t) {
@@ -133,6 +147,7 @@ export default class Track {
             }
         }
     }
+
     async getLeaderboard() {
         return RequestHandler.ajax({
             path: "/track_api/load_leaderboard",
@@ -151,6 +166,7 @@ export default class Track {
             return response.msg;
         });
     }
+
     sendChallenge(message, users) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -170,6 +186,7 @@ export default class Track {
             method: "post"
         });
     }
+
     vote(vote) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -186,6 +203,7 @@ export default class Track {
             method: "post"
         });
     }
+
     async getRace(user) {
         if (isNaN(user))
             user = await getUser(user).then(function(user) {
@@ -201,6 +219,7 @@ export default class Track {
             });
         });
     }
+
     /**
      * 
      * @param {Object|String} code 
@@ -233,7 +252,6 @@ export default class Track {
                 fps: 25,
                 time: encodeURIComponent(t2t(ticks)),
                 sig: S.SHA256(`${this.id}|${this.userId}|${code}|${ticks}|${vehicle}|25|erxrHHcksIHHksktt8933XhwlstTekz`).toString(),
-                ajax: true,
                 app_signed_request: token,
                 t_1: "ref",
                 t_2: "desk"
@@ -241,22 +259,16 @@ export default class Track {
             method: "post"
         });
     }
+
     /**
      * 
      * @private
-     * @param {number|string|object} user 
+     * @param {Number|String} user 
      * @returns {Object}
      */
     async copyRace(user) {
-        if (isNaN(user))
-            user = await getUser(user).then(function(user) {
-                return user.id;
-            });
-
         if (!token)
             throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
 
         return this.getRace(user).then(response => this.postRace(response.race.code, response.race.vehicle, response.race.runTicks));
     }
@@ -283,7 +295,6 @@ export default class Track {
             body: {
                 t_id: this.id,
                 u_id: user,
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
@@ -292,13 +303,13 @@ export default class Track {
 
     /**
      * 
-     * @protected requires administrative priviledges
+     * @protected requires administrative priviledges.
      * @param {Number} lives 
      * @param {Number} refillCost 
      * @param {Number} gems 
-     * @returns object
+     * @returns {Promise}
      */
-    addDaily(lives, refillCost, gems) {
+    addToDaily(lives, refillCost, gems) {
         if (!token)
             throw new Error("INVALID_TOKEN");
             
@@ -309,11 +320,39 @@ export default class Track {
                 lives,
                 rfll_cst: refillCost,
                 gems,
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
         });
+    }
+
+    /**
+     * 
+     * @protected requires administrative priviledges.
+     * @param {Number} lives 
+     * @param {Number} refillCost 
+     * @param {Number} gems 
+     * @returns {Promise}
+     */
+    removeFromDaily() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+            
+        return RequestHandler.ajax({
+            path: "/admin/removeTrackOfTheDay",
+            body: {
+                t_id: this.id,
+                lives,
+                rfll_cst: refillCost,
+                gems,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    toggleFeatured() {
+        return this.featured = !this.featured;
     }
 
     /**
@@ -326,6 +365,20 @@ export default class Track {
             throw new Error("INVALID_TOKEN");
 
         return RequestHandler.ajax(`/moderator/hide_track/${this.id}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`);
+    }
+
+    hideAsAdmin() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/hide_track",
+            body: {
+                track_id: this.id,
+                app_signed_request: token
+            },
+            method: "post"
+        });
     }
 }
 

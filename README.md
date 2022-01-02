@@ -7,7 +7,9 @@ https://calculamatrise.github.io/frhd/api/docs/
 ```js
 import frhd, { Client } from "frhd";
 
-const client = new Client(); // or new frhd.Client()
+// Client = frhd.Client
+
+const client = new Client();
 
 client.on("ready", function() {
     console.log("Ready!");
@@ -51,7 +53,12 @@ Expected Output:
 ```js
 import frhd, { Builder } from "frhd";
 
-const track = new Builder(); // or new frhd.Builder()
+// Builder = frhd.Builder
+
+const track = new Builder();
+
+// Import tracks:
+// track.code = "-18 1i 18 1i##"
 
 track.beginPath();
 track.moveTo(-40, 50);
@@ -75,7 +82,9 @@ Example 1 - Getting User Info:
 ```js
 import frhd, { getUser } from "frhd";
 
-getUser("Guest", /* Callback Option */ data => console.log(data)).then(data => console.log(data)); // or frhd.getUser(...)
+// getUser = frhd.getUser
+
+getUser("Guest", /* Callback Option */ data => console.log(data)).then(data => console.log(data));
 ```
 Expected Output:
 
@@ -120,7 +129,9 @@ Example 2 - Getting Track Data:
 ```js
 import frhd, { getTrack } from "frhd";
 
-getTrack(1001, /* Callback Option */ data => console.log(data)).then(data => console.log(data)); // or frhd.getTrack(...)
+// getTrack = frhd.getTrack
+
+getTrack(1001, /* Callback Option */ data => console.log(data)).then(data => console.log(data));
 ```
 Expected Output:
 

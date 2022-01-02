@@ -1,3 +1,5 @@
+import EventEmitter from "../utils/EventEmitter.js";
+
 import RequestHandler from "../utils/RequestHandler.js";
 
 import UserManager from "../managers/UserManager.js";
@@ -9,8 +11,9 @@ import User from "../structures/User.js";
 
 export let token = null;
 
-export default class {
+export default class extends EventEmitter {
     constructor({ listen = false } = {}) {
+        super();
         this.options = {
             listen
         }
@@ -21,42 +24,8 @@ export default class {
     notifications = new NotificationManager(this);
     cosmetics = new CosmeticManager(this);
     #api = new RequestHandler();
-    #events = new Map();
     get api() {
         return this.#api;
-    }
-
-    /**
-     * 
-     * @param {String} event event name
-     * @param {Function} func listening function
-     * @returns {Client}
-     */
-    on(event, func = function() {}) {
-        if (event === void 0 || typeof event !== "string")
-            throw new Error("INVALID_EVENT");
-
-        this.#events.set(event, func.bind(this));
-
-        return this;
-    }
-
-    /**
-     * 
-     * @emits
-     * @param {String} event event name
-     * @param  {...any} args arguments passed through to the listening function
-     * @returns {any} function call
-     */
-    emit(event, ...args) {
-        if (event === void 0 || typeof event !== "string")
-            throw new Error("INVALID_EVENT_ID");
-
-        event = this.#events.get(event);
-        if (event === void 0 && typeof event !== "function")
-            return new Error("INVALID_FUNCTION");
-            
-        return event(...args);
     }
 
     /**
@@ -83,8 +52,11 @@ export default class {
      * @private
      */
      #handle(notification) {
-        if (!notification.id)
-            return console.warn(new Error("UNKNOWN_NOTIFICATION_ID"));
+        if (!notification.id) {
+            let error = new Error("UNKNOWN_NOTIFICATION_ID");
+            console.warn(error);
+            return error;
+        }
         
         this.emit(notification.id, notification);
     }
@@ -148,7 +120,6 @@ export default class {
             body: {
                 login: username,
                 password,
-                ajax: true,
                 t_1: "ref",
                 t_2: "desk"
             },
@@ -160,6 +131,7 @@ export default class {
             return this.login(response.app_signed_request);
         });
     }
+
     async signup(username, email, password, recaptcha, callback = user => user) {
         return RequestHandler.ajax({
             path: "/auth/standard_signup",
@@ -177,6 +149,7 @@ export default class {
             return this.login(response.app_signed_request);
         }).then(callback);
     }
+
     async postTrack(title, description, defaultVehicle, MTBALlowed, BMXAllowed, code, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -195,6 +168,7 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async changeUsername(username, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -211,6 +185,7 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async changeDescription(description, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -227,6 +202,7 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async changePassword(oldPassword, newPassword, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -243,6 +219,7 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async setForumPassword(password, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -258,6 +235,7 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async buyHead(callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -267,6 +245,7 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async setHead(itemId, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -282,6 +261,7 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async addFriend(username, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -295,6 +275,7 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async acceptFriend(username, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -309,8 +290,9 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async removeFriend(user, callback = response => response) {
-        if (isNaN(user))
+        if (isNaN(parseInt(user)))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
             });
@@ -329,8 +311,9 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async subscribe(user, callback = response => response) {
-        if (isNaN(user))
+        if (isNaN(parseInt(user)))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
             });
@@ -350,8 +333,9 @@ export default class {
             method: "post"
         }).then(callback);
     }
+
     async unsubscribe(user, callback = response => response) {
-        if (isNaN(user))
+        if (isNaN(parseInt(user)))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
             });
@@ -376,13 +360,13 @@ export default class {
      * 
      * @async
      * @protected requires administrative priviledges
-     * @param {number|string} track 
-     * @param {User|number|string} user 
+     * @param {Number|String} track 
+     * @param {User|Number|String} user 
      * @param {Function} callback
      * @returns object
      */
     async removeRace(track, user, callback = response => response) {
-        if (isNaN(user))
+        if (isNaN(parseInt(user)))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
             });
@@ -397,7 +381,6 @@ export default class {
             body: {
                 t_id: track,
                 u_id: user || this.user.id,
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
@@ -408,13 +391,13 @@ export default class {
      * 
      * @async
      * @protected requires administrative priviledges
-     * @param {number|string} track
-     * @param {number|string} lives
-     * @param {number|string} refillCost
-     * @param {number|string} gems
+     * @param {Number|String} track
+     * @param {Number|String} lives
+     * @param {Number|String} refillCost
+     * @param {Number|String} gems
      * @param {Function} callback
      * @description removes cheated ghosts on all tracks between the given range
-     * @returns string
+     * @returns String
      */
     async addDailyTrack(track, lives, refillCost, gems, callback = response => response) {
         if (!token)
@@ -427,7 +410,6 @@ export default class {
                 lives,
                 rfll_cst: refillCost,
                 gems,
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
@@ -437,8 +419,51 @@ export default class {
     /**
      * 
      * @async
+     * @protected requires administrative priviledges
+     * @param {Number|String} track
+     * @param {Function} callback
+     * @description removes a specified track from the track of the day queue.
+     * @returns 
+     */
+    async removeTrackOfTheDay(track, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/removeTrackOfTheDay",
+            body: {
+                t_id: track,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {Number|String} track 
+     * @param {Function} callback 
+     * @returns {Promise}
+     */
+    async addFeaturedTrack(track, callback = response => response) {
+        return RequestHandler.ajax(`/track_api/feature_track/${parseInt(track)}/1?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(callback);
+    }
+
+    /**
+     * 
+     * @param {Number|String} track 
+     * @param {Function} callback 
+     * @returns {Promise}
+     */
+    async removeFeaturedTrack(track, callback = response => response) {
+        return RequestHandler.ajax(`/track_api/feature_track/${parseInt(track)}/0?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(callback);
+    }
+
+    /**
+     * 
+     * @async
      * @protected
-     * @param {number|string} track
+     * @param {Number|String} track
      * @description removes cheated ghosts on all tracks between the given range
      * @returns object
      */
@@ -446,16 +471,38 @@ export default class {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
-        return RequestHandler.ajax(`/moderator/hide_track/${track}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(callback);
+        return RequestHandler.ajax(`/moderator/hide_track/${parseInt(track)}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(callback);
     }
 
     /**
      * 
      * @async
      * @protected
-     * @param {Object} options
+     * @param {Number|String} track
      * @description removes cheated ghosts on all tracks between the given range
-     * @returns string
+     * @returns object
+     */
+    async hideTrackAsAdmin(track, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/hide_track",
+            body: {
+                track_id: parseInt(track),
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @async
+     * @protected requires administrative priviledges.
+     * @param {Object} options 
+     * @description removes cheated ghosts on all tracks between the given range
+     * @returns String
      */
     async deepClean({ users, startingTrackId = 1001, endingTrackId, timeout = 0 } = {}, callback = response => response) {
         if (!token)
@@ -506,8 +553,47 @@ export default class {
 
         return "No more cheaters left to exterminate!";
     }
+
+    /**
+     * 
+     * @param {String} username 
+     * @param {Number} coins 
+     * @param {Function} callback 
+     * @returns {Promise}
+     */
+    async addWonCoins(username, coins, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/moderator/change_username",
+            body: {
+                coins_username: username,
+                num_coins: coins,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    addPlusDays(user, days, remove, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/add_plus_days",
+            body: {
+                add_plus_days: days,
+                username: user,
+                add_plus_remove: remove,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
     async setUsername(user, username, callback = response => response) {
-        if (isNaN(user))
+        if (isNaN(parseInt(user)))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
             });
@@ -522,14 +608,29 @@ export default class {
             body: {
                 u_id: user,
                 username,
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
         }).then(callback);
     }
+
+    async setUsernameAsAdmin(user, username, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/change_username",
+            body: {
+                change_username_current: user,
+                change_username_new: username,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
     async setEmail(user, email, callback = response => response) {
-        if (isNaN(user))
+        if (isNaN(parseInt(user)))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
             });
@@ -544,14 +645,75 @@ export default class {
             body: {
                 u_id: user,
                 email,
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
         }).then(callback);
     }
+
+    setEmailAsAdmin(user, email, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/change_user_email",
+            body: {
+                username: user,
+                email,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {String} user 
+     * @param {String} email 
+     * @param {Function} callback 
+     * @returns {Promise}
+     */
+    async communitySignup(user, email, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/community_classic_signup",
+            body: {
+                classic_username: user,
+                real_email: email,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {String} user 
+     * @param {String} email 
+     * @param {String} secondaryEmail 
+     * @param {Function} callback 
+     * @returns {Promise}
+     */
+    async communityTransfer(user, email, secondaryEmail, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/community_classic_transfer",
+            body: {
+                classic_existing_email: email,
+                classic_transfer_to_username: user,
+                classic_secondary_email: secondaryEmail,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
     async toggleOA(user, callback = response => response) {
-        if (isNaN(user))
+        if (isNaN(parseInt(user)))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
             });
@@ -564,14 +726,80 @@ export default class {
         return RequestHandler.ajax({
             path: "/moderator/toggle_official_author/" + user,
             body: {
-                ajax: true,
                 app_signed_request: token
             },
             method: "post"
         }).then(callback);
     }
+
+    /**
+     * 
+     * @param {String} user 
+     * @param {Function} callback 
+     * @returns {Promise}
+     */
+    async toggleClassicUserAsAdmin(user, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/toggle_classic_user/",
+            body: {
+                toggle_classic_uname: user,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {String} user 
+     * @param {Function} callback 
+     * @returns {Promise} 
+     */
+    async userMessagingBan(user, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/user_ban_messaging",
+            body: {
+                messaging_ban_uname: user,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {String} user 
+     * @param {Function} callback 
+     * @returns {Promise} 
+     */
+    async userUploadingBan(user, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/user_ban_uploading",
+            body: {
+                uploading_ban_uname: user,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {Number|String} user 
+     * @param {Function} callback 
+     * @returns {Promise}
+     */
     async banUser(user, callback = response => response) {
-        if (isNaN(user))
+        if (isNaN(parseInt(user)))
             user = await this.users.fetch(user).then(function(user) {
                 return user.id;
             });
@@ -581,17 +809,105 @@ export default class {
         else if (!user)
             throw new Error("INVALID_USER");
 
+        // /admin/ban_user
+        // ban_secs, username, delete_race_stats
         return RequestHandler.ajax({
             path: "/moderator/ban_user",
             body: {
-                u_id: user,
-                ajax: true,
+                u_id: parseInt(user),
                 app_signed_request: token
             },
             method: "post"
         }).then(callback);
     }
-    async redeemCoupon(coupon, callback = response => response) {
+
+    /**
+     * 
+     * @param {Number|String} user 
+     * @param {Number|String} time 
+     * @param {Boolean} deleteRaces
+     * @param {Function} callback 
+     * @returns {Promise} 
+     */
+    async banUserAsAdmin(user, time = 0, deleteRaces = false, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/ban_user",
+            body: {
+                ban_secs: time,
+                delete_race_stats: deleteRaces,
+                username: user,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {String} user 
+     * @param {Function} callback 
+     * @returns {Promise} 
+     */
+    async deactivateUser(user, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/deactivate_user",
+            body: {
+                username: user,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {String} user 
+     * @param {Function} callback 
+     * @returns {Promise} 
+     */
+    async deleteUserAccount(user, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/delete_user_account",
+            body: {
+                username: user,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    generateCoupon(platform, coins, gems, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/generate_coupon_code",
+            body: {
+                platform,
+                coins,
+                gems,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @param {String} coupon 
+     * @param {Function} callback 
+     * @returns 
+     */
+    redeemCoupon(coupon, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
@@ -607,7 +923,7 @@ export default class {
     
     /**
      * 
-     * @returns object
+     * @returns {Client}
      */
     logout() {
         this.user = null;
@@ -619,7 +935,7 @@ export default class {
     /**
      * 
      * @static
-     * @param {number|string} time number in miliseconds
+     * @param {Number|String} time Number in miliseconds
      */
     static sleep(time = 0) {
         let now = Date.now();
@@ -631,7 +947,7 @@ export default class {
     /**
      * 
      * @static
-     * @param {number|string} time number in miliseconds
+     * @param {Number|String} time Number in miliseconds
      */
     static wait(time = 0) {
         return new Promise(resolve => setTimeout(resolve, time));

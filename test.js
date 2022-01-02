@@ -4,12 +4,11 @@ const track = new Builder();
 
 track.beginPath();
 
-
 const image = new Image();
 image.src = "https://calculamatrise.github.io/wtf.png";
-image.addEventListener("load", function(t) {
-    track.drawImage(t, 10, 20, 514, 621, 0, 0, 514, 621);
-
+image.addEventListener("load", function(image) {
+    track.drawImage(image, 10, 20, 514, 621, 0, 0, 514, 621);
+    
     console.log(track.code);
 });
 
@@ -19,7 +18,7 @@ track.arcTo(150, 20, 150, 70, 50);
 track.lineTo(150, 120);
 track.stroke();
 
-// console.log(track.code);
+console.log(track.code);
 
 // const client = new Client();
 

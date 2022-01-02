@@ -40,24 +40,23 @@ export default class {
                 const builder = new Builder();
 
                 this.askIndefinitely(query = `Type one of the following commands:
-    - import
     - arc
     - arcTo
     - beginPath
     - bezierCurveTo
     - clearRect
     - closePath
-    - createImageData (disabled)
+    - createImageData
     - drawImage
-    - fill
+    - fill (disabled)
     - fillRect
-    - getImageData (disabled)
+    - getImageData
     - getLineDash
     - lineTo
     - measureText
     - moveTo
     - oval
-    - putImageData (disabled)
+    - putImageData
     - quadraticCurveTo
     - rect
     - restore
@@ -80,7 +79,7 @@ export default class {
     - truck
     - balloon
     - blob
-    - translate (disabled)
+    - translate
     - scale
     
 > `, (input) => {

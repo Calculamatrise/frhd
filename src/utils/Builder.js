@@ -1,17 +1,5 @@
 import Image from "./Image.js";
 
-const position = {
-    x: null,
-    y: null
-}
-
-const initialPosition = {
-    x: null,
-    y: null
-}
-
-let cache = {}
-
 export default class {
     /**
      * 
@@ -28,14 +16,8 @@ export default class {
             });
         });
     }
-    
-    /**
-     * @private
-     */
-    #fillStyle = "#000000";
-    get fillStyle() {
-        return this.#fillStyle;
-    }
+
+    fillStyle = "#000000";
     /**
      * @param {String} value
      */
@@ -44,50 +26,28 @@ export default class {
             throw new Error("INVALID VALUE");
         }
 
-        this.#fillStyle = value;
+        this.fillStyle = value;
     }
 
-    /**
-     * @private
-     */
-    #font = "10px sans-serif";
-    get font() {
-        return this.#font;
-    }
+    font = "10px sans-serif";
     /**
      * @param {String} value
      */
     set font(value) {
         // 10px Arial
-        this.#font = value;
+        this.font = value;
     }
 
-    /**
-     * @private
-     */
-    #globalCompositeOperation = "source-over";
-    get globalCompositeOperation() {
-        return this.#globalCompositeOperation;
-    }
+    globalCompositeOperation = "source-over";
     /**
      * @param {String} value
      */
     set globalCompositeOperation(value) {
-        this.#globalCompositeOperation = value;
+        this.globalCompositeOperation = value;
     }
 
-    /**
-     * @private
-     */
-    #lineDash = [];
-
-    /**
-     * @private
-     */
-    #lineDashOffset = 0;
-    get lineDashOffset() {
-        return this.#lineDashOffset;
-    }
+    lineDash = [];
+    lineDashOffset = 0;
     /**
      * @param {Number|String} value
      */
@@ -96,16 +56,10 @@ export default class {
             throw new Error("INVALID VALUE");
         }
 
-        this.#lineDashOffset = parseInt(value);
+        this.lineDashOffset = parseInt(value);
     }
- 
-    /**
-     * @private
-     */
-    #lineWidth = 1;
-    get lineWidth() {
-        return this.#lineWidth;
-    }
+
+    lineWidth = 1;
     /**
      * @param {Number|String} value
      */
@@ -114,54 +68,57 @@ export default class {
             throw new Error("INVALID VALUE");
         }
 
-        this.#lineWidth = parseInt(value);
+        this.lineWidth = parseInt(value);
     }
 
-    /**
-     * @private
-     */
-    #strokeStyle = "#000000";
-    get strokeStyle() {
-        return this.#strokeStyle;
-    }
+    strokeStyle = "#000000";
     /**
      * @param {String} value
      */
-    set strokeStyle(value) {
+    set strokeStyle(value) {        
         if (value.match(/^(#[a-f0-9]{3,4}|#[a-f0-9]{6,8}|rgba?\((\d+(,\s+)?){3,4}\))/gi)) {
             throw new Error("INVALID VALUE");
         }
 
-        this.#strokeStyle = value;
+        this.strokeStyle = value;
     }
 
-    /**
-     * @private
-     */
-    #textAlign = "start";
-    get textAlign() {
-        return this.#textAlign;
-    }
+    textAlign = "start";
     /**
      * @param {String} value
      */
     set textAlign(value) {
-        this.#textAlign = value;
+        this.textAlign = value;
+    }
+
+    textBaseline = "start";
+    /**
+     * @param {String} value
+     */
+    set textBaseline(value) {
+        this.textBaseline = value;
     }
 
     /**
      * @private
      */
-    #textBaseline = "start";
-    get textBaseline() {
-        return this.#textBaseline;
+    #position = {
+        x: null,
+        y: null
     }
+
     /**
-     * @param {String} value
+     * @private
      */
-    set textBaseline(value) {
-        this.#textBaseline = value;
+    #translation = {
+        x: 0,
+        y: 0
     }
+    
+    /**
+     * @private
+     */
+    #cache = {}
 
     #physics = []
     #scenery = []
@@ -183,7 +140,10 @@ export default class {
     }
     #segment = []
     get lines() {
-        return this.#strokeStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
+        return this.strokeStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
+    }
+    get filler() {
+        return this.fillStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
     }
     get physics() {
         return this.#physics.map(t => t.map(t => t.toString(32)).join(" ")).join(",");
@@ -252,72 +212,81 @@ export default class {
                 break;
             }
         }
+
         return powerups;
     }
+
     get code() {
         return this.physics + "#" + this.scenery + "#" + this.powerups;
     }
-    import(t) {
-        if (typeof t === "string")
-            t = t.split(/\u0023/g).map(t => t.split(/\u002C+/g).map(t => t.split(/\s+/g)));;
-        this.#physics = t[0] ? t[0].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
-        this.#scenery = t[1] ? t[1].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
-        for (const e of t[2]) {
-            switch(e[0]) {
+
+    /**
+     * @param {String} value track code you wish to manipulate.
+     */
+    set code(value) {
+        if (typeof value !== "string") {
+            throw new Error("Invalid track.");
+        }
+        
+        value = value.split(/\u0023/g).map(t => t.split(/\u002C+/g).map(t => t.split(/\s+/g)));
+        this.#physics = value[0] ? value[0].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
+        this.#scenery = value[1] ? value[1].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
+        for (const powerup of value[2]) {
+            switch(powerup[0]) {
                 case "T":
-                    this.#powerups.targets.push(e.slice(1).map(t => parseInt(t, 32)));
-                break;
+                    this.#powerups.targets.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    break;
                 
                 case "B":
-                    this.#powerups.boosters.push(e.slice(1).map(t => parseInt(t, 32)));
-                break;
+                    this.#powerups.boosters.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    break;
 
                 case "G":
-                    this.#powerups.gravity.push(e.slice(1).map(t => parseInt(t, 32)));
-                break;
+                    this.#powerups.gravity.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    break;
 
                 case "S":
-                    this.#powerups.slowmos.push(e.slice(1).map(t => parseInt(t, 32)));
-                break;
+                    this.#powerups.slowmos.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    break;
 
                 case "O":
-                    this.#powerups.bombs.push(e.slice(1).map(t => parseInt(t, 32)));
-                break;
+                    this.#powerups.bombs.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    break;
 
                 case "C":
-                    this.#powerups.checkpoints.push(e.slice(1).map(t => parseInt(t, 32)));
-                break;
+                    this.#powerups.checkpoints.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    break;
 
                 case "A":
-                    this.#powerups.antigravity.push(e.slice(1).map(t => parseInt(t, 32)));
-                break;
+                    this.#powerups.antigravity.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    break;
 
                 case "W":
-                    this.#powerups.teleporters.push(e.slice(1).map(t => parseInt(t, 32)));
-                break;
+                    this.#powerups.teleporters.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    break;
 
                 case "V":
-                    switch(e[3]) {
+                    switch(powerup[3]) {
                         case "1":
-                            this.#powerups.vehicles.heli.push(e.slice(1).map(t => parseInt(t, 32)));
-                        break;
+                            this.#powerups.vehicles.heli.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                            break;
 
                         case "2":
-                            this.#powerups.vehicles.truck.push(e.slice(1).map(t => parseInt(t, 32)));
-                        break;
+                            this.#powerups.vehicles.truck.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                            break;
 
                         case "3":
-                            this.#powerups.vehicles.balloon.push(e.slice(1).map(t => parseInt(t, 32)));
-                        break;
+                            this.#powerups.vehicles.balloon.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                            break;
 
                         case "4":
-                            this.#powerups.vehicles.blob.push(e.slice(1).map(t => parseInt(t, 32)));
-                        break;
+                            this.#powerups.vehicles.blob.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                            break;
                     }
-                break;
+
+                    break;
             }
         }
-        return this;
     }
 
     /**
@@ -327,10 +296,10 @@ export default class {
      * @param {Number|String} radius radius of the arc
      * @param {Number|String} startAngle angle in radians
      * @param {Number|String} endAngle angle in radians
-     * @param {boolean} counterClockwise decide the direction at which the arc is drawn
-     * @returns object
+     * @param {Boolean} counterClockwise decide the direction at which the arc is drawn
+     * @returns {Builder} instance of Builder.
      */
-     arc(x, y, radius, startAngle, endAngle, counterClockwise = false) {
+    arc(x, y, radius, startAngle, endAngle, counterClockwise = false) {
         if (Array.isArray(arguments[0])) {
             for (const argument of arguments) {
                 this.arc(...argument);
@@ -360,8 +329,8 @@ export default class {
             }
         }
 
-        position.x = points[points.length - 2];
-        position.y = points[points.length - 1];
+        this.#position.x = this.#translation.x + points[points.length - 2];
+        this.#position.y = this.#translation.y + points[points.length - 1];
 
         this.#segment.push(points);
 
@@ -375,7 +344,7 @@ export default class {
      * @param {Number|String} x position x of the end point
      * @param {Number|String} y position y of the end point
      * @param {Number|String} radius radius of the arc
-     * @returns object
+     * @returns {Builder} instance of Builder.
      */
     arcTo(cpx, cpy, x, y, radius) {
         if (Array.isArray(arguments[0])) {
@@ -392,13 +361,10 @@ export default class {
             }
         }
 
-        const p0 = { x: position.x + (parseFloat(cpx) - position.x) - parseFloat(radius), y: position.y }
-        const p1 = { x: parseFloat(cpx), y: parseFloat(cpy) }
-        const p2 = { x: parseFloat(x), y: y + (parseFloat(cpy) - parseFloat(y)) + parseFloat(radius) }
         for (let i = 0; i < 1.01; i += (750 / parseFloat(radius)) / 100) {
             this.lineTo([
-                Math.pow((1 - i), 2) * p0.x + 2 * (1 - i) * i * p1.x + Math.pow(i, 2) * p2.x,
-                Math.pow((1 - i), 2) * p0.y + 2 * (1 - i) * i * p1.y + Math.pow(i, 2) * p2.y
+                Math.pow((1 - i), 2) * (this.#position.x + (parseFloat(cpx) - this.#position.x) - parseFloat(radius)) + 2 * (1 - i) * i * parseFloat(cpx) + Math.pow(i, 2) * parseFloat(x),
+                Math.pow((1 - i), 2) * this.#position.y + 2 * (1 - i) * i * parseFloat(cpy) + Math.pow(i, 2) * (y + (parseFloat(cpy) - parseFloat(y)) + parseFloat(radius))
             ]);
         }
 
@@ -406,8 +372,8 @@ export default class {
     }
     
     beginPath() {
-        position.x = 0;
-        position.y = 0;
+        this.#position.x = this.#translation.x;
+        this.#position.y = this.#translation.y;
 
         return this;
     }
@@ -420,7 +386,7 @@ export default class {
      * @param {string|number} p2y position y of the second control point
      * @param {string|number} p3x position x of the end point
      * @param {string|number} p3y position y of the end point
-     * @returns {Builder} this
+     * @returns {Builder} instance of Builder.
      */
     bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y) {
         if (Array.isArray(arguments[0])) {
@@ -437,18 +403,18 @@ export default class {
             }
         }
 
-        const p0 = { x: position.x, y: position.y }
         const p1 = { x: parseFloat(p1x), y: parseFloat(p1y) }
         const p2 = { x: parseFloat(p2x), y: parseFloat(p2y) }
         const p3 = { x: parseFloat(p3x), y: parseFloat(p3y) }
-        for (let i = 0, cX, bX, aX, cY, bY, aY; i < 1.01; i += (1000 / Math.abs(Math.abs(p0.x * p0.y) - Math.abs(p3.x * p3.y))) / 10) {
-            cX = 3 * (p1.x - p0.x),
+        for (let i = 0, cX, bX, cY, bY; i < 1.01; i += (1000 / Math.abs(Math.abs(this.#position.x * this.#position.y) - Math.abs(p3.x * p3.y))) / 10) {
+            cX = 3 * (p1.x - this.#position.x),
             bX = 3 * (p2.x - p1.x) - cX,
-            aX = p3.x - p0.x - cX - bX,
-            cY = 3 * (p1.y - p0.y),
+            cY = 3 * (p1.y - this.#position.y),
             bY = 3 * (p2.y - p1.y) - cY,
-            aY = p3.y - p0.y - cY - bY,
-            this.lineTo((aX * Math.pow(i, 3)) + (bX * Math.pow(i, 2)) + (cX * i) + p0.x, (aY * Math.pow(i, 3)) + (bY * Math.pow(i, 2)) + (cY * i) + p0.y);
+            this.lineTo(
+                ((p3.x - this.#position.x - cX - bX) * Math.pow(i, 3)) + (bX * Math.pow(i, 2)) + (cX * i) + this.#position.x,
+                ((p3.y - this.#position.y - cY - bY) * Math.pow(i, 3)) + (bY * Math.pow(i, 2)) + (cY * i) + this.#position.y
+            );
         }
 
         return this;
@@ -468,12 +434,6 @@ export default class {
     clip() {}
 
     closePath() {
-        // if (initialPosition.x ?? initialPosition.y ?? true) {
-        //     return;
-        // }
-
-        // this.lineTo(initialPosition.x, initialPosition.y);
-
         if (!this.#segment[0]) {
             return this;
         }
@@ -497,8 +457,31 @@ export default class {
         return this;
     }
 
-    createImageData() {
-        return new this.constructor();
+
+    /**
+     * 
+     * @param {Number} width the width to give to the new ImageData object.
+     * @param {Number} height the height to give to the new ImageData object.
+     * @returns {Object} ImageData object.
+     */
+    createImageData(width, height) {
+        if (typeof width === "object" && height === void 0) {
+            return {
+                data: new Uint8ClampedArray(Array.from({
+                    length: width.width * width.height * 4
+                }), () => 0),
+                width: width.width,
+                height: width.height
+            }
+        }        
+
+        return {
+            data: new Uint8ClampedArray(Array.from({
+                length: width * height * 4
+            }), () => 0),
+            width,
+            height
+        }
     }
 
     /**
@@ -512,10 +495,10 @@ export default class {
      * @param {Number|String} dy image along the y-axis on the canvas
      * @param {Number|String} dWidth image width on the canvas
      * @param {Number|String} dHeight image height on the canvas
-     * @returns {Builder} this
+     * @returns {Builder} instance of Builder.
      */
-    drawImage(image, sx = 0, sy = 0, sWidth, sHeight, dx = 0, dy = 0, dWidth, dHeight) {
-        if (!(image instanceof Image)) {
+    drawImage(image, sx = 0, sy = 0, sWidth = image.width, sHeight = image.height, dx = 0, dy = 0, dWidth = sWidth, dHeight = sHeight) {
+        if (typeof image !== "object") {
             throw new Error("Invalid Image");
         }
 
@@ -531,8 +514,8 @@ export default class {
             return index % 4 === 0
         }));
 
-        let width = sWidth || image.width;
-        let height = sHeight || image.height;
+        let width = sWidth;
+        let height = sHeight;
 
         if (arguments.length > 5) {
             pixels = pixels.slice(image.width * parseInt(sy), image.width * parseInt(sHeight));
@@ -596,7 +579,7 @@ export default class {
     ellipse(x, y, radiusX, radiusY, rotation) {}
 
     fill() {
-        this.lines.push(...this.#segment);
+        this.filler.push(...this.#segment);
 
         this.#segment = []
 
@@ -618,9 +601,9 @@ export default class {
         }
 
         for (let i = y; i < y + height; i++) {
-            this.#segment.push([
-                x, i,
-                x + width, i
+            this.filler.push([
+                this.#translation.x + x, this.#translation.y + i,
+                this.#translation.x + x + width, this.#translation.y + i
             ]);
         }
 
@@ -636,18 +619,21 @@ export default class {
     fillText(content, x, y) {}
 
     getImageData() {
+        // width times height times 4 (rgba)
+        // black, grey or white
+        
         return this.code;
     }
 
     getLineDash() {
-        return this.#lineDash.split(/\s+/g);
+        return this.lineDash.split(/\s+/g);
     }
 
     /**
      * 
      * @param {Number|String} x position x of the end point
      * @param {Number|String} y position y of the end point
-     * @returns object
+     * @returns {Builder} instance of Builder.
      */
     lineTo(x, y) {
         if (Array.isArray(arguments[0])) {
@@ -665,12 +651,12 @@ export default class {
         }
 
         this.#segment.push([
-            position.x, position.y,
+            this.#position.x, this.#position.y,
             parseFloat(x), parseFloat(y)
         ]);
         
-        position.x = parseFloat(x);
-        position.y = parseFloat(y);
+        this.#position.x = this.#translation.x + parseFloat(x);
+        this.#position.y = this.#translation.y + parseFloat(y);
 
         return this;
     }
@@ -678,6 +664,7 @@ export default class {
     /**
      * 
      * @param {String} text 
+     * @returns {Object} properties of text.
      */
     measureText(text) {
         return {
@@ -692,7 +679,7 @@ export default class {
      * 
      * @param {Number|String} x position x of the starting point
      * @param {Number|String} y position y of the starting point
-     * @returns object
+     * @returns {Builder} instance of Builder.
      */
     moveTo(x, y) {
         for (const argument of arguments) {
@@ -701,8 +688,8 @@ export default class {
             }
         }
 
-        position.x = parseFloat(x);
-        position.y = parseFloat(y);
+        this.#position.x = this.#translation.x + parseFloat(x);
+        this.#position.y = this.#translation.y + parseFloat(y);
 
         return this;
     }
@@ -724,8 +711,8 @@ export default class {
             }
         }
 
-        var arr = [];
-        if (s === void 0) s = 5;
+        let arr = [];
+        s === void 0 && (s = 5);
         for(let i = 0; i <= 360; i += s) {
             arr.push(x + width * Math.cos(i * Math.PI / 180), y + height * Math.sin(i * Math.PI / 180))
         }
@@ -735,9 +722,18 @@ export default class {
         return this;
     }
 
-    putImageData(data) {
-        this.import(data);
-        // Replace image data with new data
+    /**
+     * 
+     * @param {Object} data an ImageData object containing the array of pixel values.
+     * @param {Number|String} dx horizontal position (x coordinate) at which to place the image data in the destination canvas.
+     * @param {Number|String} dy vertical position (y coordinate) at which to place the image data in the destination canvas.
+     * @param {Number|String} dirtyX horizontal position (x coordinate) of the top-left corner from which the image data will be extracted.
+     * @param {Number|String} dirtyY vertical position (y coordinate) of the top-left corner from which the image data will be extracted.
+     * @param {Number|String} dirtyWidth width of the rectangle to be drawn.
+     * @param {Number|String} dirtyHeight height of the rectangle to be drawn.
+     */
+    putImageData(data, dx = 0, dy = 0, dirtyX = 0, dirtyY = 0, dirtyWidth = data.width, dirtyHeight = data.height) {
+        return this.drawImage(data, dirtyX, dirtyY, dirtyWidth, dirtyHeight, dx, dy);
     }
 
     /**
@@ -747,7 +743,7 @@ export default class {
      * @param {string|number} p1y position y of the control point
      * @param {string|number} p2x position x of the end point
      * @param {string|number} p2y position y of the end point
-     * @returns object
+     * @returns {Builder} instance of Builder.
      */
     quadraticCurveTo(p1x, p1y, p2x, p2y) {
         if (Array.isArray(arguments[0])) {
@@ -764,11 +760,11 @@ export default class {
             }
         }
 
-        const p0 = { x: position.x, y: position.y }
-        const p1 = { x: parseFloat(p1x), y: parseFloat(p1y) }
-        const p2 = { x: parseFloat(p2x), y: parseFloat(p2y) }
         for (let i = 0; i < 1; i += 1 / 10) {
-            this.lineTo(Math.pow((1 - i), 2) * p0.x + 2 * (1 - i) * i * p1.x + Math.pow(i, 2) * p2.x, Math.pow((1 - i), 2) * p0.y + 2 * (1 - i) * i * p1.y + Math.pow(i, 2) * p2.y);
+            this.lineTo(
+                Math.pow((1 - i), 2) * this.#position.x + 2 * (1 - i) * i * parseFloat(p1x) + Math.pow(i, 2) * parseFloat(p2x),
+                Math.pow((1 - i), 2) * this.#position.y + 2 * (1 - i) * i * parseFloat(p1y) + Math.pow(i, 2) * parseFloat(p2y)
+            );
         }
 
         return this;
@@ -780,7 +776,7 @@ export default class {
      * @param {Number|String} y 
      * @param {Number|String} width 
      * @param {Number|String} height 
-     * @returns 
+     * @returns {Builder} instance of Builder.
      */
     rect(x, y, width, height) {
         for (const argument of arguments) {
@@ -790,32 +786,27 @@ export default class {
         }
 
         this.#segment.push([
-            x, y,
-            x + width, y,
-            x + width, y + height,
-            x, y + height,
-            x, y
+            this.#translation.x + x, this.#translation.y + y,
+            this.#translation.x + x + width, this.#translation.y + y,
+            this.#translation.x + x + width, this.#translation.y + y + height,
+            this.#translation.x + x, this.#translation.y + y + height,
+            this.#translation.x + x, this.#translation.y + y
         ]);
         
         return this;
     }
 
     restore() {
-        for (const property in cache) {
+        for (const property in this.#cache) {
             if (property === "position") {
-                position.x = cache[property].x
-                position.y = cache[property].y
+                this.#position.x = this.#cache[property].x
+                this.#position.y = this.#cache[property].y
 
-                continue;
-            } else if (property === "initialPosition") {
-                initialPosition.x = cache[property].x
-                initialPosition.y = cache[property].y
-                
                 continue;
             }
             
-            if (cache.hasOwnProperty(property)) {
-                this[property] = cache[property];
+            if (this.#cache.hasOwnProperty(property)) {
+                this[property] = this.#cache[property];
             }
         }
     }
@@ -875,18 +866,8 @@ export default class {
     }
 
     save() {
-        cache = {
-            fillStyle: this.fillStyle,
-            font: this.#font,
-            globalCompositeOperation: this.#globalCompositeOperation,
-            lineDash: this.#lineDash,
-            lineDashOffset: this.#lineDashOffset,
-            lineWidth: this.#lineWidth,
-            strokeStyle: this.#strokeStyle,
-            textAlign: this.#textAlign,
-            textBaseline: this.#textBaseline,
-            // transform: this.#transform,
-            initialPosition,
+        this.#cache = {
+            ...this,
             position
         }
     }
@@ -937,7 +918,7 @@ export default class {
     }
 
     setLineDash(...args) {
-        this.#lineDash = args.join(" ");
+        this.lineDash = args.join(" ");
     }
 
     stroke() {
@@ -955,7 +936,7 @@ export default class {
      * @param {Number|String} y position y of the starting point
      * @param {Number|String} x2 position x of the end point
      * @param {Number|String} y2 position y of the end point
-     * @returns object
+     * @returns {Builder} instance of Builder.
      */
     strokeLine(x, y, x2, y2) {
         if (Array.isArray(arguments[0])) {
@@ -986,7 +967,7 @@ export default class {
      * @param {Number|String} y 
      * @param {Number|String} width 
      * @param {Number|String} height 
-     * @returns 
+     * @returns {Builder} instance of Builder.
      */
     strokeRect(x, y, width, height) {
         for (const argument of arguments) {
@@ -996,11 +977,11 @@ export default class {
         }
 
         this.lines.push([
-            x, y,
-            x + width, y,
-            x + width, y + height,
-            x, y + height,
-            x, y
+            this.#translation.x + x, this.#translation.y + y,
+            this.#translation.x + x + width, this.#translation.y + y,
+            this.#translation.x + x + width, this.#translation.y + y + height,
+            this.#translation.x + x, this.#translation.y + y + height,
+            this.#translation.x + x, this.#translation.y + y
         ]);
         
         return this;
@@ -1042,7 +1023,7 @@ export default class {
     }
 
     boost(x, y, d) {
-        this.#powerups.boosts.push([x, y, d]);
+        this.#powerups.boosters.push([x, y, d]);
 
         return this;
     }
@@ -1109,13 +1090,15 @@ export default class {
 
     translate(x = 0, y = 0) {
         // translate canvas to reposition the origin
+        this.#translation.x = x;
+        this.#translation.y = y;
 
         return this;
     }
 
     /**
      * 
-     * @deprecated this method will be removed in the next version.
+     * @deprecated this method will be removed in the future.
      */
     clear() {
         this.#physics = [],
