@@ -21,32 +21,6 @@ client.on("commentMention", function(data) {
 
 client.login("TOKEN");
 ```
-Expected Output:
-
-```js
-{
-    track: {
-        id: 1001,
-        url: '1001-wild-west',
-        title: 'Wild West'
-    },
-    user: {
-        id: 0000000,
-        username: 'guest',
-        displayNname: 'Guest',
-        avatar: 'https://www.freeriderhd.com/u/guest/pic?size=50'
-    },
-    comment: {
-        id: 0000000,
-        message: '<a href="https://www.freeriderhd.com/u/guest">Guest</a> Hello World!',
-        time: 'just now',
-        deletable: false,
-        flagged: false
-    },
-    timeAgo: 'just now',
-    timestamp: 1628538002
-}
-```
 
 # Builder API
 
