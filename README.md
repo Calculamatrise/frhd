@@ -19,7 +19,12 @@ client.on("commentMention", function(data) {
     console.log(data);
 });
 
-client.login("TOKEN");
+client.login("token");
+
+// client.login({
+//     username: "Guest",
+//     password: "password"
+// })
 ```
 
 # Builder API

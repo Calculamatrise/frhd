@@ -10,7 +10,7 @@ export default class User {
     displayName = null;
     avatar = null;
     static async create(data) {
-        if (!data || typeof data !== "object") {
+        if (typeof data !== "object") {
             throw new Error("INVALID_DATA_TYPE");
         }
 
@@ -97,27 +97,27 @@ export default class User {
                     return;
                 }
                 
-                return await getTrack(parseInt(track.slug));
+                return getTrack(parseInt(track.slug));
             }));
         }
 
         if (recently_ghosted_tracks !== void 0) {
-            this.recentlyCompleted = await Promise.all(recently_ghosted_tracks.tracks.map(async function(track) {
+            this.recentlyCompleted = await Promise.all(recently_ghosted_tracks.tracks.map(function(track) {
                 if (typeof track !== "object" || track["slug"] === void 0) {
                     return;
                 }
                 
-                return await getTrack(parseInt(track.slug));
+                return getTrack(parseInt(track.slug));
             }));
         }
 
         if (created_tracks !== void 0) {
-            this.createdTracks = await Promise.all(created_tracks.tracks.map(async function(track) {
+            this.createdTracks = await Promise.all(created_tracks.tracks.map(function(track) {
                 if (typeof track !== "object" || track["id"] === void 0) {
                     return;
                 }
                 
-                return await getTrack(track.id);
+                return getTrack(track.id);
             }));
         }
 
@@ -127,7 +127,7 @@ export default class User {
                     return;
                 }
                 
-                return await getTrack(track.id);
+                return getTrack(track.id);
             }));
         }
 
@@ -232,7 +232,262 @@ export default class User {
 
     /**
      * 
-     * @protected requires administrative priviledges.
+     * @param {String} username 
+     * @returns {Promise}
+     */
+    async changeUsername(username) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/moderator/change_username",
+            body: {
+                u_id: this.id,
+                username,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then((response) => {
+            if (response.result) {
+                this.username = username;
+
+                return response;
+            }
+
+            RequestHandler.ajax({
+                path: "/account/edit_profile",
+                body: {
+                    name: "u_name",
+                    value: username,
+                    app_signed_request: token
+                },
+                method: "post"
+            }).then((response) => {
+                if (response.result) {
+                    this.username = username;
+
+                    return response;
+                }
+
+                throw new Error(response.msg || "Insufficeint privileges.");
+            });
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @returns {Promise}
+     */
+    changeUsernameAsAdmin(username) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/change_username",
+            body: {
+                change_username_current: this.username,
+                change_username_new: username,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @param {String} description 
+     * @returns {Promise}
+     */
+    changeDescription(description) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+        else if (!description)
+            throw new Error("INVALID_DESCRIPTION");
+
+        return RequestHandler.ajax({
+            path: "/account/edit_profile",
+            body: {
+                name: "about",
+                value: description,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @param {String} oldPassword 
+     * @param {String} newPassword 
+     * @returns {Promise}
+     */
+    changePassword(oldPassword, newPassword) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+        else if (!oldPassword || !newPassword)
+            throw new Error("INVALID_PASSWORD");
+
+        return RequestHandler.ajax({
+            path: "/account/change_password",
+            body: {
+                old_password: oldPassword,
+                new_password: newPassword,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @param {String} password 
+     * @returns {Promise}
+     */
+    changeForumPassword(password) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+        else if (!password)
+            throw new Error("INVALID_PASSWORD");
+
+        return RequestHandler.ajax({
+            path: "/account/update_forum_account",
+            body: {
+                password,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @param {String} email 
+     * @returns {Promise}
+     */
+    changeEmail(email) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/moderator/change_email",
+            body: {
+                u_id: this.id,
+                email,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @param {String} email 
+     * @returns {Promise}
+     */
+    async changeEmailAsAdmin(email) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/change_user_email",
+            body: {
+                username: this.username,
+                email,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @param {Number|String} coins 
+     * @param {Callback} callback 
+     * @returns {Promise}
+     */
+    addWonCoins(coins) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/moderator/change_username",
+            body: {
+                coins_username: this.username,
+                num_coins: coins,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @param {Number} days 
+     * @param {any} remove
+     * @param {Callback} callback 
+     * @returns {Promise}
+     */
+    async addPlusDays(days, remove, callback = response => response) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/add_plus_days",
+            body: {
+                add_plus_days: days,
+                username: this.username,
+                add_plus_remove: remove,
+                app_signed_request: token
+            },
+            method: "post"
+        }).then(callback);
+    }
+
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @returns {Promise}
+     */
+    toggleOA() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/moderator/toggle_official_author/" + this.id,
+            body: {
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @returns {Promise}
+     */
+    toggleClassicAuthorAsAdmin() {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/admin/toggle_classic_user/",
+            body: {
+                toggle_classic_uname: this.username,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @protected requires administrative privileges.
      * @param {Number} coins 
      * @returns {Promise}
      */
@@ -253,7 +508,7 @@ export default class User {
 
     /**
      * 
-     * @protected requires administrative priviledges.
+     * @protected requires administrative privileges.
      * @returns {Promise}
      */
     addPlusDays(days, remove) {
@@ -274,124 +529,9 @@ export default class User {
 
     /**
      * 
-     * @protected requires administrative priviledges.
-     * @param {String} username 
+     * @protected requires administrative privileges.
      * @returns {Promise}
      */
-    setUsername(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return this.constructor.ajax({
-            path: "/moderator/change_username",
-            body: {
-                u_id: this.id,
-                username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
-    /**
-     * 
-     * @protected requires administrative priviledges.
-     * @returns {Promise}
-     */
-    setUsernameAsAdmin(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/change_username",
-            body: {
-                change_username_current: this.username,
-                change_username_new: username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
-    /**
-     * 
-     * @protected requires administrative priviledges.
-     * @param {String} email 
-     * @returns {Promise}
-     */
-    setEmail(email) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return this.constructor.ajax({
-            path: "/moderator/change_email",
-            body: {
-                u_id: this.id,
-                email,
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
-    /**
-     * 
-     * @protected requires administrative priviledges.
-     * @param {String} email 
-     * @returns {Promise}
-     */
-    async setEmailAsAdmin(email) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/change_user_email",
-            body: {
-                username: this.username,
-                email,
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
-    /**
-     * 
-     * @protected requires administrative priviledges.
-     * @returns {Promise}
-     */
-    toggleOA() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/moderator/toggle_official_author/" + this.id,
-            body: {
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
-    /**
-     * 
-     * @protected requires administrative priviledges.
-     * @returns {Promise}
-     */
-    toggleClassicAuthorAsAdmin() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/toggle_classic_user/",
-            body: {
-                toggle_classic_uname: this.username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
     messagingBan() {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -406,6 +546,11 @@ export default class User {
         });
     }
 
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @returns {Promise}
+     */
     uploadingBan() {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -422,7 +567,7 @@ export default class User {
 
     /**
      * 
-     * @protected requires administrative priviledges.
+     * @protected requires administrative privileges.
      * @returns {Promise}
      */
     ban() {
@@ -439,9 +584,18 @@ export default class User {
         });
     }
 
-    banAsAdmin(time = 0, deleteRaces = false) {
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @param {Number|String} time 
+     * @param {Boolean} deleteRaces 
+     * @returns {Promise}
+     */
+    banAsAdmin(time = 0, deleteRaces = !1) {
         if (!token)
             throw new Error("INVALID_TOKEN");
+        else if (isNaN(+time))
+            throw new Error("INVALID_TIME");
 
         return RequestHandler.ajax({
             path: "/admin/ban_user",
@@ -455,6 +609,11 @@ export default class User {
         });
     }
 
+    /**
+     * 
+     * @protected requires administrative privileges.
+     * @returns {Promise}
+     */
     deactive() {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -469,6 +628,10 @@ export default class User {
         });
     }
 
+    /**
+     * @protected requires administrative privileges.
+     * @returns {Promise}
+     */
     delete() {
         if (!token)
             throw new Error("INVALID_TOKEN");

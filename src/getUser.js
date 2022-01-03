@@ -8,7 +8,7 @@ import User from "./structures/User.js";
  * @param {Function} callback callback function
  * @returns {User} 
  */
-export default function(user, callback = function() {}) {
+export default function(user, callback = response => response) {
     return RequestHandler.ajax({
         path: `/u/${user}?ajax=!0`,
         method: "get"

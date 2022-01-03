@@ -2,7 +2,7 @@ import RequestHandler from "./utils/RequestHandler.js";
 
 import Race from "./structures/Race.js";
 
-export default function(trackId, username, callback = race => race) {
+export default function(trackId, username, callback = response => response) {
     return RequestHandler.ajax({
         path: `/t/${trackId}/r/${username}?ajax=true`,
         method: "get"

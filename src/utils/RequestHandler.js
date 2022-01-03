@@ -13,7 +13,7 @@ export default class RequestHandler {
      * 
      * @param {String} option URI or options object
      * @param {Object} options Options
-     * @returns 
+     * @returns {Promise}
      */
     static ajax(option, options = typeof option === "object" ? option : {}) {
         const {
@@ -25,6 +25,10 @@ export default class RequestHandler {
             },
             body = {}
         } = options;
+
+        body.ajax = !0;
+        body.t_1 = "ref";
+        body.t_2 = "desk";
 
         if (path.match(/^\.?\/?/) && host === "local") {
             const body = readFileSync(path);
@@ -84,22 +88,45 @@ export default class RequestHandler {
             }
         });
     }
+
     users(username) {
-        return this.constructor.ajax(`/u/${username}?ajax=true`).then(function(response) {
+        return this.constructor.ajax(`/u/${username}?ajax=!0`).then(function(response) {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))
                 throw new Error("USER_NOT_FOUND");
 
             return User.create(response);
         });
     }
-    tracks(id) {
+
+    /**
+     * 
+     * @param {Number|String} id
+     * @param {Array} fields 
+     * @param {String} fields[code] 
+     */
+    tracks(id, fields) {
+        if (fields !== void 0) {
+            return this.constructor.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}&app_signed_request=${token}`).then(function(response) {
+                if (response.result === false)
+                    throw new Error("TRACK_NOT_FOUND");
+                
+                return Track.create(response.data);
+            });
+        }
+
         return this.constructor.ajax(`/t/${parseInt(id)}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))
                 throw new Error("TRACK_NOT_FOUND");
             
-            return Track.create(response);
+            return Track.create({
+                ...response.track,
+                campagin: response.campagin,
+                track_comments: response.track_comments,
+                track_stats: response.track_stats
+            });
         });
     }
+
     notifications(count = Infinity) {
         return this.constructor.ajax(`/notifications?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
             if (response.notification_days && response.notification_days[0]) {
@@ -109,6 +136,7 @@ export default class RequestHandler {
             }
         });
     }
+
     cosmetics(id) {
         return this.constructor.ajax(`/store/gear?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))

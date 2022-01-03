@@ -8,7 +8,7 @@ export default class Comment {
     author = null;
     timeAgo = null;
     static async create(data) {
-        if (!data || typeof data !== "object") {
+        if (typeof data !== "object") {
             throw new Error("INVALID_DATA_TYPE");
         }
 
@@ -18,30 +18,26 @@ export default class Comment {
 
         return comment;
     }
-    init(data) {
-        for (const t in data) {
-            switch(t) {
-                case "comment":
-                    this.id = data[t].id,
-                    this.message = data[t].msg,
-                    this.timeAgo = data[t].time;
-                break;
+    
+    init({
+        comment,
+        user,
+        track
+    }) {
+        this.id = comment.id;
+        this.message = comment.msg;
+        this.timeAgo = comment.time;
+        this.author = {
+            username: user.u_name,
+            displayName: user.d_name,
+            avatar: user.img_url_small
+        }
 
-                case "user":
-                    this.author = {
-                        username: data[t].u_name,
-                        displayName: data[t].d_name,
-                        avatar: data[t].img_url_small
-                    }
-                break;
-
-                case "track":
-                    // this.track = data[t];
-                    this.trackId = parseInt(data[t].id);
-                break;
-            }
+        if (track !== void 0) {
+            this.trackId = track.id;
         }
     }
+
     async reply(message) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -63,6 +59,7 @@ export default class Comment {
             return new Error(response.msg);
         });
     }
+
     delete({ timeout = 0 } = {}) {
         if (!token)
             throw new Error("INVALID_TOKEN");

@@ -17,7 +17,11 @@ export default class {
         });
     }
 
-    fillStyle = "#000000";
+    #fillStyle = "#000000";
+    get fillStyle() {
+        return this.#fillStyle;
+    }
+
     /**
      * @param {String} value
      */
@@ -26,52 +30,72 @@ export default class {
             throw new Error("INVALID VALUE");
         }
 
-        this.fillStyle = value;
+        this.#fillStyle = value;
     }
 
-    font = "10px sans-serif";
+    #font = "10px sans-serif";
+    get font() {
+        return this.#font;
+    }
+
     /**
      * @param {String} value
      */
     set font(value) {
         // 10px Arial
-        this.font = value;
+        this.#font = value;
     }
 
-    globalCompositeOperation = "source-over";
+    #globalCompositeOperation = "source-over";
+    get globalCompositeOperation() {
+        return this.#globalCompositeOperation;
+    }
+
     /**
      * @param {String} value
      */
     set globalCompositeOperation(value) {
-        this.globalCompositeOperation = value;
+        this.#globalCompositeOperation = value;
     }
 
     lineDash = [];
-    lineDashOffset = 0;
+    #lineDashOffset = 0;
+    get lineDashOffset() {
+        return this.#lineDashOffset;
+    }
+
     /**
      * @param {Number|String} value
      */
     set lineDashOffset(value) {
-        if (isNaN(parseInt(value))) {
+        if (isNaN(+value)) {
             throw new Error("INVALID VALUE");
         }
 
-        this.lineDashOffset = parseInt(value);
+        this.#lineDashOffset = +value;
     }
 
-    lineWidth = 1;
+    #lineWidth = 1;
+    get lineWidth() {
+        return this.#lineWidth;
+    }
+
     /**
      * @param {Number|String} value
      */
     set lineWidth(value) {
-        if (isNaN(parseInt(value))) {
+        if (isNaN(+value)) {
             throw new Error("INVALID VALUE");
         }
 
-        this.lineWidth = parseInt(value);
+        this.#lineWidth = +value;
     }
 
-    strokeStyle = "#000000";
+    #strokeStyle = "#000000";
+    get strokeStyle() {
+        return this.#strokeStyle;
+    }
+
     /**
      * @param {String} value
      */
@@ -80,23 +104,31 @@ export default class {
             throw new Error("INVALID VALUE");
         }
 
-        this.strokeStyle = value;
+        this.#strokeStyle = value;
     }
 
-    textAlign = "start";
+    #textAlign = "start";
+    get textAlign() {
+        return this.#textAlign;
+    }
+
     /**
      * @param {String} value
      */
     set textAlign(value) {
-        this.textAlign = value;
+        this.#textAlign = value;
     }
 
-    textBaseline = "start";
+    #textBaseline = "start";
+    get textBaseline() {
+        return this.#textBaseline;
+    }
+
     /**
      * @param {String} value
      */
     set textBaseline(value) {
-        this.textBaseline = value;
+        this.#textBaseline = value;
     }
 
     /**
@@ -313,7 +345,7 @@ export default class {
                 continue;
             }
 
-            if (isNaN(parseInt(argument))) {
+            if (isNaN(+argument)) {
                 throw new Error("INVALID_VALUE");
             }
         }
@@ -356,7 +388,7 @@ export default class {
         }
 
         for (const argument of arguments) {
-            if (isNaN(parseInt(argument))) {
+            if (isNaN(+argument)) {
                 throw new Error("INVALID_VALUE");
             }
         }
@@ -398,7 +430,7 @@ export default class {
         }
 
         for (const argument of arguments) {
-            if (isNaN(parseInt(argument))) {
+            if (isNaN(+argument)) {
                 throw new Error("INVALID_VALUE");
             }
         }
@@ -518,10 +550,10 @@ export default class {
         let height = sHeight;
 
         if (arguments.length > 5) {
-            pixels = pixels.slice(image.width * parseInt(sy), image.width * parseInt(sHeight));
-            pixels = pixels.filter((item, index) => index % image.width >= parseInt(sx) && index % image.width < parseInt(sWidth));
-            width -= parseInt(sx);
-            height -= parseInt(sy);
+            pixels = pixels.slice(image.width * +sy, image.width * +sHeight);
+            pixels = pixels.filter((item, index) => index % image.width >= +sx && index % image.width < +sWidth);
+            width -= +sx;
+            height -= +sy;
         }
 
         for (let y = 0, iy; y < pixels.length / width; y++) {
@@ -532,14 +564,14 @@ export default class {
                     continue;
                 }
 
-                ix = x * (arguments.length > 5 ? (parseInt(dWidth) / width) * 2 : 2) + parseInt(arguments.length > 5 ? dx : sx);
-                iy = y * (arguments.length > 5 ? (parseInt(dHeight) / height) * 2 : 2) + parseInt(arguments.length > 5 ? dy : sy);
+                ix = x * (arguments.length > 5 ? (dWidth / width) * 2 : 2) + (arguments.length > 5 ? dx : sx);
+                iy = y * (arguments.length > 5 ? (dHeight / height) * 2 : 2) + (arguments.length > 5 ? dy : sy);
 
                 for (let i = x + 1, s; i <= width; i++) {
                     s = i + y * width;
                     
                     if (i >= width - 1 || pixels[e] !== pixels[s]) {
-                        dxt = (i - 1) * (arguments.length > 5 ? (parseInt(dWidth) / width) * 2 : 2) + parseInt(arguments.length > 5 ? dx : sx);
+                        dxt = (i - 1) * (arguments.length > 5 ? (dWidth / width) * 2 : 2) + (arguments.length > 5 ? dx : sx);
 
                         break;
                     }
@@ -547,7 +579,7 @@ export default class {
 
                 if (pixels[e] == 0) {
                     this.#physics.push([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
-                    n = arguments.length > 5 ? (parseInt(dHeight) / height) * 2 : 2;
+                    n = arguments.length > 5 ? (dHeight / height) * 2 : 2;
                     while(n > 0) {
                         this.#physics.push([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
 
@@ -555,7 +587,7 @@ export default class {
                     }
                 } else {
                     this.#scenery.push([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
-                    n = arguments.length > 5 ? (parseInt(dHeight) / height) * 2 : 2;
+                    n = arguments.length > 5 ? (dHeight / height) * 2 : 2;
                     while(n > 0) {
                         this.#scenery.push([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
 
@@ -595,7 +627,7 @@ export default class {
      */
     fillRect(x, y, width, height) {
         for (const argument of arguments) {
-            if (isNaN(parseInt(argument))) {
+            if (isNaN(+argument)) {
                 throw new Error("INVALID_VALUE");
             }
         }
@@ -696,7 +728,7 @@ export default class {
 
     oval(x, y, width, height, s) {
         for (const argument of arguments) {
-            if (isNaN(parseInt(argument))) {
+            if (isNaN(+argument)) {
                 throw new Error("INVALID_VALUE");
             }
         }
@@ -755,7 +787,7 @@ export default class {
         }
 
         for (const argument of arguments) {
-            if (isNaN(parseInt(argument))) {
+            if (isNaN(+argument)) {
                 throw new Error("INVALID_VALUE");
             }
         }
@@ -780,7 +812,7 @@ export default class {
      */
     rect(x, y, width, height) {
         for (const argument of arguments) {
-            if (isNaN(parseInt(argument))) {
+            if (isNaN(+argument)) {
                 throw new Error("INVALID_VALUE");
             }
         }
@@ -812,7 +844,7 @@ export default class {
     }
 
     rotate(x = 0) {
-        if (isNaN(parseInt(x))) {
+        if (isNaN(+x)) {
             throw new Error("INVALID_VALUE")
         }
 
@@ -868,7 +900,7 @@ export default class {
     save() {
         this.#cache = {
             ...this,
-            position
+            position: this.#position
         }
     }
 
@@ -971,7 +1003,7 @@ export default class {
      */
     strokeRect(x, y, width, height) {
         for (const argument of arguments) {
-            if (isNaN(parseInt(argument))) {
+            if (isNaN(+argument)) {
                 throw new Error("INVALID_VALUE");
             }
         }
@@ -997,7 +1029,7 @@ export default class {
     strokeText(content, x, y) {
         throw new Error("Incomplete method.");
 
-        const size = parseInt(this.font.replace(/^\D+/gi, ""));
+        const size = +this.font.replace(/^\D+/gi, "");
         for (const character of content) {
             let position = {
                 get x() {
