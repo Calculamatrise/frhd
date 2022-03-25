@@ -1,14 +1,22 @@
 import RequestHandler from "../utils/RequestHandler.js";
 
-import getTrack from "../getTrack.js";
-
 import { token } from "../client/Client.js";
+
+import FriendManager from "../managers/FriendManager.js";
+import getTrack from "../getTrack.js";
+import TrackManager from "../managers/TrackManager.js";
 
 export default class User {
     id = null;
     username = null;
     displayName = null;
     avatar = null;
+    moderator = false;
+    friends = new FriendManager();
+    recentlyPlayed = new TrackManager();
+    recentlyCompleted = new TrackManager();
+    createdTracks = new TrackManager();
+    likedTracks = new TrackManager();
     static async create(data) {
         if (typeof data !== "object") {
             throw new Error("INVALID_DATA_TYPE");
@@ -133,9 +141,9 @@ export default class User {
 
         if (friends !== void 0) {
             this.friendCount = friends.friend_cnt;
-            this.friends = await Promise.all(friends.friends_data.map(function(user) {
+            this.friends.push(...await Promise.all(friends.friends_data.map(function(user) {
                 return User.create(user);
-            }));
+            })));
         }
 
         if (friend_requests !== void 0) {

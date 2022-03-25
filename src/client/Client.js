@@ -8,7 +8,7 @@ import NotificationManager from "../managers/NotificationManager.js";
 import CosmeticManager from "../managers/CosmeticManager.js";
 import User from "../structures/User.js";
 
-export let token = null;
+export let token;
 
 /**
  * @callback Callback
@@ -21,6 +21,7 @@ export default class extends EventEmitter {
             listen
         }
     }
+
     user = null;
     users = new UserManager(this);
     tracks = new TrackManager(this);
@@ -29,6 +30,10 @@ export default class extends EventEmitter {
     #api = new RequestHandler();
     get api() {
         return this.#api;
+    }
+
+    get friends() {
+        return this.user.friends;
     }
 
     /**
@@ -88,9 +93,9 @@ export default class extends EventEmitter {
     /**
      * 
      * @param {String} asr app signed request token
-     * @param {String} asr.username frhd login username
-     * @param {String} asr.password frhd login password
-     * @param {String} asr.token app signed request token
+     * @param {Object[String]} asr[username] frhd login username
+     * @param {Object[String]} asr[password] frhd login password
+     * @param {Object[String]} asr[token] app signed request token
      * @returns {Client}
      */
     async login(asr) {
@@ -103,7 +108,13 @@ export default class extends EventEmitter {
                         password: asr.password
                     },
                     method: "post"
-                }).then(response => response.app_signed_request);
+                }).then(function(response) {
+                    if (response.result === false) {
+                        throw new Error(response.msg);
+                    }
+
+                    return response.app_signed_request;
+                });
             } else if (asr.hasOwnProperty("token")) {
                 asr = asr.token;
             }
@@ -114,11 +125,12 @@ export default class extends EventEmitter {
 
         token = asr;
 
-        const response = await RequestHandler.ajax(`/?ajax=!0&app_signed_request=${token}`);
-        if (!response.user)
+        const response = await RequestHandler.ajax(`/account/settings?ajax=!0&app_signed_request=${token}`);
+        if (!response || !response.user)
             throw new Error("INVALID_TOKEN");
 
         this.user = await this.users.fetch(response.user.d_name);
+        this.user.moderator = response.user.moderator;
         
         this.emit("ready");
 
@@ -129,6 +141,11 @@ export default class extends EventEmitter {
         return this;
     }
 
+    /**
+     * 
+     * @param {Callback} callback 
+     * @returns {Promise}
+     */
     async buyHead(callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -139,6 +156,12 @@ export default class extends EventEmitter {
         }).then(callback);
     }
 
+    /**
+     * 
+     * @param {Number|String} itemId 
+     * @param {Callback} callback 
+     * @returns {Promise}
+     */
     async setHead(itemId, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -154,56 +177,6 @@ export default class extends EventEmitter {
             method: "post"
         }).then(callback);
     }
-
-    async addFriend(username, callback = response => response) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/friends/send_friend_request",
-            body: {
-                u_name: username,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(callback);
-    }
-
-    async acceptFriend(username, callback = response => response) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/friends/respond_to_friend_request",
-            body: {
-                u_name: username,
-                action: "accept",
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(callback);
-    }
-
-    async removeFriend(user, callback = response => response) {
-        if (isNaN(parseInt(user)))
-            user = await this.users.fetch(user).then(function(user) {
-                return user.id;
-            });
-
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
-
-        return RequestHandler.ajax({
-            path: "/friends/remove_friend",
-            body: {
-                u_id: user,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(callback);
-    }
     
     /**
      * 
@@ -212,7 +185,7 @@ export default class extends EventEmitter {
      * @param {Number|String} track 
      * @param {User|Number|String} user 
      * @param {Callback} callback
-     * @returns object
+     * @returns {Promise}
      */
     async removeRace(track, user, callback = response => response) {
         if (isNaN(parseInt(user)))
@@ -282,6 +255,14 @@ export default class extends EventEmitter {
         }).then(callback);
     }
 
+    /**
+     * 
+     * @param {String} platform 
+     * @param {Number|String} coins 
+     * @param {Number|String} gems 
+     * @param {Callback} callback 
+     * @returns {Promise}
+     */
     async generateCoupon(platform, coins, gems, callback = response => response) {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -345,6 +326,7 @@ export default class extends EventEmitter {
      * 
      * @static
      * @param {Number|String} time Number in miliseconds
+     * @returns {Promise}
      */
     static wait(time = 0) {
         return new Promise(resolve => setTimeout(resolve, time));

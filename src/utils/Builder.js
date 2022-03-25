@@ -1,4 +1,5 @@
 import Image from "./Image.js";
+import Alphabet from "./Alphabet.js";
 
 export default class {
     /**
@@ -1027,25 +1028,17 @@ export default class {
      * @param {Number|String} y 
      */
     strokeText(content, x, y) {
-        throw new Error("Incomplete method.");
-
         const size = +this.font.replace(/^\D+/gi, "");
-        for (const character of content) {
-            let position = {
-                get x() {
-                    return content.length * size + x + content.indexOf(character) * size * 2.5;
-                },
-                get y() {
-                    return y;
-                }
+        this.save();
+        this.beginPath();
+        for (const char in content) {
+            if (typeof Alphabet[content[char]] === "function") {
+                Alphabet[content[char]](this, x, y, (char + 1) * (Alphabet.letterSpacing * (parseInt(Alphabet.fontSize) / 8)));
             }
-
-            this.save();
-            this.beginPath();
-            alphabet[character](this, position, size);
-            this.stroke();
-            this.restore();
         }
+
+        this.stroke();
+        this.restore();
     }
     
     star(x, y) {

@@ -32,8 +32,7 @@ client.login("token");
 ```js
 import frhd, { Builder } from "frhd";
 
-// Builder = frhd.Builder
-
+// const { Builder } = frhd;
 const track = new Builder();
 
 // Import tracks:
@@ -50,6 +49,53 @@ Expected Output:
 
 ```js
 "-18 1i 18 1i##"
+```
+
+# Gamepad API
+
+```js
+import frhd, { Gamepad } from "frhd";
+
+// const { Gamepad } = frhd;
+const gamepad = new Gamepad();
+
+gamepad.on("tick", function(records) {
+    // records = this.getReplayString();
+    console.log(records);
+});
+
+gamepad.on("tick", function(ticks) {
+    this.toggleKey(this.keymap[Math.floor(Math.random() * ticks) % 5]);
+    /* switch(ticks) {
+        case 0:
+            this.setKeyDown("up");
+            break;
+
+        case 1:
+            this.setKeyDown("left", "down");
+            break;
+    } */
+    this.tick(10); // first param defines the maximum ticks
+});
+
+/* Or create a ghost manually
+gamepad.setKeyDown("up");
+gamepad.tick();
+gamepad.setKeyUp("up");
+gamepad.complete();
+*/
+```
+Expected Output:
+
+```js
+{
+  up_down: [ 0, 2 ],
+  up_up: [ 1, 8 ],
+  left_down: [ 3, 5, 10 ],
+  left_up: [ 4, 9 ],
+  right_down: [ 6 ],
+  right_up: [ 7 ]
+}
 ```
 
 # Data Retrievers

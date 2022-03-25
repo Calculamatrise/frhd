@@ -1,8 +1,8 @@
-import frhd, { Client, Builder, Image } from "./src/bootstrap.js";
+import frhd, { Client, Builder, Gamepad, Image } from "./src/bootstrap.js";
 
-// const track = new Builder();
+const track = new Builder();
 
-// track.beginPath();
+track.beginPath();
 
 // const image = new Image();
 // image.src = "https://calculamatrise.github.io/wtf.png";
@@ -18,19 +18,36 @@ import frhd, { Client, Builder, Image } from "./src/bootstrap.js";
 // track.lineTo(150, 120);
 // track.stroke();
 
-// console.log(track.code);
+track.strokeText("Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz", 10, 10);
 
-const client = new Client();
+console.log(track.code);
 
-client.on("ready", async function() {
-    let track = await this.tracks.fetch(1001);
-    // this.user.changeUsername("Calculamatrise");
-    // const user = await this.users.fetch("char");
+// const gamepad = new Gamepad();
 
-    // console.log(user);
-});
+// gamepad.on("complete", function(records) {
+//     console.log(records);
+// });
 
-client.login({
-    username: "calculus",
-    password: "nt. nt."
-});
+// gamepad.on("tick", function(ticks) {
+//     this.toggleKey(this.keymap[Math.floor(Math.random() * ticks) % 5]);
+//     this.tick(10);
+// });
+
+// gamepad.toggleKey("up");
+// gamepad.tick();
+// gamepad.setKeyDown("up");
+// gamepad.complete();
+
+// const client = new Client();
+
+// client.on("ready", async function() {
+//     let track = await this.tracks.fetch(1001);
+//     // this.user.changeUsername("Calculamatrise");
+//     // const user = await this.users.fetch("char");
+//     console.log(track.races.fetch(this.user.id));
+// });
+
+// client.login({
+//     username: "calculus",
+//     password: "nt, nt."
+// });

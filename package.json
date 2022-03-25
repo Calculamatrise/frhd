@@ -1,7 +1,7 @@
 {
     "name": "frhd",
     "alias": "@Calculamatrise/frhd",
-    "version": "0.0.4-dev",
+    "version": "0.0.4-gamepad",
     "description": "An app to communicacte with FRHD",
     "main": "./src/bootstrap.js",
     "preferGlobal": true,

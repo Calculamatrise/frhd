@@ -1,15 +1,17 @@
 import { token } from "../client/Client.js";
 
 import RequestHandler from "../utils/RequestHandler.js";
-import User from "../structures/User.js";
 import getUser from "../getUser.js";
 
 export default class extends Array {
     get(user) {
+        if (typeof user === "string")
+            return this.find(friend => friend.username === user) || null;
+
         if (isNaN(+(+user).toFixed()))
             throw new Error("INVALID_USER");
 
-        return this.find(race => +(race.userId || race.user.id) === +user) || null;
+        return this.find(friend => +friend.id === +user) || null;
     }
 
     /**
@@ -21,23 +23,74 @@ export default class extends Array {
     async fetch(user) {
         isNaN(+(+user).toFixed()) && (user = await getUser(user).then(user => user.id));
 
-        if (!user)
-            throw new Error("INVALID_USER");
+        user = this.get(user);
 
-        return RequestHandler.ajax(`/track_api/load_races?t_id=${this.track}&u_ids=${user}&ajax=true`).then((response) => {
-            return response.data.map((race) => {
-                race = new Race(race);
+        if (user) {
+            return getUser(user.username);
+        }
+    }
+    
+    /**
+     * 
+     * @param {String} username 
+     * @returns {Promise}
+     */
+    async add(username) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
 
-                this.push(race);
-
-                return race;
-            });
+        return RequestHandler.ajax({
+            path: "/friends/send_friend_request",
+            body: {
+                u_name: username,
+                app_signed_request: token
+            },
+            method: "post"
         });
     }
 
     /**
      * 
-     * @protected requires administrative privileges.
+     * @param {String} username 
+     * @returns {Promise}
+     */
+    async accept(username) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/friends/respond_to_friend_request",
+            body: {
+                u_name: username,
+                action: "accept",
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @param {String} username 
+     * @returns {Promise}
+     */
+    async reject(username) {
+        if (!token)
+            throw new Error("INVALID_TOKEN");
+
+        return RequestHandler.ajax({
+            path: "/friends/respond_to_friend_request",
+            body: {
+                u_name: username,
+                action: "accept",
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
      * @param {Number|String} user 
      * @returns {Promise}
      */
@@ -50,9 +103,8 @@ export default class extends Array {
             throw new Error("INVALID_USER");
 
         return RequestHandler.ajax({
-            path: "/moderator/remove_race",
+            path: "/friends/remove_friend",
             body: {
-                t_id: this.track,
                 u_id: user,
                 app_signed_request: token
             },

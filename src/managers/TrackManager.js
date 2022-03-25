@@ -220,11 +220,7 @@ export default class extends BaseManager {
     
         for (let trackId = startingTrackId; trackId < endingTrackId; trackId++) {
             await this.fetch(trackId).then(function(track) {
-                return track.vote(1).catch(error => {
-                    console.warn(error);
-                    
-                    return track.vote(rating);
-                });
+                return track.vote(1);
             }).then(function(response) {
                 return console.log(trackId, response.result || response.msg);
             }).catch(console.error);
