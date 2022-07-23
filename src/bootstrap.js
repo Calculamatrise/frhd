@@ -1,5 +1,6 @@
 import Builder from "./utils/Builder.js";
 import Client from "./client/Client.js";
+import Events from "./utils/Events.js";
 import Gamepad from "./utils/Gamepad.js";
 import Image from "./utils/Image.js";
 
@@ -18,6 +19,7 @@ export { default as getFeaturedGhosts } from "./getFeaturedGhosts.js";
 export default {
     Builder,
     Client,
+    Events,
     Gamepad,
     Image
 }
@@ -25,6 +27,7 @@ export default {
 export {
     Builder,
     Client,
+    Events,
     Gamepad,
     Image
 }

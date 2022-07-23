@@ -1,5 +1,6 @@
 import Image from "./Image.js";
 import Alphabet from "./Alphabet.js";
+import { Buffer } from "buffer";
 
 export default class {
     /**
@@ -152,7 +153,6 @@ export default class {
      * @private
      */
     #cache = {}
-
     #physics = []
     #scenery = []
     #powerups = {
@@ -175,15 +175,19 @@ export default class {
     get lines() {
         return this.strokeStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
     }
+
     get filler() {
         return this.fillStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
     }
+
     get physics() {
-        return this.#physics.map(t => t.map(t => t.toString(32)).join(" ")).join(",");
+        return this.#physics.map((vector) => vector.map((value) => parseInt(value).toString(32)).join(" ")).join(",");
     }
+
     get scenery() {
-        return this.#scenery.map(t => t.map(t => t.toString(32)).join(" ")).join(",");
+        return this.#scenery.map((vector) => vector.map((value) => parseInt(value).toString(32)).join(" ")).join(",");
     }
+
     get powerups() {
         let powerups = "";
         for (const t in this.#powerups) {
@@ -258,7 +262,7 @@ export default class {
      */
     set code(value) {
         if (typeof value !== "string") {
-            throw new Error("Invalid track.");
+            throw new TypeError("Track code must be of type string!");
         }
         
         value = value.split(/\u0023/g).map(t => t.split(/\u002C+/g).map(t => t.split(/\s+/g)));
@@ -353,19 +357,28 @@ export default class {
 
         const points = []
         if (counterClockwise) {
-            for (let i = parseFloat(startAngle) * 180 / Math.PI % 360; i >= -360 + parseFloat(endAngle) * 180 / Math.PI % 360; i -= 750 / parseFloat(radius)) {
-                points.push(parseFloat(x) + parseFloat(radius) * Math.cos(i * Math.PI / 180), parseFloat(y) + parseFloat(radius) * Math.sin(i * Math.PI / 180));
+            for (let i = parseFloat(startAngle) * 180 / Math.PI % 360; i >= -360 + parseFloat(endAngle) * 180 / Math.PI % 360; i -= Math.max(360 / parseFloat(radius), 2)) {
+                points.push([
+                    parseFloat(x) + parseFloat(radius) * Math.cos(i * Math.PI / 180),
+                    parseFloat(y) + parseFloat(radius) * Math.sin(i * Math.PI / 180)
+                ]);
             }
         } else {
-            for (let i = parseFloat(startAngle) * 180 / Math.PI % 360; i <= (parseFloat(endAngle) * 180 / Math.PI % 360 || 360); i += 750 / parseFloat(radius)) {
-                points.push(parseFloat(x) + parseFloat(radius) * Math.cos(i * Math.PI / 180), parseFloat(y) + parseFloat(radius) * Math.sin(i * Math.PI / 180));
+            for (let i = parseFloat(startAngle) * 180 / Math.PI % 360; i < (parseFloat(endAngle) * 180 / Math.PI % 360 || 360); i += Math.max(360 / parseFloat(radius), 2)) {
+                points.push([
+                    parseFloat(x) + parseFloat(radius) * Math.cos(i * Math.PI / 180),
+                    parseFloat(y) + parseFloat(radius) * Math.sin(i * Math.PI / 180)
+                ]);
             }
         }
 
+        points.push(points[0]);
+
+        this.moveTo(...points.shift());
+        this.lineTo(...points);
+
         this.#position.x = this.#translation.x + points[points.length - 2];
         this.#position.y = this.#translation.y + points[points.length - 1];
-
-        this.#segment.push(points);
 
         return this;
     }
@@ -461,29 +474,35 @@ export default class {
      * @param {Number|String} height clip rectangle height
      */
     clearRect(x, y, width, height) {
-        // Remove all lines between x and width AND y and height. Maybe use Math.abs
+        if (width < 0 || height < 0) {
+            throw new Error("Width and Height cannot be negative!");
+        }
+
+        for (const line of this.#physics) {
+            if (line[0] > x && line[1] > y && line[2] < x + width && line[3] < y + height) {
+                this.#physics.splice(this.#physics.indexOf(line), 1);
+            }
+        }
     }
 
     clip() {}
 
     closePath() {
-        if (!this.#segment[0]) {
+        if (!this.#segment) {
             return this;
         }
 
-        for (const line of this.#segment) {
-            if (line.length < 1) {
+        if (this.#segment.length < 1) {
+            return;
+        }
+        
+        for (const value of this.#segment) {
+            if (isNaN(parseFloat(value))) {
                 return;
-            }
-            
-            for (const argument of line) {
-                if (isNaN(parseFloat(argument))) {
-                    return;
-                }
             }
         }
 
-        let [ x, y ] = this.#segment[0];
+        let [ x, y ] = this.#segment;
 
         this.lineTo(x, y);
 
@@ -609,7 +628,28 @@ export default class {
      * @param {Number|String} radiusY 
      * @param {Number|String} rotation 
      */
-    ellipse(x, y, radiusX, radiusY, rotation) {}
+    ellipse(x, y, radiusX, radiusY, rotation) {
+        let old = {};
+        for (let i = 0; i < 360; i += Math.max(360 / Math.sqrt(radiusX ** 2 + radiusY ** 2), 2)) {
+            if (i === 0) {
+                this.moveTo(
+                    old.x = x + Math.sqrt((radiusX - x) ** 2) * Math.cos(i * Math.PI / 180),
+                    old.y = y + Math.sqrt((radiusY - y) ** 2) * Math.sin(i * Math.PI / 180)
+                );
+                continue;
+            }
+
+            this.lineTo([
+                x + Math.sqrt((radiusX - x) ** 2) * Math.cos(i * Math.PI / 180),
+                y + Math.sqrt((radiusY - y) ** 2) * Math.sin(i * Math.PI / 180)
+            ]);
+        }
+
+        this.lineTo([
+            old.x,
+            old.y
+        ]);
+    }
 
     fill() {
         this.filler.push(...this.#segment);
@@ -645,16 +685,68 @@ export default class {
 
     /**
      * 
-     * @param {String} content 
      * @param {Number|String} x 
      * @param {Number|String} y 
+     * @param {Number|String} width 
+     * @param {Number|String} height 
+     * @returns {String} 
      */
-    fillText(content, x, y) {}
+    getImageData(x, y, width, height) {
+        /* const array = Array.from({ length: width * height * 4 }, () => 255);
 
-    getImageData() {
-        // width times height times 4 (rgba)
-        // black, grey or white
-        
+        let physics = this.#physics.filter((line) => line[0] > x && line[1] > y && line[2] < x + width && line[3] < y + height);
+        let scenery = this.#scenery.filter((line) => line[0] > x && line[1] > y && line[2] < x + width && line[3] < y + height);
+        for (let x = 0; x < width; x++) {
+            for (let y = 0; y < height; y++) {
+                let pixel = (y + x * width) * 4;
+                for (const line of physics) {
+                    let len = Math.sqrt((line[2] - line[0]) ** 2 + (line[3] - line[1]) ** 2);
+                    let difference = (x - line[0]) * (line[2] - line[0] / len) + (y - line[1]) * ((line[3] - line[1] / len));
+                    let vector = [];
+                    if (difference >= len) {
+                        vector.push(line[2], line[3]);
+                    } else {
+                        vector.push(line[0], line[1]);
+                        if (difference > 0) {
+                            vector[0] += line[2] - line[0] / len;
+                            vector[1] += line[3] - line[1] / len;
+                        }
+                    }
+
+                    if (Math.sqrt((x - vector[0]) ** 2 + (y - vector[1]) ** 2) <= 2) {
+                        array[pixel] = 0;
+                        array[pixel + 1] = 0;
+                        array[pixel + 2] = 0;
+                    }
+                }
+
+                for (const line of scenery) {
+                    let len = Math.sqrt((line[2] - line[0]) ** 2 + (line[3] - line[1]) ** 2);
+                    let difference = (x - line[0]) * (line[2] - line[0] / len) + (y - line[1]) * ((line[3] - line[1] / len));
+                    let vector = [];
+                    if (difference >= len) {
+                        vector.push(line[2], line[3]);
+                    } else {
+                        vector.push(line[0], line[1]);
+                        if (difference > 0) {
+                            vector[0] += line[2] - line[0] / len;
+                            vector[1] += line[3] - line[1] / len;
+                        }
+                    }
+
+                    if (Math.sqrt((x - vector[0]) ** 2 + (y - vector[1]) ** 2) <= 2) {
+                        array[pixel] = 170;
+                        array[pixel + 1] = 170;
+                        array[pixel + 2] = 170;
+                    }
+                }
+            }
+        }
+
+        const data = new Uint8ClampedArray(array);
+        console.log(data, Buffer.from(data).toString("base64"))
+        */
+
         return this.code;
     }
 
@@ -683,7 +775,7 @@ export default class {
             }
         }
 
-        this.#segment.push([
+        this.lines.push([
             this.#position.x, this.#position.y,
             parseFloat(x), parseFloat(y)
         ]);
@@ -727,34 +819,6 @@ export default class {
         return this;
     }
 
-    oval(x, y, width, height, s) {
-        for (const argument of arguments) {
-            if (isNaN(+argument)) {
-                throw new Error("INVALID_VALUE");
-            }
-        }
-
-        if (s < 3) {
-            switch(s) {
-                case 1:
-                    s += 2;
-                    break;
-                case 2:
-                    s += 1
-            }
-        }
-
-        let arr = [];
-        s === void 0 && (s = 5);
-        for(let i = 0; i <= 360; i += s) {
-            arr.push(x + width * Math.cos(i * Math.PI / 180), y + height * Math.sin(i * Math.PI / 180))
-        }
-
-        this.#segment.push(arr);
-
-        return this;
-    }
-
     /**
      * 
      * @param {Object} data an ImageData object containing the array of pixel values.
@@ -771,7 +835,6 @@ export default class {
 
     /**
      * 
-     * @alias curveTo
      * @param {string|number} p1x position x of the control point
      * @param {string|number} p1y position y of the control point
      * @param {string|number} p2x position x of the end point
@@ -818,7 +881,7 @@ export default class {
             }
         }
 
-        this.#segment.push([
+        this.lines.push([
             this.#translation.x + x, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y + height,
@@ -954,14 +1017,6 @@ export default class {
         this.lineDash = args.join(" ");
     }
 
-    stroke() {
-        this.lines.push(...this.#segment);
-
-        this.#segment = []
-
-        return this;
-    }
-
     /**
      * 
      * @deprecated this method may be removed in the near future
@@ -986,7 +1041,7 @@ export default class {
             }
         }
 
-        this.#segment.push([
+        this.lines.push([
             parseFloat(x), parseFloat(y),
             parseFloat(x2), parseFloat(y2)
         ]);
@@ -1028,103 +1083,86 @@ export default class {
      * @param {Number|String} y 
      */
     strokeText(content, x, y) {
-        const size = +this.font.replace(/^\D+/gi, "");
-        this.save();
-        this.beginPath();
-        for (const char in content) {
-            if (typeof Alphabet[content[char]] === "function") {
-                Alphabet[content[char]](this, x, y, (char + 1) * (Alphabet.letterSpacing * (parseInt(Alphabet.fontSize) / 8)));
-            }
-        }
+        content = content.toUpperCase().split(/\n/g);
 
-        this.stroke();
-        this.restore();
+        this.beginPath();
+        content.forEach((line, offset) => {
+            for (const char in line) {
+                if (typeof Alphabet[line[char]] === "function") {
+                    Alphabet[line[char]](this, x, y + offset * (Alphabet.letterSpacing * (parseInt(Alphabet.fontSize) * 4)) - 2, (char + 1) * (Alphabet.letterSpacing * (parseInt(Alphabet.fontSize) / 5)) - 2);
+                }
+            }
+        });
+
+        return this;
     }
     
     star(x, y) {
         this.#powerups.targets.push([x, y]);
-
         return this;
     }
 
     boost(x, y, d) {
         this.#powerups.boosters.push([x, y, d]);
-
         return this;
     }
 
     gravity(x, y) {
         this.#powerups.gravity.push([x, y, d]);
-
         return this;
     }
 
     slowmo(x, y) {
         this.#powerups.slowmos.push([x, y]);
-
         return this;
     }
 
     bomb(x, y) {
         this.#powerups.bombs.push([x, y]);
-
         return this;
     }
 
     checkpoint(x, y) {
         this.#powerups.checkpoints.push([x, y]);
-
         return this;
     }
 
     antigravity(x, y) {
         this.#powerups.antigravity.push([x, y]);
-
         return this;
     }
 
     teleport(x, y, ex, ey) {
         this.#powerups.teleporters.push([x, y, ex, ey]);
-
         return this;
     }
 
     heli(x, y, t) {
         this.#powerups.vehicles.heli.push([x, y, 1, t]);
-
         return this;
     }
 
     truck(x, y, t) {
         this.#powerups.vehicles.truck.push([x, y, 2, t]);
-
         return this;
     }
 
     balloon(x, y, t) {
         this.#powerups.vehicles.balloon.push([x, y, 3, t]);
-
         return this;
     }
 
     blob(x, y, t) {
         this.#powerups.vehicles.blob.push([x, y, 4, t]);
-
         return this;
     }
 
     translate(x = 0, y = 0) {
-        // translate canvas to reposition the origin
         this.#translation.x = x;
         this.#translation.y = y;
-
         return this;
     }
 
-    /**
-     * 
-     * @deprecated this method will be removed in the future.
-     */
     clear() {
         this.#physics = [],
         this.#scenery = [],

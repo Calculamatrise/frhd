@@ -1,6 +1,7 @@
 import EventEmitter from "../utils/EventEmitter.js";
-
 import RequestHandler from "../utils/RequestHandler.js";
+
+import Events from "../utils/Events.js";
 
 import UserManager from "../managers/UserManager.js";
 import TrackManager from "../managers/TrackManager.js";
@@ -15,91 +16,79 @@ export let token;
  */
 
 export default class extends EventEmitter {
-    constructor({ listen = !1 } = {}) {
-        super();
-        this.options = {
-            listen
+    /**
+     * 
+     * @param {Object} options 
+     * @param {Boolean} options.listen listen to incoming notifications
+     * @param {(Number|String)} options.interval time between each datapoll request
+     */
+    constructor(options = {}) {
+        if (typeof options !== "object") {
+            throw TypeError("Options must be of type: Object.");
         }
-    }
 
-    user = null;
-    users = new UserManager(this);
-    tracks = new TrackManager(this);
-    notifications = new NotificationManager(this);
-    cosmetics = new CosmeticManager(this);
+        super();
+        this.#options = {
+            interval: options.interval || 6e4,
+            listen: options.listen || false
+        }
+
+        this.cosmetics = new CosmeticManager(this);
+        this.notifications = new NotificationManager(this);
+        this.tracks = new TrackManager(this);
+        this.users = new UserManager(this);
+    }
     #api = new RequestHandler();
+    #options = {};
+    #user = null;
     get api() {
+        if (!token) throw new Error("INVALID_TOKEN");
         return this.#api;
     }
 
-    get friends() {
-        return this.user.friends;
-    }
-
-    /**
-     * 
-     * @param {Callback} callback 
-     * @returns {Promise} 
-     */
-    async datapoll(callback = response => response) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/datapoll/poll_request",
-            body: {
-                notifications: !0,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(callback);
+    get user() {
+        return this.#user;
     }
 
     /**
      * 
      * @private
      */
-    #handle(notification) {
-        if (!notification.id) {
-            let error = new Error("UNKNOWN_NOTIFICATION_ID");
-            console.warn(error);
-            return error;
-        }
-        
-        this.emit(notification.id, notification);
-    }
-
-    /**
-     * 
-     * @private
-     */
-    #listen() {
-        this.datapoll(t => {
-            if (t.notification_count > 0) {
-                this.notifications.fetch().then(notifications => {
-                    notifications = notifications.sort((t, e) => e.ts - t.ts);
-                    for (const notification in notifications) {
-                        if (notification >= t.notification_count) return;
-
-                        this.#handle(notifications[notification]);
-                    }
-                });
-            }
+    async #listen() {
+        let notifications = await this.api.datapoll().then(data => {
+            return data.notification_count > 0 ? this.notifications.fetch(data.notification_count) : [];
         });
+        for (const notification of notifications) {
+            console.log(notification)
+            if (notification.id === null) {
+                let error = new Error("UNKNOWN_NOTIFICATION_ID");
+                console.warn(error, notification);
+                this.emit("error", error);
+                continue
+            }
 
-        setTimeout(() => this.#listen(), 3000);
+            if (notification.id == Events.CommentMention) {
+                let track = await this.api.tracks(notification.track.id);
+                this.emit(notification.id, track.comments.get(notification.comment.id));
+                return;
+            }
+
+            this.emit(notification.id, notification);
+        }
+
+        setTimeout(() => this.#listen(), this.#options.interval);
     }
 
     /**
      * 
-     * @param {String} asr app signed request token
-     * @param {Object[String]} asr[username] frhd login username
-     * @param {Object[String]} asr[password] frhd login password
-     * @param {Object[String]} asr[token] app signed request token
+     * @param {(String|Object[])} asr app signed request token
+     * @param {String} asr[].username frhd login username
+     * @param {String} asr[].password frhd login password
+     * @param {String} asr[].token app signed request token
      * @returns {Client}
      */
     async login(asr) {
-        if (typeof asr === "object") {
+        if (typeof asr == "object") {
             if (asr.hasOwnProperty("username") && asr.hasOwnProperty("password")) {
                 asr = await RequestHandler.ajax({
                     path: "/auth/standard_login",
@@ -109,7 +98,7 @@ export default class extends EventEmitter {
                     },
                     method: "post"
                 }).then(function(response) {
-                    if (response.result === false) {
+                    if (response.result == false) {
                         throw new Error(response.msg);
                     }
 
@@ -121,77 +110,37 @@ export default class extends EventEmitter {
         }
 
         if (typeof asr !== "string")
-            throw new Error("INVALID_TOKEN");
+            throw new TypeError("INVALID_TOKEN");
 
         token = asr;
 
-        const response = await RequestHandler.ajax(`/account/settings?ajax=!0&app_signed_request=${token}`);
+        let response = await this.api.constructor.ajax(`/account/settings?ajax=!0&app_signed_request=${token}`);
         if (!response || !response.user)
             throw new Error("INVALID_TOKEN");
 
-        this.user = await this.users.fetch(response.user.d_name);
+        this.#user = await this.users.fetch(response.user.d_name) || null;
         this.user.moderator = response.user.moderator;
-        
-        this.emit("ready");
 
-        if (this.options.listen) {
+        this.emit("ready");
+        if (this.#options.listen) {
             this.#listen();
         }
 
         return this;
-    }
-
-    /**
-     * 
-     * @param {Callback} callback 
-     * @returns {Promise}
-     */
-    async buyHead(callback = response => response) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/store/buy",
-            method: "post"
-        }).then(callback);
-    }
-
-    /**
-     * 
-     * @param {Number|String} itemId 
-     * @param {Callback} callback 
-     * @returns {Promise}
-     */
-    async setHead(itemId, callback = response => response) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!itemId)
-            throw new Error("INVALID_COSMETIC");
-
-        return RequestHandler.ajax({
-            path: "/store/equip",
-            body: {
-                item_id: itemId,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(callback);
     }
     
     /**
      * 
      * @async
      * @protected requires administrative privileges.
-     * @param {Number|String} track 
-     * @param {User|Number|String} user 
+     * @param {(Number|String)} track 
+     * @param {(User|Number|String)} user 
      * @param {Callback} callback
      * @returns {Promise}
      */
     async removeRace(track, user, callback = response => response) {
         if (isNaN(parseInt(user)))
-            user = await this.users.fetch(user).then(function(user) {
-                return user.id;
-            });
+            user = await this.users.fetch(user).then(user => user.id);
 
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -308,27 +257,5 @@ export default class extends EventEmitter {
         token = null;
 
         return this;
-    }
-    
-    /**
-     * 
-     * @static
-     * @param {Number|String} time Number in miliseconds
-     */
-    static sleep(time = 0) {
-        let now = Date.now();
-        while(Date.now() - now < time) {
-            continue;
-        }
-    }
-
-    /**
-     * 
-     * @static
-     * @param {Number|String} time Number in miliseconds
-     * @returns {Promise}
-     */
-    static wait(time = 0) {
-        return new Promise(resolve => setTimeout(resolve, time));
     }
 }

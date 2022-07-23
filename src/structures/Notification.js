@@ -1,65 +1,57 @@
+import Events from "../utils/Events.js";
+
 export default class {
     constructor(data) {
-        if (!data || typeof data !== "object")
-            throw new Error("INVALID_DATA_TYPE");
+        if (typeof data !== "object" || data === null) {
+            throw new TypeError("INVALID_DATA_TYPE");
+        }
 
-        this.id = null,
-        this.user = null,
-        this.timeAgo = null,
-        this.timestamp = null;
+        if (data.friend_lb_passed) {
+            this.id = Events.FriendLeaderboardPassed
+        } else if (data.friend_req_accptd) {
+            this.id = Events.FriendRequestAccepted
+        } else if (data.friend_req_rcvd) {
+            this.id = Events.FriendRequestReceived
+        } else if (data.friend_t_challenge) {
+            this.id = Events.Challenge
+        } else if (data.subscribed_t_publish) {
+            this.id = Events.SubscribedTrackPublish
+        } else if (data.track_lb_passed) {
+            this.id = Events.TrackLeaderboardPassed
+        } else if (data.t_uname_mention) {
+            this.id = Events.TrackUsernameMention
+        }
 
-        this.init(data);
-    }
-    init(data) {
-        for (const t in data) {
-            switch(t) {
-                case "t_uname_mention":
-                    this.id = "commentMention";
-                break;
+        if (data.comment) {
+            this.comment = data.comment;
+        }
 
-                case "track_lb_passed":
-                    this.id = "trackRaceLost";
-                break;
+        if (data.message) {
+            this.message = data.message;
+        }
 
-                case "friend_req_rcvd":
-                    this.id = "friendRequestReceived";
-                break;
+        if (data.track) {
+            this.track = data.track;
+        }
 
-                case "friend_lb_passed":
-                    this.id = "friendRaceLost";
-                break;
-
-                case "friend_req_accptd":
-                    this.id = "friendRequestAccepted";
-                break;
-
-                case "friend_t_challenge":
-                    this.id = "challenge";
-                break;
-
-                case "user":
-                    this.user = {
-                        id: data[t].u_id,
-                        username: data[t].u_name,
-                        displayName: data[t].d_name,
-                        avatar: data[t].img_url_small
-                    }
-                break;
-
-                case "track":
-                case "message":
-                case "comment":
-                    this[t] = data[t];
-                break;
-                 
-                case "time":
-                    this.timeAgo = data[t];
-                break;
-            
-                case "ts":
-                    this.timestamp = data[t];
-                break;
+        if (data.user) {
+            this.user = {
+                id: data.user.u_id,
+                username: data.user.u_name,
+                displayName: data.user.d_name,
+                avatar: data.user.img_url_small
             }
         }
+
+        this.timeAgo = data.time;
+        this.timestamp = data.ts;
+        this.init(data);
     }
+    id = null;
+    comment = null;
+    message = null;
+    user = null;
+    track = null;
+    timeAgo = null;
+    timestamp = null;
 }

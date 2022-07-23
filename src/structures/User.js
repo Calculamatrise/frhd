@@ -3,15 +3,16 @@ import RequestHandler from "../utils/RequestHandler.js";
 import { token } from "../client/Client.js";
 
 import FriendManager from "../managers/FriendManager.js";
-import getTrack from "../getTrack.js";
 import TrackManager from "../managers/TrackManager.js";
+
+import getTrack from "../getTrack.js";
 
 export default class User {
     id = null;
-    username = null;
-    displayName = null;
     avatar = null;
+    displayName = null;
     moderator = false;
+    username = null;
     friends = new FriendManager();
     recentlyPlayed = new TrackManager();
     recentlyCompleted = new TrackManager();
@@ -22,85 +23,61 @@ export default class User {
             throw new Error("INVALID_DATA_TYPE");
         }
 
-        const user = new User();
-
-        await user.init(data);
-
-        return user;
-    }
-    
-    async init({
-        u_id,
-        u_name,
-        d_name,
-        img_url_small,
-        img_url_medium,
-        user,
-        user_stats,
-        user_info,
-        user_mobile_stats,
-        user_verify_reminder,
-        recently_played_tracks,
-        recently_ghosted_tracks,
-        created_tracks,
-        liked_tracks,
-        friends,
-        friend_requests,
-        has_max_friends,
-        subscribe,
-        activity_time_ago,
-        a_ts
-    }) {
-        this.id = u_id || user.u_id;
-        this.username = u_name || user.u_name;
-        this.displayName = d_name || user.d_name;
-        this.avatar = img_url_small || img_url_medium || user.img_url_medium;
-        if (user !== void 0) {
-            this.classic = user.classic;
-            this.admin = user.admin;
-            this.plus = user.plus;
-            this.forums = user.forum_url;
-            this.cosmetics = {
+        const instance = new User();
+        instance.id = data.u_id;
+        instance.username = data.u_name;
+        instance.displayName = data.d_name;
+        instance.avatar = data.img_url_small || data.img_url_medium;
+        if (data.user !== void 0) {
+            instance.id = instance.id || data.user.u_id;
+            instance.username = instance.username || data.user.u_name;
+            instance.displayName = instance.displayName || data.user.d_name;
+            instance.avatar = instance.avatar || data.user.img_url_medium;
+            instance.classic = data.user.classic;
+            instance.admin = data.user.admin;
+            instance.plus = data.user.plus;
+            instance.forums = data.user.forum_url || null;
+            instance.cosmetics = {
                 head: {
-                    image: user.cosmetics.head.img,
+                    image: data.user.cosmetics.head.img,
                     spriteSheetURL() {
-                        return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${user.cosmetics.head.img.replace(/\s(.*)/gi, "")}.png`
+                        return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${data.user.cosmetics.head.img.replace(/\s(.*)/gi, "")}.png`
                     }
                 }
             }
         }
 
-        if (user_stats !== void 0) {
-            this.stats = {
-                totalPoints: user_stats.tot_pts,
-                completed: user_stats.cmpltd,
-                rated: user_stats.rtd,
-                comments: user_stats.cmmnts,
-                created: user_stats.crtd,
-                headCount: user_stats.head_cnt,
-                totalHeadCount: user_stats.total_head_cnt
+        if (data.user_stats !== void 0) {
+            instance.stats = {
+                totalPoints: data.user_stats.tot_pts,
+                completed: data.user_stats.cmpltd,
+                rated: data.user_stats.rtd,
+                comments: data.user_stats.cmmnts,
+                created: data.user_stats.crtd,
+                headCount: data.user_stats.head_cnt,
+                totalHeadCount: data.user_stats.total_head_cnt
             }
         }
 
-        if (user_info) {
-            this.bio = user_info.about; 
+        if (data.user_info) {
+            instance.bio = data.user_info.about; 
         }
-        
-        if (user_mobile_stats !== void 0) {
-            this.mobileStats = {
-                level: user_mobile_stats.lvl,
-                wins: user_mobile_stats.wins,
-                headCount: user_mobile_stats.headCount,
-                connected: user_mobile_stats.connected
+
+        if (data.user_mobile_stats !== void 0) {
+            instance.mobileStats = {
+                level: data.user_mobile_stats.lvl,
+                wins: data.user_mobile_stats.wins,
+                headCount: data.user_mobile_stats.headCount,
+                connected: data.user_mobile_stats.connected
             }
         }
 
-        if (user_verify_reminder !== void 0) {
-            this.verifiedEmail = user_verify_reminder;
+        if (data.user_verify_reminder !== void 0) {
+            instance.verifiedEmail = data.user_verify_reminder;
         }
 
-        if (recently_played_tracks !== void 0) {
-            this.recentlyPlayed = await Promise.all(recently_played_tracks.tracks.map(async function(track) {
+        if (data.recently_played_tracks !== void 0) {
+            instance.recentlyPlayed = await Promise.all(data.recently_played_tracks.tracks.map(async function(track) {
                 if (typeof track !== "object" || track["slug"] === void 0) {
                     return;
                 }
@@ -109,8 +86,8 @@ export default class User {
             }));
         }
 
-        if (recently_ghosted_tracks !== void 0) {
-            this.recentlyCompleted = await Promise.all(recently_ghosted_tracks.tracks.map(function(track) {
+        if (data.recently_ghosted_tracks !== void 0) {
+            instance.recentlyCompleted = await Promise.all(data.recently_ghosted_tracks.tracks.map(function(track) {
                 if (typeof track !== "object" || track["slug"] === void 0) {
                     return;
                 }
@@ -119,8 +96,8 @@ export default class User {
             }));
         }
 
-        if (created_tracks !== void 0) {
-            this.createdTracks = await Promise.all(created_tracks.tracks.map(function(track) {
+        if (data.created_tracks !== void 0) {
+            instance.createdTracks = await Promise.all(data.created_tracks.tracks.map(function(track) {
                 if (typeof track !== "object" || track["id"] === void 0) {
                     return;
                 }
@@ -129,8 +106,8 @@ export default class User {
             }));
         }
 
-        if (liked_tracks !== void 0) {
-            this.likedTracks = await Promise.all(liked_tracks.tracks.map(async function(track) {
+        if (data.liked_tracks !== void 0) {
+            instance.likedTracks = await Promise.all(data.liked_tracks.tracks.map(async function(track) {
                 if (typeof track !== "object" || track["id"] === void 0) {
                     return;
                 }
@@ -139,48 +116,48 @@ export default class User {
             }));
         }
 
-        if (friends !== void 0) {
-            this.friendCount = friends.friend_cnt;
-            this.friends.push(...await Promise.all(friends.friends_data.map(function(user) {
+        if (data.friends !== void 0) {
+            instance.friendCount = data.friends.friend_cnt;
+            instance.friends.push(...await Promise.all(data.friends.friends_data.map(function(user) {
                 return User.create(user);
             })));
         }
 
-        if (friend_requests !== void 0) {
-            this.friendRequestCount = friend_requests.request_cnt;
-            this.friendRequests = friend_requests.request_data;
+        if (data.friend_requests !== void 0) {
+            instance.friendRequestCount = data.friend_requests.request_cnt;
+            instance.friendRequests = data.friend_requests.request_data;
         }
         
-        if (has_max_friends !== void 0) {
-            this.friendLimitReached = has_max_friends;
+        if (data.has_max_friends !== void 0) {
+            instance.friendLimitReached = data.has_max_friends;
         }
 
-        if (subscribe !== void 0) {
-            this.subscriberCount = subscribe.count;
+        if (data.subscribe !== void 0) {
+            instance.subscriberCount = data.subscribe.count;
         }
 
-        if (activity_time_ago !== void 0) {
-            this.lastPlayed = activity_time_ago;
+        if (data.activity_time_ago !== void 0) {
+            instance.lastPlayed = data.activity_time_ago;
         }
 
-        if (a_ts !== void 0) {
-            this.lastPlayedTimestamp = a_ts;
+        if (data.a_ts !== void 0) {
+            instance.lastPlayedTimestamp = data.a_ts;
         }
+
+        return instance;
     }
 
     /**
      * 
-     * @alias addFriend
-     * @returns object
+     * @returns {Promise}
      */
-    befriend() {
+    buyHead() {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
         return RequestHandler.ajax({
-            path: "/friends/send_friend_request",
+            path: "/store/buy",
             body: {
-                u_name: this.username,
                 app_signed_request: token
             },
             method: "post"
@@ -189,25 +166,25 @@ export default class User {
 
     /**
      * 
-     * @alias removeFriend
-     * @returns object
+     * @param {Number} itemId 
+     * @returns {Promise}
      */
-    shun() {
+    setHead(itemId) {
         if (!token)
             throw new Error("INVALID_TOKEN");
+        else if (!itemId)
+            throw new Error("INVALID_COSMETIC");
 
         return RequestHandler.ajax({
-            path: "/friends/remove_friend",
+            path: "/store/equip",
             body: {
-                u_id: this.id,
+                item_id: itemId,
                 app_signed_request: token
             },
             method: "post"
         });
     }
 
-    addFriend = this.befriend;
-    removeFriend = this.shun;
     subscribe() {
         if (!token)
             throw new Error("INVALID_TOKEN");
@@ -258,7 +235,6 @@ export default class User {
         }).then((response) => {
             if (response.result) {
                 this.username = username;
-
                 return response;
             }
 
@@ -413,52 +389,6 @@ export default class User {
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {Number|String} coins 
-     * @param {Callback} callback 
-     * @returns {Promise}
-     */
-    addWonCoins(coins) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/moderator/change_username",
-            body: {
-                coins_username: this.username,
-                num_coins: coins,
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @param {Number} days 
-     * @param {any} remove
-     * @param {Callback} callback 
-     * @returns {Promise}
-     */
-    async addPlusDays(days, remove, callback = response => response) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/add_plus_days",
-            body: {
-                add_plus_days: days,
-                username: this.username,
-                add_plus_remove: remove,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(callback);
-    }
-
-    /**
-     * 
-     * @protected requires administrative privileges.
      * @returns {Promise}
      */
     toggleOA() {
@@ -504,7 +434,7 @@ export default class User {
             throw new Error("INVALID_TOKEN");
 
         return RequestHandler.ajax({
-            path: "/moderator/change_username",
+            path: "/admin/add_won_coins",
             body: {
                 coins_username: this.username,
                 num_coins: coins,
@@ -622,7 +552,7 @@ export default class User {
      * @protected requires administrative privileges.
      * @returns {Promise}
      */
-    deactive() {
+    deactivate() {
         if (!token)
             throw new Error("INVALID_TOKEN");
 

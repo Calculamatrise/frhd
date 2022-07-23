@@ -8,6 +8,13 @@ import getUser from "../getUser.js";
 
 export default class extends Array {
     track = null;
+    get(user) {
+        if (isNaN(+(+user).toFixed()))
+            throw new Error("INVALID_USER");
+
+        return this.find(race => +(race.userId || race.user.id) === +user) || null;
+    }
+
     /**
      * 
      * @private
@@ -62,13 +69,6 @@ export default class extends Array {
             throw new Error("INVALID_TOKEN");
 
         return this.fetch(user).then(response => this.post(response.race.code, response.race.vehicle, response.race.runTicks));
-    }
-
-    get(user) {
-        if (isNaN(+(+user).toFixed()))
-            throw new Error("INVALID_USER");
-
-        return this.find(race => +(race.userId || race.user.id) === +user) || null;
     }
 
     /**

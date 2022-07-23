@@ -4,15 +4,29 @@ export default class {
     /**
      * 
      * @param {String} event event name
-     * @param {Function} func listening function
+     * @param {Function} handler listening function
      */
-    on(event, func = function() {}) {
-        if (event === void 0 || typeof event !== "string")
-            return new Error("INVALID_EVENT");
+    on(event, handler) {
+        if (typeof event !== "string") {
+            throw new TypeError("INVALID_EVENT");
+        } else if (typeof handler !== "function") {
+            throw new TypeError("Handler must be of type: Function.");
+        }
 
-        this.#events.set(event, func.bind(this));
+        let events = this.#events.get(event) || [];
+        events.push(handler.bind(this));
 
+        this.#events.set(event, events);
         return this;
+    }
+
+    /**
+     * 
+     * @param {String} event event name
+     * @param {Function} handler listening function
+     */
+    once(event, handler) {
+        return this.on(event + " --once", handler);
     }
 
     /**
@@ -23,13 +37,14 @@ export default class {
      * @returns {any} function call
      */
     emit(event, ...args) {
-        if (event === void 0 || typeof event !== "string")
-            return new Error("INVALID_EVENT_ID");
+        if (this.#events.has(event)) {
+            this.#events.get(event).forEach(event => event(...args));
+        }
 
-        event = this.#events.get(event);
-        if (event === void 0 && typeof event !== "function")
-            return new Error("INVALID_FUNCTION");
-
-        return event(...args);
+        event = event + " --once";
+        if (this.#events.has(event)) {
+            this.#events.get(event).forEach(event => event(...args));
+            this.#events.delete(event);
+        }
     }
 }

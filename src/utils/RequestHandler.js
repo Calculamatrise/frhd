@@ -25,14 +25,14 @@ export default class RequestHandler {
             },
             body = {}
         } = options;
-
-        body.ajax = !0;
-        body.t_1 = "ref";
-        body.t_2 = "desk";
+        if (typeof body === "object" && body !== null) {
+            body.ajax = !0;
+            body.t_1 = "ref";
+            body.t_2 = "desk";
+        }
 
         if (path.match(/^\.?\/?/) && host === "local") {
             const body = readFileSync(path);
-
             if (headers["content-type"].startsWith("image/png")) {
                 if (headers["content-type"].includes("base64")) {
                     return "data:image/png; base64, " + body.toString("base64");
@@ -40,11 +40,8 @@ export default class RequestHandler {
 
                 return body;
             }
-            
-            try {
-                return JSON.parse(body);
-            } catch(e) {}
 
+            try { return JSON.parse(body) } catch(e) {}
             return body.toString("utf8");
         }
         
@@ -89,54 +86,11 @@ export default class RequestHandler {
         });
     }
 
-    users(username) {
-        return this.constructor.ajax(`/u/${username}?ajax=!0`).then(function(response) {
-            if (response.app_title.match(/Page\s+Not\s+Found/gi))
-                throw new Error("USER_NOT_FOUND");
-
-            return User.create(response);
-        });
-    }
-
     /**
      * 
-     * @param {Number|String} id
-     * @param {Array} fields 
-     * @param {String} fields[code] 
+     * @param {Number} id 
+     * @returns {Promise}
      */
-    tracks(id, fields) {
-        if (fields !== void 0) {
-            return this.constructor.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}&app_signed_request=${token}`).then(function(response) {
-                if (response.result === false)
-                    throw new Error("TRACK_NOT_FOUND");
-                
-                return Track.create(response.data);
-            });
-        }
-
-        return this.constructor.ajax(`/t/${parseInt(id)}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
-            if (response.app_title.match(/Page\s+Not\s+Found/gi))
-                throw new Error("TRACK_NOT_FOUND");
-            
-            return Track.create({
-                ...response.track,
-                campagin: response.campagin,
-                track_comments: response.track_comments,
-                track_stats: response.track_stats
-            });
-        });
-    }
-
-    notifications(count = Infinity) {
-        return this.constructor.ajax(`/notifications?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
-            if (response.notification_days && response.notification_days[0]) {
-                return response.notification_days[0].notifications.slice(0, count).map(function(notification) {
-                    return new Notification(notification)
-                });
-            }
-        });
-    }
-
     cosmetics(id) {
         return this.constructor.ajax(`/store/gear?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))
@@ -164,6 +118,80 @@ export default class RequestHandler {
                     return new Cosmetic(head);
                 })
             }
+        });
+    }
+
+    /**
+     * 
+     * @returns {Promise}
+     */
+    datapoll() {
+        return this.constructor.ajax({
+            path: "/datapoll/poll_request",
+            body: {
+                notifications: !0,
+                app_signed_request: token
+            },
+            method: "post"
+        });
+    }
+
+    /**
+     * 
+     * @param {Number} count 
+     * @returns {Promise}
+     */
+    notifications(count = Infinity) {
+        return this.constructor.ajax(`/notifications?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function({ notification_days }) {
+            if (notification_days && notification_days.length > 0) {
+                return notification_days[0].notifications.slice(0, count).map(function(notification) {
+                    return new Notification(notification)
+                }).sort((t, e) => e.ts - t.ts);
+            }
+        });
+    }
+
+    /**
+     * 
+     * @param {Number|String} id
+     * @param {Array} fields 
+     * @param {String} fields[code] 
+     * @returns {Promise}
+     */
+    tracks(id, fields) {
+        if (fields !== void 0) {
+            return this.constructor.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}&app_signed_request=${token}`).then(function(response) {
+                if (response.result === false)
+                    throw new Error("TRACK_NOT_FOUND");
+                
+                return Track.create(response.data);
+            });
+        }
+
+        return this.constructor.ajax(`/t/${parseInt(id)}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
+            if (response.app_title.match(/Page\s+Not\s+Found/gi))
+                throw new Error("TRACK_NOT_FOUND");
+            
+            return Track.create({
+                ...response.track,
+                campagin: response.campagin,
+                track_comments: response.track_comments,
+                track_stats: response.track_stats
+            });
+        });
+    }
+
+    /**
+     * 
+     * @param {String} username 
+     * @returns {Promise}
+     */
+    users(username) {
+        return this.constructor.ajax(`/u/${username}?ajax=!0`).then(function(response) {
+            if (response.app_title.match(/Page\s+Not\s+Found/gi))
+                throw new Error("USER_NOT_FOUND");
+
+            return User.create(response);
         });
     }
 }

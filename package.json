@@ -1,11 +1,11 @@
 {
     "name": "frhd",
     "alias": "@Calculamatrise/frhd",
-    "version": "0.0.4-gamepad",
+    "version": "0.0.5-security",
     "description": "An app to communicacte with FRHD",
     "main": "./src/bootstrap.js",
-    "preferGlobal": true,
     "bin": "./bin/bootstrap.js",
+    "preferGlobal": true,
     "author": "Calculus",
     "type": "module",
     "license": "GNU General Public License v3.0-or-later",

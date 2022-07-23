@@ -13,7 +13,7 @@ export default class {
      * 
      * @private
      */
-    #cache = new LimitedMap({ limit: 10000 });;
+    #cache = new LimitedMap({ limit: 1e4 });;
     get cache() {
         return this.#cache;
     }

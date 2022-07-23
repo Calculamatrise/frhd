@@ -69,27 +69,17 @@ export default class {
      * 
      * @param {String} key 
      */
-    setKeyDown(key) {
+    down(key) {
         let keys = null;
         if (arguments.length > 1) {
             keys = [...arguments];
-        }
-
-        if (typeof key === "object") {
-            keys = key;
+        } else if (key instanceof Object) {
+            keys = Object.keys(key);
         }
 
         if (keys !== null) {
-            if (Array.isArray(keys)) {
-                for (const key of keys) {
-                    this.setKeyDown.call(this, key);
-                }
-
-                return;
-            }
-
-            for (const key in keys) {
-                this.setKeyDown.call(this, key);
+            for (const key of keys) {
+                this.down.call(this, key);
             }
 
             return;
@@ -117,27 +107,17 @@ export default class {
      * 
      * @param {String} key 
      */
-    toggleKey(key) {
+    toggle(key) {
         let keys = null;
         if (arguments.length > 1) {
             keys = [...arguments];
-        }
-
-        if (typeof key === "object") {
-            keys = key;
+        } else if (key instanceof Object) {
+            keys = Object.keys(key);
         }
 
         if (keys !== null) {
-            if (Array.isArray(keys)) {
-                for (const key of keys) {
-                    this.toggleKey.call(this, key);
-                }
-
-                return;
-            }
-
-            for (const key in keys) {
-                this.toggleKey.call(this, key);
+            for (const key of keys) {
+                this.toggle.call(this, key);
             }
 
             return;
@@ -150,38 +130,28 @@ export default class {
 
         let record = this.records.get(key);
         if (record.down.size === record.up.size) {
-            this.setKeyDown(key);
+            this.down(key);
             return;
         }
 
-        this.setKeyUp(key);
+        this.up(key);
     }
 
     /**
      * 
      * @param {String} key 
      */
-    setKeyUp(key) {
+    up(key) {
         let keys = null;
         if (arguments.length > 1) {
             keys = [...arguments];
-        }
-
-        if (typeof key === "object") {
-            keys = key;
+        } else if (key instanceof Object) {
+            keys = Object.keys(key);
         }
 
         if (keys !== null) {
-            if (Array.isArray(keys)) {
-                for (const key of keys) {
-                    this.setKeyUp.call(this, key);
-                }
-
-                return;
-            }
-
-            for (const key in keys) {
-                this.setKeyUp.call(this, key);
+            for (const key of keys) {
+                this.up.call(this, key);
             }
 
             return;
