@@ -48,7 +48,6 @@ export default class {
             this.height = image.height;
 
             data = new Uint8ClampedArray(image.data);
-
             if (events.hasOwnProperty("load")) {
                 events.load.bind(this)(this);
             }

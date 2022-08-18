@@ -7,9 +7,9 @@ import { token } from "../client/Client.js";
 export default class extends Array {
     constructor(array, id) {
         super(...array);
-        
         this.id = id;
     }
+
     get(id) {
         if (isNaN(id))
             throw new Error("INVALID_COMMENT");
@@ -18,6 +18,7 @@ export default class extends Array {
             return comment.id == id;
         }) || null;
     }
+
     async post(message) {
         if (!token)
             throw new Error("INVALID_TOKEN");

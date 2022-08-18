@@ -5,16 +5,17 @@ import { Buffer } from "buffer";
 export default class {
     /**
      * 
-     * @param {String} URI image location or URI
+     * @param {String} uri image location or URI
      */
-    static image(URI) {
-        const image = new Image();
-
-        image.src = URI;
-
+    static image(uri) {
         return new Promise(function(resolve, reject) {
+            let image = new Image();
+            image.src = uri;
             image.addEventListener("load", function(image) {
                 resolve(image);
+            });
+            image.addEventListener("error", function(error) {
+                reject(error);
             });
         });
     }
@@ -102,7 +103,7 @@ export default class {
      * @param {String} value
      */
     set strokeStyle(value) {        
-        if (value.match(/^(#[a-f0-9]{3,4}|#[a-f0-9]{6,8}|rgba?\((\d+(,\s+)?){3,4}\))/gi)) {
+        if (value.match(/^(#([a-f0-9]{3,4}|[a-f0-9]{6,8})|rgba?\((\d+(,\s+)?){3,4}\))/gi)) {
             throw new Error("INVALID VALUE");
         }
 
@@ -153,22 +154,22 @@ export default class {
      * @private
      */
     #cache = {}
-    #physics = []
-    #scenery = []
+    #physics = new Set();
+    #scenery = new Set();
     #powerups = {
-        targets: [],
-        boosters: [],
-        gravity: [],
-        slowmos: [],
-        bombs: [],
-        checkpoints: [],
-        antigravity: [],
-        teleporters: [],
+        targets: new Set(),
+        boosters: new Set(),
+        gravity: new Set(),
+        slowmos: new Set(),
+        bombs: new Set(),
+        checkpoints: new Set(),
+        antigravity: new Set(),
+        teleporters: new Set(),
         vehicles: {
-            heli: [],
-            truck: [],
-            balloon: [],
-            blob: []
+            heli: new Set(),
+            truck: new Set(),
+            balloon: new Set(),
+            blob: new Set()
         }
     }
     #segment = []
@@ -181,7 +182,7 @@ export default class {
     }
 
     get physics() {
-        return this.#physics.map((vector) => vector.map((value) => parseInt(value).toString(32)).join(" ")).join(",");
+        return Array.from(this.#physics.values()).map((vector) => vector.map((value) => parseInt(value).toString(32)).join(" ")).join(",");
     }
 
     get scenery() {
@@ -266,58 +267,58 @@ export default class {
         }
         
         value = value.split(/\u0023/g).map(t => t.split(/\u002C+/g).map(t => t.split(/\s+/g)));
-        this.#physics = value[0] ? value[0].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
-        this.#scenery = value[1] ? value[1].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : [];
+        this.#physics = new Set(value[0] ? value[0].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : []);
+        this.#scenery = new Set(value[1] ? value[1].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : []);
         for (const powerup of value[2]) {
             switch(powerup[0]) {
                 case "T":
-                    this.#powerups.targets.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.targets.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
                 
                 case "B":
-                    this.#powerups.boosters.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.boosters.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
 
                 case "G":
-                    this.#powerups.gravity.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.gravity.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
 
                 case "S":
-                    this.#powerups.slowmos.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.slowmos.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
 
                 case "O":
-                    this.#powerups.bombs.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.bombs.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
 
                 case "C":
-                    this.#powerups.checkpoints.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.checkpoints.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
 
                 case "A":
-                    this.#powerups.antigravity.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.antigravity.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
 
                 case "W":
-                    this.#powerups.teleporters.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                    this.#powerups.teleporters.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
 
                 case "V":
                     switch(powerup[3]) {
                         case "1":
-                            this.#powerups.vehicles.heli.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                            this.#powerups.vehicles.heli.add(powerup.slice(1).map(t => parseInt(t, 32)));
                             break;
 
                         case "2":
-                            this.#powerups.vehicles.truck.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                            this.#powerups.vehicles.truck.add(powerup.slice(1).map(t => parseInt(t, 32)));
                             break;
 
                         case "3":
-                            this.#powerups.vehicles.balloon.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                            this.#powerups.vehicles.balloon.add(powerup.slice(1).map(t => parseInt(t, 32)));
                             break;
 
                         case "4":
-                            this.#powerups.vehicles.blob.push(powerup.slice(1).map(t => parseInt(t, 32)));
+                            this.#powerups.vehicles.blob.add(powerup.slice(1).map(t => parseInt(t, 32)));
                             break;
                     }
 
@@ -377,8 +378,8 @@ export default class {
         this.moveTo(...points.shift());
         this.lineTo(...points);
 
-        this.#position.x = this.#translation.x + points[points.length - 2];
-        this.#position.y = this.#translation.y + points[points.length - 1];
+        this.#position.x = this.#translation.x + points.at(-2);
+        this.#position.y = this.#translation.y + points.at(-1);
 
         return this;
     }
@@ -420,18 +421,17 @@ export default class {
     beginPath() {
         this.#position.x = this.#translation.x;
         this.#position.y = this.#translation.y;
-
         return this;
     }
 
     /**
      * 
-     * @param {string|number} p1x position x of the first control point
-     * @param {string|number} p1y position y of the first control point
-     * @param {string|number} p2x position x of the second control point
-     * @param {string|number} p2y position y of the second control point
-     * @param {string|number} p3x position x of the end point
-     * @param {string|number} p3y position y of the end point
+     * @param {Number|String} p1x position x of the first control point
+     * @param {Number|String} p1y position y of the first control point
+     * @param {Number|String} p2x position x of the second control point
+     * @param {Number|String} p2y position y of the second control point
+     * @param {Number|String} p3x position x of the end point
+     * @param {Number|String} p3y position y of the end point
      * @returns {Builder} instance of Builder.
      */
     bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y) {
@@ -480,7 +480,7 @@ export default class {
 
         for (const line of this.#physics) {
             if (line[0] > x && line[1] > y && line[2] < x + width && line[3] < y + height) {
-                this.#physics.splice(this.#physics.indexOf(line), 1);
+                this.#physics.delete(line);
             }
         }
     }
@@ -598,18 +598,17 @@ export default class {
                 }
 
                 if (pixels[e] == 0) {
-                    this.#physics.push([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
+                    this.#physics.add([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
                     n = arguments.length > 5 ? (dHeight / height) * 2 : 2;
                     while(n > 0) {
-                        this.#physics.push([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
-
+                        this.#physics.add([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
                         n -= 2;
                     }
                 } else {
-                    this.#scenery.push([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
+                    this.#scenery.add([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
                     n = arguments.length > 5 ? (dHeight / height) * 2 : 2;
                     while(n > 0) {
-                        this.#scenery.push([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
+                        this.#scenery.add([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
 
                         n -= 2;
                     }
@@ -652,11 +651,9 @@ export default class {
     }
 
     fill() {
-        this.filler.push(...this.#segment);
-
-        this.#segment = []
-
-        return this;
+        return this.filler.add(...this.#segment),
+        this.#segment = [],
+        this;
     }
 
     /**
@@ -674,7 +671,7 @@ export default class {
         }
 
         for (let i = y; i < y + height; i++) {
-            this.filler.push([
+            this.filler.add([
                 this.#translation.x + x, this.#translation.y + i,
                 this.#translation.x + x + width, this.#translation.y + i
             ]);
@@ -775,7 +772,7 @@ export default class {
             }
         }
 
-        this.lines.push([
+        this.lines.add([
             this.#position.x, this.#position.y,
             parseFloat(x), parseFloat(y)
         ]);
@@ -881,7 +878,7 @@ export default class {
             }
         }
 
-        this.lines.push([
+        this.lines.add([
             this.#translation.x + x, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y + height,
@@ -1041,7 +1038,7 @@ export default class {
             }
         }
 
-        this.lines.push([
+        this.lines.add([
             parseFloat(x), parseFloat(y),
             parseFloat(x2), parseFloat(y2)
         ]);
@@ -1064,7 +1061,7 @@ export default class {
             }
         }
 
-        this.lines.push([
+        this.lines.add([
             this.#translation.x + x, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y + height,
@@ -1098,63 +1095,51 @@ export default class {
     }
     
     star(x, y) {
-        this.#powerups.targets.push([x, y]);
-        return this;
+        return this.#powerups.targets.add([x, y]), this;
     }
 
     boost(x, y, d) {
-        this.#powerups.boosters.push([x, y, d]);
-        return this;
+        return this.#powerups.boosters.add([x, y, d]), this;
     }
 
     gravity(x, y) {
-        this.#powerups.gravity.push([x, y, d]);
-        return this;
+        return this.#powerups.gravity.add([x, y, d]), this;
     }
 
     slowmo(x, y) {
-        this.#powerups.slowmos.push([x, y]);
-        return this;
+        return this.#powerups.slowmos.add([x, y]), this;
     }
 
     bomb(x, y) {
-        this.#powerups.bombs.push([x, y]);
-        return this;
+        return this.#powerups.bombs.add([x, y]), this;
     }
 
     checkpoint(x, y) {
-        this.#powerups.checkpoints.push([x, y]);
-        return this;
+        return this.#powerups.checkpoints.add([x, y]), this;
     }
 
     antigravity(x, y) {
-        this.#powerups.antigravity.push([x, y]);
-        return this;
+        return this.#powerups.antigravity.add([x, y]), this;
     }
 
     teleport(x, y, ex, ey) {
-        this.#powerups.teleporters.push([x, y, ex, ey]);
-        return this;
+        return this.#powerups.teleporters.add([x, y, ex, ey]), this;
     }
 
     heli(x, y, t) {
-        this.#powerups.vehicles.heli.push([x, y, 1, t]);
-        return this;
+        return this.#powerups.vehicles.heli.add([x, y, 1, t]), this;
     }
 
     truck(x, y, t) {
-        this.#powerups.vehicles.truck.push([x, y, 2, t]);
-        return this;
+        return this.#powerups.vehicles.truck.add([x, y, 2, t]), this;
     }
 
     balloon(x, y, t) {
-        this.#powerups.vehicles.balloon.push([x, y, 3, t]);
-        return this;
+        return this.#powerups.vehicles.balloon.add([x, y, 3, t]), this;
     }
 
     blob(x, y, t) {
-        this.#powerups.vehicles.blob.push([x, y, 4, t]);
-        return this;
+        return this.#powerups.vehicles.blob.add([x, y, 4, t]), this;
     }
 
     translate(x = 0, y = 0) {
@@ -1164,22 +1149,22 @@ export default class {
     }
 
     clear() {
-        this.#physics = [],
-        this.#scenery = [],
+        this.#physics = new Set(),
+        this.#scenery = new Set(),
         this.#powerups = {
-            targets: [],
-            slowmos: [],
-            bombs: [],
-            checkpoints: [],
-            antigravity: [],
-            boosters: [],
-            gravity: [],
-            teleporters: [],
+            targets: new Set(),
+            boosters: new Set(),
+            gravity: new Set(),
+            slowmos: new Set(),
+            bombs: new Set(),
+            checkpoints: new Set(),
+            antigravity: new Set(),
+            teleporters: new Set(),
             vehicles: {
-                heli: [],
-                truck: [],
-                balloon: [],
-                blob: []
+                heli: new Set(),
+                truck: new Set(),
+                balloon: new Set(),
+                blob: new Set()
             }
         }
         

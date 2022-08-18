@@ -3,9 +3,17 @@
     "alias": "@Calculamatrise/frhd",
     "version": "0.0.5-security",
     "description": "An app to communicacte with FRHD",
-    "main": "./src/bootstrap.js",
-    "bin": "./bin/bootstrap.js",
+    "main": "src/index.js",
+    "bin": "bin/index.js",
+    "types": "typings/index.d.ts",
     "preferGlobal": true,
+    "directories": {
+        "lib": "src"
+    },
+    "files": [
+        "src",
+        "typings"
+    ],
     "author": "Calculus",
     "type": "module",
     "license": "GNU General Public License v3.0-or-later",

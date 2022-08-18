@@ -1,3 +1,4 @@
+import http from "http";
 import https from "https";
 import { readFileSync } from "fs";
 
@@ -16,21 +17,8 @@ export default class RequestHandler {
      * @returns {Promise}
      */
     static ajax(option, options = typeof option === "object" ? option : {}) {
-        const {
-            host = (options.path || option).replace(/(?:^(.+)?:\/\/|(\.?\/.+)|(?!.*\/).*)/gi, ""),
-            method = "GET",
-            path = (options.path || option).replace(/^((.+)?:\/\/)?/gi, "").replace(/^[^\/]+([^\/]+)\//gi, "/"),
-            headers = {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-            },
-            body = {}
-        } = options;
-        if (typeof body === "object" && body !== null) {
-            body.ajax = !0;
-            body.t_1 = "ref";
-            body.t_2 = "desk";
-        }
-
+        let host = options.hostname || options.host || 'www.freeriderhd.com';
+        let path = options.pathname || options.path || option || '';
         if (path.match(/^\.?\/?/) && host === "local") {
             const body = readFileSync(path);
             if (headers["content-type"].startsWith("image/png")) {
@@ -41,48 +29,53 @@ export default class RequestHandler {
                 return body;
             }
 
-            try { return JSON.parse(body) } catch(e) {}
+            try {
+                return JSON.parse(body);
+            } catch {}
             return body.toString("utf8");
         }
-        
+
+        let url = new URL(options.url || `https://${host}${path}`);
+        url.searchParams.set("ajax", true);
+        url.searchParams.set("t_1", "ref");
+        url.searchParams.set("t_2", "desk");
+        if (token !== null) {
+            url.searchParams.set("app_signed_request", token);
+        }
+
+        let request = new Request(url, { ...options, headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            ...options.headers
+        }});
+
+        let contentType = request.headers.get("Content-Type");
         return new Promise((resolve, reject) => {
-            try {
-                const req = https.request({
-                    hostname: host || "www.freeriderhd.com",
-                    path,
-                    method,
-                    headers
-                }, res => {
-                    let data = [];
+            (/^https:$/i.test(url.protocol) ? https : http).request({
+                host: url.hostname,
+                path: url.pathname + url.search,
+                method: request.method,
+                headers: Object.fromEntries(request.headers.entries())
+            }, async function(res) {
+                const buffers = [];
+                for await (const chunk of res) {
+                    buffers.push(chunk);
+                }
 
-                    res.on("data", function(buffer) {
-                        data.push(buffer);
-                    });
-                    res.on("end", function() {
-                        data = Buffer.concat(data);
+                let data = Buffer.concat(buffers);
+                if (contentType.startsWith("image/png")) {
+                    if (contentType.includes("base64")) {
+                        data = 'data:image/png; base64, ' + data.toString("base64");
+                    }
 
-                        if (headers["content-type"].startsWith("image/png")) {
-                            if (headers["content-type"].includes("base64")) {
-                                data = "data:image/png; base64, " + data.toString("base64");
-                            }
+                    return void resolve(data);
+                }
 
-                            return resolve(data);
-                        }
-
-                        try {
-                            data = JSON.parse(data);
-                        } catch(e) {
-                            data = data.toString("utf8");
-                        }
-
-                        resolve(data);
-                    });
-                });
-                req.write(headers["content-type"] === "application/json" ? JSON.stringify(body) : new URLSearchParams(body).toString());
-                req.end();
-            } catch(error) {
-                return reject(error);
-            }
+                res.once("error", reject);
+                try {
+                    return void resolve(JSON.parse(data));
+                } catch {}
+                resolve(data.toString("utf8"));
+            }).end(contentType == "application/json" ? JSON.stringify(options.body) : (new URLSearchParams(options.body) || url.searchParams).toString());
         });
     }
 
@@ -92,7 +85,7 @@ export default class RequestHandler {
      * @returns {Promise}
      */
     cosmetics(id) {
-        return this.constructor.ajax(`/store/gear?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
+        return this.constructor.ajax(`/store/gear`).then(function(response) {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))
                 throw new Error("COSMETIC_NOT_FOUND");
             
@@ -142,7 +135,7 @@ export default class RequestHandler {
      * @returns {Promise}
      */
     notifications(count = Infinity) {
-        return this.constructor.ajax(`/notifications?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function({ notification_days }) {
+        return this.constructor.ajax(`/notifications`).then(function({ notification_days }) {
             if (notification_days && notification_days.length > 0) {
                 return notification_days[0].notifications.slice(0, count).map(function(notification) {
                     return new Notification(notification)
@@ -160,7 +153,7 @@ export default class RequestHandler {
      */
     tracks(id, fields) {
         if (fields !== void 0) {
-            return this.constructor.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}&app_signed_request=${token}`).then(function(response) {
+            return this.constructor.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}`).then(function(response) {
                 if (response.result === false)
                     throw new Error("TRACK_NOT_FOUND");
                 
@@ -168,7 +161,7 @@ export default class RequestHandler {
             });
         }
 
-        return this.constructor.ajax(`/t/${parseInt(id)}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(function(response) {
+        return this.constructor.ajax(`/t/${parseInt(id)}`).then(function(response) {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))
                 throw new Error("TRACK_NOT_FOUND");
             
@@ -187,7 +180,7 @@ export default class RequestHandler {
      * @returns {Promise}
      */
     users(username) {
-        return this.constructor.ajax(`/u/${username}?ajax=!0`).then(function(response) {
+        return this.constructor.ajax(`/u/${username}`).then(function(response) {
             if (response.app_title.match(/Page\s+Not\s+Found/gi))
                 throw new Error("USER_NOT_FOUND");
 
