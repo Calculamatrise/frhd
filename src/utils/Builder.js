@@ -1,25 +1,7 @@
-import Image from "./Image.js";
 import Alphabet from "./Alphabet.js";
-import { Buffer } from "buffer";
+import Image from "./Image.js";
 
 export default class {
-    /**
-     * 
-     * @param {String} uri image location or URI
-     */
-    static image(uri) {
-        return new Promise(function(resolve, reject) {
-            let image = new Image();
-            image.src = uri;
-            image.addEventListener("load", function(image) {
-                resolve(image);
-            });
-            image.addEventListener("error", function(error) {
-                reject(error);
-            });
-        });
-    }
-
     #fillStyle = "#000000";
     get fillStyle() {
         return this.#fillStyle;
@@ -134,25 +116,16 @@ export default class {
         this.#textBaseline = value;
     }
 
-    /**
-     * @private
-     */
     #position = {
         x: null,
         y: null
     }
 
-    /**
-     * @private
-     */
     #translation = {
         x: 0,
         y: 0
     }
-    
-    /**
-     * @private
-     */
+
     #cache = {}
     #physics = new Set();
     #scenery = new Set();
@@ -186,7 +159,7 @@ export default class {
     }
 
     get scenery() {
-        return this.#scenery.map((vector) => vector.map((value) => parseInt(value).toString(32)).join(" ")).join(",");
+        return Array.from(this.#scenery.values()).map((vector) => vector.map((value) => parseInt(value).toString(32)).join(" ")).join(",");
     }
 
     get powerups() {
@@ -197,49 +170,49 @@ export default class {
                     for (const e of this.#powerups[t]) {
                         powerups += `T ${e.map(t => t.toString(32)).join(" ")},`;
                     }
-                break;
+                    break;
                 
                 case "boosters":
                     for (const e of this.#powerups[t]) {
                         powerups += `B ${e.map(t => t.toString(32)).join(" ")},`;
                     }
-                break;
+                    break;
 
                 case "gravity":
                     for (const e of this.#powerups[t]) {
                         powerups += `G ${e.map(t => t.toString(32)).join(" ")},`;
                     }
-                break;
+                    break;
 
                 case "slowmos":
                     for (const e of this.#powerups[t]) {
                         powerups += `S ${e.map(t => t.toString(32)).join(" ")},`;
                     }
-                break;
+                    break;
                 
                 case "bombs":
                     for (const e of this.#powerups[t]) {
                         powerups += `O ${e.map(t => t.toString(32)).join(" ")},`;
                     }
-                break;
+                    break;
 
                 case "checkpoints":
                     for (const e of this.#powerups[t]) {
                         powerups += `C ${e.map(t => t.toString(32)).join(" ")},`;
                     }
-                break;
+                    break;
 
                 case "antigravity":
                     for (const e of this.#powerups[t]) {
                         powerups += `A ${e.map(t => t.toString(32)).join(" ")},`;
                     }
-                break;
+                    break;
 
                 case "teleporters":
                     for (const e of this.#powerups[t]) {
                         powerups += `W ${e.map(t => t.toString(32)).join(" ")},`;
                     }
-                break;
+                    break;
 
                 case "vehicles":
                     for (const e in this.#powerups[t]) {
@@ -247,7 +220,7 @@ export default class {
                             powerups += `V ${i.map(t => t.toString(32)).join(" ")},`;
                         }
                     }
-                break;
+                    break;
             }
         }
 
@@ -262,7 +235,7 @@ export default class {
      * @param {String} value track code you wish to manipulate.
      */
     set code(value) {
-        if (typeof value !== "string") {
+        if (typeof value != "string") {
             throw new TypeError("Track code must be of type string!");
         }
         
@@ -303,7 +276,7 @@ export default class {
                     this.#powerups.teleporters.add(powerup.slice(1).map(t => parseInt(t, 32)));
                     break;
 
-                case "V":
+                case "V": {
                     switch(powerup[3]) {
                         case "1":
                             this.#powerups.vehicles.heli.add(powerup.slice(1).map(t => parseInt(t, 32)));
@@ -321,8 +294,8 @@ export default class {
                             this.#powerups.vehicles.blob.add(powerup.slice(1).map(t => parseInt(t, 32)));
                             break;
                     }
-
                     break;
+                }
             }
         }
     }
@@ -342,12 +315,11 @@ export default class {
             for (const argument of arguments) {
                 this.arc(...argument);
             }
-
             return;
         }
 
         for (const argument of arguments) {
-            if (typeof argument === "boolean") {
+            if (typeof argument == "boolean") {
                 continue;
             }
 
@@ -380,7 +352,6 @@ export default class {
 
         this.#position.x = this.#translation.x + points.at(-2);
         this.#position.y = this.#translation.y + points.at(-1);
-
         return this;
     }
 
@@ -398,7 +369,6 @@ export default class {
             for (const argument of arguments) {
                 this.arcTo(...argument);
             }
-
             return;
         }
 
@@ -439,7 +409,6 @@ export default class {
             for (const argument of arguments) {
                 this.bezierCurveTo(...argument);
             }
-
             return;
         }
 
@@ -486,7 +455,6 @@ export default class {
     }
 
     clip() {}
-
     closePath() {
         if (!this.#segment) {
             return this;
@@ -495,20 +463,16 @@ export default class {
         if (this.#segment.length < 1) {
             return;
         }
-        
+
         for (const value of this.#segment) {
             if (isNaN(parseFloat(value))) {
                 return;
             }
         }
 
-        let [ x, y ] = this.#segment;
-
-        this.lineTo(x, y);
-
+        this.lineTo(...this.#segment);
         return this;
     }
-
 
     /**
      * 
@@ -517,7 +481,7 @@ export default class {
      * @returns {Object} ImageData object.
      */
     createImageData(width, height) {
-        if (typeof width === "object" && height === void 0) {
+        if (typeof width == "object" && height === void 0) {
             return {
                 data: new Uint8ClampedArray(Array.from({
                     length: width.width * width.height * 4
@@ -525,7 +489,7 @@ export default class {
                 width: width.width,
                 height: width.height
             }
-        }        
+        }
 
         return {
             data: new Uint8ClampedArray(Array.from({
@@ -547,24 +511,21 @@ export default class {
      * @param {Number|String} dy image along the y-axis on the canvas
      * @param {Number|String} dWidth image width on the canvas
      * @param {Number|String} dHeight image height on the canvas
-     * @returns {Builder} instance of Builder.
+     * @returns {Builder} instance of Builder
      */
     drawImage(image, sx = 0, sy = 0, sWidth = image.width, sHeight = image.height, dx = 0, dy = 0, dWidth = sWidth, dHeight = sHeight) {
-        if (typeof image !== "object") {
-            throw new Error("Invalid Image");
+        if (typeof image != "object") {
+            throw new TypeError("Invalid Image");
         }
 
         let pixels = new Uint8ClampedArray(image.data.map(function(item, index, data) {
             if (index % 4 === 0) {
                 let average = item * .2 + data[index + 1] * .7 + data[index + 2] * .1;
-
                 return average <= 85 ? 0 : average <= 170 ? 170 : 255;
             }
 
             return false;
-        }).filter((item, index) => {
-            return index % 4 === 0
-        }));
+        }).filter((item, index) => index % 4 === 0));
 
         let width = sWidth;
         let height = sHeight;
@@ -762,7 +723,6 @@ export default class {
             for (const argument of arguments) {
                 this.lineTo(...argument);
             }
-
             return;
         }
 
@@ -894,7 +854,6 @@ export default class {
             if (property === "position") {
                 this.#position.x = this.#cache[property].x
                 this.#position.y = this.#cache[property].y
-
                 continue;
             }
             
@@ -1085,7 +1044,7 @@ export default class {
         this.beginPath();
         content.forEach((line, offset) => {
             for (const char in line) {
-                if (typeof Alphabet[line[char]] === "function") {
+                if (typeof Alphabet[line[char]] == "function") {
                     Alphabet[line[char]](this, x, y + offset * (Alphabet.letterSpacing * (parseInt(Alphabet.fontSize) * 4)) - 2, (char + 1) * (Alphabet.letterSpacing * (parseInt(Alphabet.fontSize) / 5)) - 2);
                 }
             }
@@ -1143,8 +1102,8 @@ export default class {
     }
 
     translate(x = 0, y = 0) {
-        this.#translation.x = x;
-        this.#translation.y = y;
+        this.#translation.x = ~~x;
+        this.#translation.y = ~~y;
         return this;
     }
 

@@ -274,7 +274,6 @@ export default class extends EventEmitter {
     logout() {
         this.user = null;
         token = null;
-
         return this;
     }
 }

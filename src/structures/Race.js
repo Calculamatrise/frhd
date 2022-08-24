@@ -1,7 +1,8 @@
 export default class {
     constructor(data) {
-        if (typeof data !== "object")
-            throw new Error("INVALID_DATA_TYPE");
+        if (typeof data != "object") {
+            throw new TypeError("INVALID_DATA_TYPE");
+        }
 
         this.init(data);
     }

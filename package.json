@@ -1,13 +1,14 @@
 {
     "name": "frhd",
     "alias": "@Calculamatrise/frhd",
-    "version": "0.0.5-security",
+    "version": "0.0.6-gold",
     "description": "An app to communicacte with FRHD",
     "main": "src/index.js",
     "bin": "bin/index.js",
     "types": "typings/index.d.ts",
     "preferGlobal": true,
     "directories": {
+        "bin": "bin",
         "lib": "src"
     },
     "files": [

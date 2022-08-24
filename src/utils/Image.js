@@ -1,94 +1,73 @@
-let src;
-let data;
+import read from "../libs/exif/index.js";
 
-import read from "../libs/pngjs/index.js";
-
+import EventEmitter from "events";
 import RequestHandler from "./RequestHandler.js";
 
-const events = {}
-
-export default class {
-    constructor(width, height) {
-        if (width !== void 0) {
-            this.width = width;
-        }
-
-        if (height !== void 0) {
-            this.height = height;
-        }
-    }
+export default class Image extends EventEmitter {
+    #data = null;
+    #src = null;
 
     width = 0;
     height = 0;
 
-    /**
-     * 
-     * @public
-     */
-    get src() {
-        return src;
+    get data() {
+        return this.#data;
     }
-    /**
-     * 
-     * @type {String}
-     */
-    set src(source) {
-        src = source;
 
-        const response = RequestHandler.ajax(source, {
+    get src() {
+        return this.#src;
+    }
+
+    set src(value) {
+        this.#src = value;
+
+        RequestHandler.ajax({
+            url: value,
             headers: {
-                "content-type": "image/png"
+                "Content-Type": "image/png"
+            }
+        }).then(image => {
+            const { width, height, data } = read(image);
+
+            this.width = width;
+            this.height = height;
+            this.#data = new Uint8ClampedArray(data);
+
+            this.emit("load", this);
+            if (typeof this.onload == "function") {
+                this.onload.call(this);
             }
         });
-
-        const then = (image) => {
-            image = read(image);
-
-            this.width = image.width;
-            this.height = image.height;
-
-            data = new Uint8ClampedArray(image.data);
-            if (events.hasOwnProperty("load")) {
-                events.load.bind(this)(this);
-            }
-            
-            if (this.onload === "function") {
-                this.onload.bind(this)(this);
-            }
-        }
-
-        if (Buffer.isBuffer(response)) {
-            then(response);
-
-            return;
-        }
-
-        response.then(then);
     }
 
     /**
-     * 
-     * @protected
-     * @type {Object}
+     * Load an image asynchronous
+     * @param {String} url 
+     * @returns {Promise<Uint8ClampedArray>}
      */
-    get data() {
-        return data;
+    static load(url) {
+        const image = new this.constructor();
+        return new Promise(function(resolve, reject) {
+            try {
+                image.on("load", function() {
+                    resolve(this.data);
+                });
+                image.src = url;
+            } catch(err) {
+                reject(err);
+            }
+        });
     }
 
-    /**
-     * 
-     * @param {String} event event
-     * @param {Function} listener listener function
-     */
-    addEventListener(event, listener = function() {}) {
-        if (typeof event !== "string") {
-            throw new Error("Invalid event");
-        } else if (typeof listener !== "function") {
-            throw new Error("Invalid listener");
+    constructor(width, height) {
+        super();
+
+        if (width !== void 0) {
+            this.width = ~~width;
         }
 
-        events[event] = listener;
+        if (height !== void 0) {
+            this.height = ~~height;
+        }
     }
-
-    on = this.addEventListener;
 }

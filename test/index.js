@@ -1,4 +1,4 @@
-import frhd, { Client, Builder, Gamepad, Image } from "./src/bootstrap.js";
+import frhd, { Client, Builder, Gamepad, Image } from "../src/index.js";
 
 const client = new Client({
     listen: true,
@@ -18,5 +18,5 @@ client.on("commentMention", function(comment) {
 
 client.login({
     username: "frai",
-    password: "allah"
+    password: "password"
 });

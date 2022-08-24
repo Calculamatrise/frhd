@@ -1,59 +1,27 @@
-export default class {
-    events = new Map();
-    keymap = ["up", "down", "left", "right", "z"];
-    records = new Map(this.keymap.map((item) => [
-        item, {
-            down: new Set(),
-            up: new Set()
-        }
-    ]));
-    ticks = 0;
-    /**
-     * 
-     * @param {String} event 
-     * @param {Function} listener 
-     */
-    on(event, listener) {
-        if (this.events.has(event) === false) {
-            this.events.set(event, []);
-        }
+import EventEmitter from "events";
 
-        let events = this.events.get(event);
-        events.push(event, listener);
+export default class extends EventEmitter {
+    keymap = new Set();
+    records = new Map();
+    constructor() {
+        super();
 
-        if (event === "tick") {
-            this.emit(event, this.ticks);
-        }
+        this.keymap.add("down");
+        this.keymap.add("left");
+        this.keymap.add("right");
+        this.keymap.add("up");
+        this.keymap.add("z");
 
-        return listener;
+        this.reset();
     }
 
     /**
      * 
-     * @param {String} event 
-     * @param  {...any} args 
-     */
-    emit(event, ...args) {
-        let events = this.events.get(event) || [];
-        if (typeof this["on" + event] === "function") {
-            events.push(this["on" + event]);
-        }
-
-        events.forEach((event) => {
-            if (typeof event === "function") {
-                event.apply(this, args);
-            }
-        });
-    }
-
-    /**
-     * 
-     * @param {Number} max 
+     * @param {Number} [max]
      */
     tick(max = Infinity) {
         if (this.ticks >= max) {
-            this.complete();
-            return;
+            return void this.complete();
         }
 
         // update records here instead; a downkeys set can be used, then
@@ -81,19 +49,16 @@ export default class {
             for (const key of keys) {
                 this.down.call(this, key);
             }
-
             return;
         }
 
         if (this.keymap.indexOf(key) === -1) {
-            console.warn("Key does not exist in keymap!");
-            return;
+            return void console.warn("Key does not exist in keymap!");
         }
 
         let record = this.records.get(key);
         if (record.down.size > record.up.size) {
-            console.warn("Key is already down!");
-            return;
+            return void console.warn("Key is already down!");
         }
 
         if (record.up.delete(this.ticks)) {
@@ -119,19 +84,16 @@ export default class {
             for (const key of keys) {
                 this.toggle.call(this, key);
             }
-
             return;
         }
 
         if (this.keymap.indexOf(key) === -1) {
-            console.warn("Key does not exist in keymap!");
-            return;
+            return void console.warn("Key does not exist in keymap!");
         }
 
         let record = this.records.get(key);
         if (record.down.size === record.up.size) {
-            this.down(key);
-            return;
+            return void this.down(key);
         }
 
         this.up(key);
@@ -153,19 +115,16 @@ export default class {
             for (const key of keys) {
                 this.up.call(this, key);
             }
-
             return;
         }
 
         if (this.keymap.indexOf(key) === -1) {
-            console.warn("Key does not exist in keymap!");
-            return;
+            return void console.warn("Key does not exist in keymap!");
         }
 
         let record = this.records.get(key);
         if (record.down.size === record.up.size) {
-            console.warn("Key is already up!");
-            return;
+            return void console.warn("Key is already up!");
         }
 
         if (record.down.delete(this.ticks)) {
@@ -191,12 +150,13 @@ export default class {
     }
 
     reset() {
-        this.records = new Map(this.keymap.map((item) => [
-            item, {
+        this.records.clear();
+        this.keymap.forEach(key => {
+            this.records.set(key, {
                 down: new Set(),
                 up: new Set()
-            }
-        ]));
+            });
+        });
         this.ticks = 0;
     }
 }

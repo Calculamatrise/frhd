@@ -5,7 +5,7 @@ import getUser from "../getUser.js";
 
 export default class extends Array {
     get(user) {
-        if (typeof user === "string")
+        if (typeof user == "string")
             return this.find(friend => friend.username === user) || null;
 
         if (isNaN(+(+user).toFixed()))

@@ -9,6 +9,12 @@ export interface Client {
 }
 
 export interface ClientEvents {
-    test: [message: string],
-    raw: [message: object]
+    friendLeaderboardPassed: [data: object],
+    friendRequestAccepted: [data: object],
+    friendRequestReceived: [data: object],
+    friendTrackChallenge: [data: object],
+    raw: [message: object],
+    subscriberTrackPublish: [data: object],
+    trackLeaderboardPassed: [data: object],
+    trackUsernameMention: [data: object]
 }

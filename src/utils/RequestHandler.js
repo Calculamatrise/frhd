@@ -18,7 +18,7 @@ export default class RequestHandler {
      */
     static ajax(option, options = typeof option === "object" ? option : {}) {
         let host = options.hostname || options.host || 'www.freeriderhd.com';
-        let path = options.pathname || options.path || option || '';
+        let path = options.pathname || options.path || (typeof option != 'object' && option) || '';
         if (path.match(/^\.?\/?/) && host === "local") {
             const body = readFileSync(path);
             if (headers["content-type"].startsWith("image/png")) {
@@ -43,10 +43,10 @@ export default class RequestHandler {
             url.searchParams.set("app_signed_request", token);
         }
 
-        let request = new Request(url, { ...options, headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            ...options.headers
-        }});
+        let request = new Request(url, options);
+        if (!request.headers.has("Content-Type")) {
+            request.headers.set("Content-Type", "application/x-www-form-urlencoded");
+        }
 
         let contentType = request.headers.get("Content-Type");
         return new Promise((resolve, reject) => {

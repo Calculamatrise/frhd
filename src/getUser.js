@@ -9,10 +9,7 @@ import User from "./structures/User.js";
  * @returns {User} 
  */
 export default function(user, callback = response => response) {
-    return RequestHandler.ajax({
-        path: `/u/${user}?ajax=!0`,
-        method: "get"
-    }).then(function(user) {
-        return User.create(user);
+    return RequestHandler.ajax(`/u/${user}`).then(function(response) {
+        return User.create(response);
     }).then(callback);
 }

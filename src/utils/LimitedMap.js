@@ -1,14 +1,14 @@
 export default class extends Map {
-    constructor({ limit = Infinity } = {}) {
+    limit = Infinity;
+    constructor(options = {}) {
         super();
-        this.limit = limit;
+
+        this.limit = ~~options.limit || this.limit;
     }
 
     set(key, value) {
-        if (this.limit) {
-            if (this.size >= this.limit) {
-                this.delete([...this].shift()[0]);
-            }
+        if (this.size >= this.limit) {
+            this.delete([...this].shift()[0]);
         }
 
         super.set(key, value);

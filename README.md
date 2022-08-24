@@ -7,7 +7,7 @@ https://calculamatrise.github.io/frhd/api/docs/
 ```js
 import frhd, { Client } from "frhd";
 
-// Client = frhd.Client
+// const { Client } = frhd;
 
 const client = new Client();
 

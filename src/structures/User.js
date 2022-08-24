@@ -19,8 +19,8 @@ export default class User {
     createdTracks = new TrackManager();
     likedTracks = new TrackManager();
     static async create(data) {
-        if (typeof data !== "object") {
-            throw new Error("INVALID_DATA_TYPE");
+        if (typeof data != "object") {
+            throw new TypeError("INVALID_DATA_TYPE");
         }
 
         const instance = new User();

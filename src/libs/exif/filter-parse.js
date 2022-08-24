@@ -1,26 +1,34 @@
-import paethPredictor from "./paeth-predictor.js";
+import EventEmitter from "events";
 
-function getByteWidth(width, bpp, depth) {
-    let byteWidth = width * bpp;
-    if (depth !== 8) {
-        byteWidth = Math.ceil(byteWidth / (8 / depth));
+import paethPredictor from "./paeth-predictor.js";
+import SyncReader from "./sync-reader.js";
+
+export default class extends EventEmitter {
+    #buffers = [];
+    #images = [];
+    #imageIndex = 0;
+    #lastLine = null;
+    #reader = null;
+    #xref = 0;
+
+    get buffer() {
+        return Buffer.concat(this.#buffers);
     }
 
-    return byteWidth;
-}
+    /**
+     * 
+     * @param {Object} bitmapInfo
+     * @param {Number} bitmapInfo.width
+     * @param {Number} bitmapInfo.height
+     * @param {Number} bitmapInfo.depth
+     * @param {Number} bitmapInfo.bpp
+     */
+    constructor(bitmapInfo) {
+        super();
 
-export default class {
-    constructor(bitmapInfo, dependencies) {
         let bpp = bitmapInfo.bpp;
         let depth = bitmapInfo.depth;
-
-        this.read = dependencies.read;
-        this.write = dependencies.write;
-        this.complete = dependencies.complete;
-
-        this._imageIndex = 0;
-        this._images = [];
-        this._images.push({
+        this.#images.push({
             byteWidth: getByteWidth(bitmapInfo.width, bpp, depth),
             height: bitmapInfo.height,
             lineIndex: 0,
@@ -31,29 +39,31 @@ export default class {
         // so if the depth is byte compatible (8 or 16) we subtract the bpp in order to compare back
         // a pixel rather than just a different byte part. However if we are sub byte, we ignore.
         if (depth === 8) {
-            this._xComparison = bpp;
+            this.#xref = bpp;
         } else if (depth === 16) {
-            this._xComparison = bpp * 2;
+            this.#xref = bpp * 2;
         } else {
-            this._xComparison = 1;
+            this.#xref = 1;
         }
     }
 
-    start() {
-        this.read(
-            this._images[this._imageIndex].byteWidth + 1,
-            this._reverseFilterLine.bind(this)
+    /**
+     * 
+     * @param {Buffer} [buffer]
+     */
+    filter(buffer) {
+        this.#reader = new SyncReader(buffer);
+        this.#reader.read(
+            this.#images[this.#imageIndex].byteWidth + 1,
+            this.#reverseFilterLine.bind(this)
         );
+        this.#reader.process();
+        return this.buffer;
     }
 
-    _unFilterType1(
-        rawData,
-        unfilteredLine,
-        byteWidth
-    ) {
-        let xComparison = this._xComparison;
+    #unFilterType1(rawData, unfilteredLine, byteWidth) {
+        let xComparison = this.#xref;
         let xBiggerThan = xComparison - 1;
-    
         for (let x = 0; x < byteWidth; x++) {
             let rawByte = rawData[1 + x];
             let f1Left = x > xBiggerThan ? unfilteredLine[x - xComparison] : 0;
@@ -61,13 +71,8 @@ export default class {
         }
     }
 
-    _unFilterType2(
-        rawData,
-        unfilteredLine,
-        byteWidth
-    ) {
-        let lastLine = this._lastLine;
-    
+    #unFilterType2(rawData, unfilteredLine, byteWidth) {
+        let lastLine = this.#lastLine;
         for (let x = 0; x < byteWidth; x++) {
             let rawByte = rawData[1 + x];
             let f2Up = lastLine ? lastLine[x] : 0;
@@ -75,14 +80,10 @@ export default class {
         }
     }
 
-    _unFilterType3(
-        rawData,
-        unfilteredLine,
-        byteWidth
-    ) {
-        let xComparison = this._xComparison;
+    #unFilterType3(rawData, unfilteredLine, byteWidth) {
+        let xComparison = this.#xref;
         let xBiggerThan = xComparison - 1;
-        let lastLine = this._lastLine;
+        let lastLine = this.#lastLine;
     
         for (let x = 0; x < byteWidth; x++) {
             let rawByte = rawData[1 + x];
@@ -93,15 +94,11 @@ export default class {
         }
     }
 
-    _unFilterType4(
-        rawData,
-        unfilteredLine,
-        byteWidth
-    ) {
-        let xComparison = this._xComparison;
+    #unFilterType4(rawData, unfilteredLine, byteWidth) {
+        let xComparison = this.#xref;
         let xBiggerThan = xComparison - 1;
-        let lastLine = this._lastLine;
-    
+        let lastLine = this.#lastLine;
+
         for (let x = 0; x < byteWidth; x++) {
             let rawByte = rawData[1 + x];
             let f4Up = lastLine ? lastLine[x] : 0;
@@ -112,52 +109,58 @@ export default class {
         }
     }
 
-    _reverseFilterLine(rawData) {
+    #reverseFilterLine(rawData) {
         let filter = rawData[0];
         let unfilteredLine;
-        let currentImage = this._images[this._imageIndex];
+        let currentImage = this.#images[this.#imageIndex];
         let byteWidth = currentImage.byteWidth;
-    
         if (filter === 0) {
             unfilteredLine = rawData.slice(1, byteWidth + 1);
         } else {
             unfilteredLine = Buffer.alloc(byteWidth);
-    
-            switch (filter) {
+            switch(filter) {
                 case 1:
-                    this._unFilterType1(rawData, unfilteredLine, byteWidth);
+                    this.#unFilterType1(rawData, unfilteredLine, byteWidth);
                     break;
                 case 2:
-                    this._unFilterType2(rawData, unfilteredLine, byteWidth);
+                    this.#unFilterType2(rawData, unfilteredLine, byteWidth);
                     break;
                 case 3:
-                    this._unFilterType3(rawData, unfilteredLine, byteWidth);
+                    this.#unFilterType3(rawData, unfilteredLine, byteWidth);
                     break;
                 case 4:
-                    this._unFilterType4(rawData, unfilteredLine, byteWidth);
+                    this.#unFilterType4(rawData, unfilteredLine, byteWidth);
                     break;
                 default:
                     throw new Error("Unrecognised filter type - " + filter);
             }
         }
-    
-        this.write(unfilteredLine);
-    
+
+        this.#buffers.push(unfilteredLine);
+
         currentImage.lineIndex++;
         if (currentImage.lineIndex >= currentImage.height) {
-            this._lastLine = null;
-            this._imageIndex++;
-            currentImage = this._images[this._imageIndex];
+            this.#lastLine = null;
+            currentImage = this.#images[++this.#imageIndex];
         } else {
-            this._lastLine = unfilteredLine;
+            this.#lastLine = unfilteredLine;
         }
-    
+
         if (currentImage) {
             // read, using the byte width that may be from the new current image
-            this.read(currentImage.byteWidth + 1, this._reverseFilterLine.bind(this));
+            this.#reader.read(currentImage.byteWidth + 1, this.#reverseFilterLine.bind(this));
         } else {
-            this._lastLine = null;
-            this.complete();
+            this.#lastLine = null;
+            this.emit("complete");
         }
     }
+}
+
+function getByteWidth(width, bpp, depth) {
+    let byteWidth = width * bpp;
+    if (depth !== 8) {
+        byteWidth = Math.ceil(byteWidth / (8 / depth));
+    }
+
+    return byteWidth;
 }

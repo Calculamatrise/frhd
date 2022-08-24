@@ -46,8 +46,8 @@ export default class Track {
      * @returns {Track} 
      */
     static async create(data) {
-        if (typeof data !== "object") {
-            throw new Error("INVALID_DATA_TYPE");
+        if (typeof data != "object") {
+            throw new TypeError("INVALID_DATA_TYPE");
         }
 
         const track = new Track();

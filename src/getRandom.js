@@ -5,11 +5,11 @@ import getTrack from "./getTrack.js";
 
 export default function(min, max, callback = response => response) {
     if (min !== void 0 && max !== void 0) {
-        getTrack(Math.ceil(Math.random() * max) + min);
+        getTrack(Math.round(Math.random() * max) + min);
     }
 
     return RequestHandler.ajax({
-        path: `/random/track/?ajax=!0`,
+        path: `/random/track/`,
         method: "get"
     }).then(function(track) {
         return new Track(track);

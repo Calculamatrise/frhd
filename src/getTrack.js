@@ -9,7 +9,7 @@ import Track from "./structures/Track.js";
  * @returns {Track} 
  */
 export default function(id, callback = response => response) {
-    return RequestHandler.ajax("/t/" + parseInt(id) + "?ajax=!0").then(function(response) {
+    return RequestHandler.ajax("/t/" + parseInt(id) + "").then(function(response) {
         return Track.create({
             ...response.track,
             campagin: response.campagin,

@@ -2,7 +2,7 @@
 
 import Terminal from "./utils/Terminal.js";
 
-import { Builder, Client, getTrack, getUser } from "../src/bootstrap.js";
+import { Builder, Client, getTrack, getUser } from "../src/index.js";
 
 const terminal = new Terminal();
 
@@ -70,7 +70,7 @@ terminal.when("builder", function(response) {
     });
 });
 
-terminal.when("client", function(response) {
+terminal.when("client", function recurse(response) {
     const client = new Client();
     response.write("Type one of the following commands:\n\t- login\n\t- defaultLogin\n\t- changeUsername\n\t- changeDescription\n\t- changePassword\n\t- setForumPassword\n\t- buyHead\n\t- setHead\n\t- addFriend\n\t- acceptFriend\n\t- removeFriend\n\t- subscribe\n\t- unsubscribe\n\t- postTrack\n\t- redeemCoupon\n\t- logout\n\n> ", async (input) => {
         const [ method, ...args ] = input.split(/\s+/g)
