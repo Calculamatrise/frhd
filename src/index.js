@@ -2,6 +2,8 @@ export { default as Builder } from "./utils/Builder.js";
 export { default as Client } from "./client/Client.js";
 export { default as Events } from "./utils/Events.js";
 export { default as Gamepad } from "./utils/Gamepad.js";
+export { default as GamepadEvents } from "./utils/GamepadEvents.js";
+export { default as GamepadKeymap } from "./utils/GamepadKeymap.js";
 export { default as Image } from "./utils/Image.js";
 
 export { default as getHome } from "./getHome.js";

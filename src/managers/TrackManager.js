@@ -7,10 +7,6 @@ import Builder from "../utils/Builder.js";
 
 import getCategory from "../getCategory.js";
 
-/**
- * @callback Callback
- */
-
 export default class extends BaseManager {
     /**
      * 
@@ -29,7 +25,6 @@ export default class extends BaseManager {
      * @param {String} options.defaultVehicle 
      * @param {Boolean} options.MTB 
      * @param {Boolean} options.BMX 
-     * @param {Callback} callback 
      * @returns {Promise}
      */
     async post({
@@ -80,15 +75,12 @@ export default class extends BaseManager {
     }
 
     /**
-     * 
-     * @async
+     * Add a track to the 'track of the day' queue
      * @protected requires administrative privileges.
-     * @description add a track to the 'track of the day' queue
      * @param {Number|String} track
      * @param {Number|String} lives
      * @param {Number|String} refillCost
      * @param {Number|String} gems
-     * @param {Callback} callback
      * @returns {Promise}
      */
     addTrackOfTheDay(track, lives, refillCost, gems) {
@@ -109,15 +101,12 @@ export default class extends BaseManager {
     }
 
     /**
-     * 
-     * @async
+     * Remove a track from the 'track of the day' queue
      * @protected requires administrative privileges.
-     * @description removes a specified track from the track of the day queue.
      * @param {Number|String} track
-     * @param {Callback} callback
      * @returns {Promise}
      */
-    async removeTrackOfTheDay(track, callback = response => response) {
+    removeTrackOfTheDay(track) {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
@@ -128,7 +117,7 @@ export default class extends BaseManager {
                 app_signed_request: token
             },
             method: "post"
-        }).then(callback);
+        });
     }
 
     /**
@@ -148,7 +137,6 @@ export default class extends BaseManager {
      * 
      * @protected requires administrative privileges.
      * @param {Number|String} id track ID
-     * @param {Callback} callback 
      * @returns {Promise}
      */
     unfeature(id) {
@@ -194,10 +182,9 @@ export default class extends BaseManager {
     }
 
     /**
-     * 
+     * Rate all tracks in a given range
      * @async
      * @private
-     * @description rate all tracks between so and so.
      * @param {Number|Boolean} rating
      * @param {Object} options
      * @param {Number|String} options.startingTrackId 
@@ -230,15 +217,14 @@ export default class extends BaseManager {
     }
 
     /**
-     * 
+     * Remove cheated ghosts on all tracks between a given range
      * @async
      * @protected requires administrative privileges.
-     * @param {Object} options 
-     * @param {Array} options.users 
-     * @param {Number|String} options.startingTrackId 
-     * @param {Number|String} options.endingTrackId 
-     * @param {Number|String} timeout 
-     * @description removes cheated ghosts on all tracks between the given range
+     * @param {Object} options
+     * @param {Array} options.users
+     * @param {Number|String} options.startingTrackId
+     * @param {Number|String} options.endingTrackId
+     * @param {Number|String} timeout
      * @returns {String} 
      */
     async deepClean({ users, startingTrackId = 1001, endingTrackId, timeout = 0 } = {}, callback = response => response) {

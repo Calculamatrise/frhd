@@ -52,6 +52,7 @@ export default class extends EventEmitter {
             switch(key.toLowerCase()) {
                 case "debug": {
                     this.#debug = !!options[key];
+                    // this.on(Events.Debug, console.log);
                     break;
                 }
 
@@ -74,23 +75,20 @@ export default class extends EventEmitter {
     }
 
     async #listen() {
-        let notifications = await this.api.datapoll().then(({ notification_count }) => notification_count > 0 ? this.notifications.fetch(notification_count) : []);
+        const notifications = await this.api.datapoll().then(({ notification_count }) => notification_count > 0 ? this.notifications.fetch(notification_count) : []);
         for (const notification of notifications) {
             this.#debug && console.log(notification);
+            this.emit(Events.Raw, notification);
             if (notification.id === null) {
                 let error = new Error("UNKNOWN_NOTIFICATION_ID");
                 console.warn(error, notification);
-                this.emit("error", error);
-                continue;
-            }
-
-            if (notification.id == Events.CommentMention) {
+                this.emit(Events.Error, error);
+            } else if (notification.id == Events.CommentMention) {
                 let track = await this.api.tracks(notification.track.id);
                 this.emit(notification.id, track.comments.get(notification.comment.id));
-                continue;
+            } else {
+                this.emit(notification.id, notification);
             }
-
-            this.emit(notification.id, notification);
         }
 
         setTimeout(this.#listen.bind(this), this.#options.interval);
@@ -140,7 +138,7 @@ export default class extends EventEmitter {
         this.#user = await this.users.fetch(response.user.d_name) || null;
         this.user.moderator = response.user.moderator;
 
-        this.emit("ready");
+        this.emit(Events.ClientReady);
         if (this.#options.listen) {
             this.#listen();
         }

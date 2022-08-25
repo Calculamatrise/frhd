@@ -7,9 +7,6 @@ export default class {
         return this.#fillStyle;
     }
 
-    /**
-     * @param {String} value
-     */
     set fillStyle(value) {
         if (value.match(/^(#([a-f0-9]{3,4}|[a-f0-9]{6,8})|rgba?\((\d+(,\s+)?){3,4}\))$/gi)) {
             throw new Error("INVALID VALUE");
@@ -23,9 +20,6 @@ export default class {
         return this.#font;
     }
 
-    /**
-     * @param {String} value
-     */
     set font(value) {
         // 10px Arial
         this.#font = value;
@@ -36,9 +30,6 @@ export default class {
         return this.#globalCompositeOperation;
     }
 
-    /**
-     * @param {String} value
-     */
     set globalCompositeOperation(value) {
         this.#globalCompositeOperation = value;
     }
@@ -49,9 +40,6 @@ export default class {
         return this.#lineDashOffset;
     }
 
-    /**
-     * @param {Number|String} value
-     */
     set lineDashOffset(value) {
         if (isNaN(+value)) {
             throw new Error("INVALID VALUE");
@@ -65,9 +53,6 @@ export default class {
         return this.#lineWidth;
     }
 
-    /**
-     * @param {Number|String} value
-     */
     set lineWidth(value) {
         if (isNaN(+value)) {
             throw new Error("INVALID VALUE");
@@ -81,9 +66,6 @@ export default class {
         return this.#strokeStyle;
     }
 
-    /**
-     * @param {String} value
-     */
     set strokeStyle(value) {        
         if (value.match(/^(#([a-f0-9]{3,4}|[a-f0-9]{6,8})|rgba?\((\d+(,\s+)?){3,4}\))/gi)) {
             throw new Error("INVALID VALUE");
@@ -97,9 +79,6 @@ export default class {
         return this.#textAlign;
     }
 
-    /**
-     * @param {String} value
-     */
     set textAlign(value) {
         this.#textAlign = value;
     }
@@ -109,9 +88,6 @@ export default class {
         return this.#textBaseline;
     }
 
-    /**
-     * @param {String} value
-     */
     set textBaseline(value) {
         this.#textBaseline = value;
     }
@@ -146,11 +122,11 @@ export default class {
         }
     }
     #segment = []
-    get lines() {
+    get #lines() {
         return this.strokeStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
     }
 
-    get filler() {
+    get #filler() {
         return this.fillStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
     }
 
@@ -231,9 +207,6 @@ export default class {
         return this.physics + "#" + this.scenery + "#" + this.powerups;
     }
 
-    /**
-     * @param {String} value track code you wish to manipulate.
-     */
     set code(value) {
         if (typeof value != "string") {
             throw new TypeError("Track code must be of type string!");
@@ -435,6 +408,29 @@ export default class {
         return this;
     }
 
+    clear() {
+        this.#physics = new Set(),
+        this.#scenery = new Set(),
+        this.#powerups = {
+            targets: new Set(),
+            boosters: new Set(),
+            gravity: new Set(),
+            slowmos: new Set(),
+            bombs: new Set(),
+            checkpoints: new Set(),
+            antigravity: new Set(),
+            teleporters: new Set(),
+            vehicles: {
+                heli: new Set(),
+                truck: new Set(),
+                balloon: new Set(),
+                blob: new Set()
+            }
+        }
+        
+        return this;
+    }
+
     /**
      * 
      * @param {Number|String} x rectangle clip position along the x-axis
@@ -612,7 +608,7 @@ export default class {
     }
 
     fill() {
-        return this.filler.add(...this.#segment),
+        return this.#filler.add(...this.#segment),
         this.#segment = [],
         this;
     }
@@ -632,7 +628,7 @@ export default class {
         }
 
         for (let i = y; i < y + height; i++) {
-            this.filler.add([
+            this.#filler.add([
                 this.#translation.x + x, this.#translation.y + i,
                 this.#translation.x + x + width, this.#translation.y + i
             ]);
@@ -732,7 +728,7 @@ export default class {
             }
         }
 
-        this.lines.add([
+        this.#lines.add([
             this.#position.x, this.#position.y,
             parseFloat(x), parseFloat(y)
         ]);
@@ -838,7 +834,7 @@ export default class {
             }
         }
 
-        this.lines.add([
+        this.#lines.add([
             this.#translation.x + x, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y + height,
@@ -997,7 +993,7 @@ export default class {
             }
         }
 
-        this.lines.add([
+        this.#lines.add([
             parseFloat(x), parseFloat(y),
             parseFloat(x2), parseFloat(y2)
         ]);
@@ -1020,7 +1016,7 @@ export default class {
             }
         }
 
-        this.lines.add([
+        this.#lines.add([
             this.#translation.x + x, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y,
             this.#translation.x + x + width, this.#translation.y + y + height,
@@ -1050,6 +1046,12 @@ export default class {
             }
         });
 
+        return this;
+    }
+
+    translate(x = 0, y = 0) {
+        this.#translation.x = ~~x;
+        this.#translation.y = ~~y;
         return this;
     }
     
@@ -1099,34 +1101,5 @@ export default class {
 
     blob(x, y, t) {
         return this.#powerups.vehicles.blob.add([x, y, 4, t]), this;
-    }
-
-    translate(x = 0, y = 0) {
-        this.#translation.x = ~~x;
-        this.#translation.y = ~~y;
-        return this;
-    }
-
-    clear() {
-        this.#physics = new Set(),
-        this.#scenery = new Set(),
-        this.#powerups = {
-            targets: new Set(),
-            boosters: new Set(),
-            gravity: new Set(),
-            slowmos: new Set(),
-            bombs: new Set(),
-            checkpoints: new Set(),
-            antigravity: new Set(),
-            teleporters: new Set(),
-            vehicles: {
-                heli: new Set(),
-                truck: new Set(),
-                balloon: new Set(),
-                blob: new Set()
-            }
-        }
-        
-        return this;
     }
 }

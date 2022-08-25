@@ -186,7 +186,7 @@ export default class extends BaseManager {
      * @param {String} user 
      * @returns {Promise}
      */
-     async toggleClassicUserAsAdmin(user) {
+    toggleClassicUserAsAdmin(user) {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
@@ -207,7 +207,7 @@ export default class extends BaseManager {
      * @param {Number|String} coins 
      * @returns {Promise}
      */
-    async addWonCoins(username, coins) {
+    addWonCoins(username, coins) {
         if (!token)
             throw new Error("INVALID_TOKEN");
 
@@ -229,7 +229,7 @@ export default class extends BaseManager {
      * @param {Number|String} coins 
      * @returns {Promise}
      */
-    async addPlusDays(username, days, remove) {
+    addPlusDays(username, days, remove) {
         if (!token)
             throw new Error("INVALID_TOKEN");
 

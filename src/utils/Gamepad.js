@@ -1,19 +1,11 @@
 import EventEmitter from "events";
 
+import GamepadEvents from "./GamepadEvents.js";
+
 export default class extends EventEmitter {
-    keymap = new Set();
-    records = new Map();
-    constructor() {
-        super();
-
-        this.keymap.add("down");
-        this.keymap.add("left");
-        this.keymap.add("right");
-        this.keymap.add("up");
-        this.keymap.add("z");
-
-        this.reset();
-    }
+    keymap = new Set(["down", "left", "right", "up", "z"]);
+    records = new Map(Array.from(this.keymap.values()).map(key => [key, new Set()]));
+    ticks = 0;
 
     /**
      * 
@@ -25,47 +17,40 @@ export default class extends EventEmitter {
         }
 
         // update records here instead; a downkeys set can be used, then
-        this.emit("tick", ++this.ticks);
+        this.emit(GamepadEvents.Tick, ++this.ticks);
     }
 
     complete() {
-        this.emit("complete", this.getReplayString());
+        this.emit(GamepadEvents.Complete, this.getReplayString());
         this.reset();
     }
 
     /**
      * 
-     * @param {String} key 
+     * @param {String} key
      */
     down(key) {
-        let keys = null;
         if (arguments.length > 1) {
-            keys = [...arguments];
-        } else if (key instanceof Object) {
-            keys = Object.keys(key);
-        }
-
-        if (keys !== null) {
-            for (const key of keys) {
-                this.down.call(this, key);
+            for (const key of arguments) {
+                this.down(key);
             }
+
             return;
         }
 
-        if (this.keymap.indexOf(key) === -1) {
+        if (!this.keymap.has(key)) {
             return void console.warn("Key does not exist in keymap!");
         }
 
         let record = this.records.get(key);
-        if (record.down.size > record.up.size) {
+        if (record.size % 2 === 1) {
             return void console.warn("Key is already down!");
-        }
-
-        if (record.up.delete(this.ticks)) {
+        } else if (record.delete(this.ticks)) {
             return;
         }
 
-        record.down.add(this.ticks);
+        record.add(this.ticks);
+        this.emit(GamepadEvents.KeyDown, key, this.ticks);
     }
 
     /**
@@ -73,30 +58,19 @@ export default class extends EventEmitter {
      * @param {String} key 
      */
     toggle(key) {
-        let keys = null;
         if (arguments.length > 1) {
-            keys = [...arguments];
-        } else if (key instanceof Object) {
-            keys = Object.keys(key);
-        }
-
-        if (keys !== null) {
-            for (const key of keys) {
-                this.toggle.call(this, key);
+            for (const key of arguments) {
+                this.toggle(key);
             }
+
             return;
         }
 
-        if (this.keymap.indexOf(key) === -1) {
+        if (!this.keymap.has(key)) {
             return void console.warn("Key does not exist in keymap!");
         }
 
-        let record = this.records.get(key);
-        if (record.down.size === record.up.size) {
-            return void this.down(key);
-        }
-
-        this.up(key);
+        this[this.records.get(key).size % 2 === 0 ? 'down' : 'up'](key);
     }
 
     /**
@@ -104,59 +78,53 @@ export default class extends EventEmitter {
      * @param {String} key 
      */
     up(key) {
-        let keys = null;
         if (arguments.length > 1) {
-            keys = [...arguments];
-        } else if (key instanceof Object) {
-            keys = Object.keys(key);
-        }
-
-        if (keys !== null) {
-            for (const key of keys) {
-                this.up.call(this, key);
+            for (const key of arguments) {
+                this.up(key);
             }
+
             return;
         }
 
-        if (this.keymap.indexOf(key) === -1) {
+        if (!this.keymap.has(key)) {
             return void console.warn("Key does not exist in keymap!");
         }
 
         let record = this.records.get(key);
-        if (record.down.size === record.up.size) {
+        if (record.size % 2 === 0) {
             return void console.warn("Key is already up!");
-        }
-
-        if (record.down.delete(this.ticks)) {
+        } else if (record.delete(this.ticks)) {
             return;
         }
 
-        record.up.add(this.ticks);
+        record.add(this.ticks);
+        this.emit(GamepadEvents.KeyUp, key, this.ticks);
     }
 
     getReplayString() {
         let records = {};
-        this.records.forEach((record, key) => {
-            for (const position in record) {
-                if (record[position].size === 0) {
-                    continue;
-                }
-
-                records[key + "_" + position] = Array.from(record[position]);
+        for (const [ key, record ] of this.records) {
+            const ticks = Array.from(record.values());
+            const down = ticks.filter((tick, index) => !(index % 2));
+            if (down.length > 0) {
+                records[key + '_down'] = down;
             }
-        });
 
-        return records;
+            const up = ticks.filter((tick, index) => index % 2);
+            if (up.length > 0) {
+                records[key + '_up'] = up;
+            }
+        }
+
+        return JSON.stringify(records);
     }
 
     reset() {
-        this.records.clear();
-        this.keymap.forEach(key => {
-            this.records.set(key, {
-                down: new Set(),
-                up: new Set()
-            });
-        });
+        for (const record of this.records.values()) {
+            record.clear();
+        }
+
         this.ticks = 0;
+        this.emit(GamepadEvents.Restart);
     }
 }
