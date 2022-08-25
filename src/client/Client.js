@@ -36,10 +36,10 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {Object} [options]
-     * @param {Boolean} options.debug
-     * @param {(Number|String)} options.interval time between each datapoll request
-     * @param {Boolean} options.listen listen to incoming notifications
+     * @param {object} [options]
+     * @param {boolean} [options.debug]
+     * @param {number} [options.interval] time between each datapoll request
+     * @param {boolean} [options.listen] listen to incoming notifications
      */
     constructor(options = {}) {
         if (typeof options != "object" || options instanceof Array) {
@@ -96,10 +96,10 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {(String|Object)} asr app signed request token
-     * @param {String} asr.username frhd login username
-     * @param {String} asr.password frhd login password
-     * @param {String} asr.token app signed request token
+     * @param {(string|object)} asr app signed request token
+     * @param {string} asr.username frhd login username
+     * @param {string} asr.password frhd login password
+     * @param {string} asr.token app signed request token
      * @returns {Client}
      */
     async login(asr) {
@@ -150,8 +150,8 @@ export default class extends EventEmitter {
      * 
      * @async
      * @protected requires administrative privileges.
-     * @param {(Number|String)} track 
-     * @param {(User|Number|String)} user 
+     * @param {number} track
+     * @param {(User|number|string)} user
      * @param {Callback} callback
      * @returns {Promise}
      */
@@ -177,8 +177,8 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {String} user 
-     * @param {String} email 
+     * @param {string} user 
+     * @param {string} email 
      * @param {Callback} callback 
      * @returns {Promise}
      */
@@ -199,10 +199,10 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {String} user 
-     * @param {String} email 
-     * @param {String} secondaryEmail 
-     * @param {Callback} callback 
+     * @param {string} user
+     * @param {string} email
+     * @param {string} secondaryEmail
+     * @param {Callback} callback
      * @returns {Promise}
      */
     async communityTransfer(user, email, secondaryEmail, callback = response => response) {
@@ -223,10 +223,10 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {String} platform 
-     * @param {Number|String} coins 
-     * @param {Number|String} gems 
-     * @param {Callback} callback 
+     * @param {string} platform
+     * @param {number} coins
+     * @param {number} gems
+     * @param {Callback} callback
      * @returns {Promise}
      */
     async generateCoupon(platform, coins, gems, callback = response => response) {
@@ -247,8 +247,8 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {String} coupon 
-     * @param {Callback} callback 
+     * @param {string} coupon
+     * @param {Callback} callback
      * @returns {Promise}
      */
     async redeemCoupon(coupon, callback = response => response) {

@@ -1,7 +1,6 @@
 import EventEmitter from "events";
 
-import Events from "../src/utils/Events";
-import Image from "../src/utils/Image";
+import { Events, GamepadEvents, GamepadKeymap } from "../src";
 import User from "../src/structures/User";
 
 //#region Functions
