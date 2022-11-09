@@ -1,5 +1,10 @@
 import RequestHandler from "./utils/RequestHandler.js";
 
-export default function(callback = response => response) {
+/**
+ * 
+ * @param {Function} callback 
+ * @returns {Promise}
+ */
+export default function(callback = res => res) {
     return RequestHandler.ajax("/").then(callback);
 }

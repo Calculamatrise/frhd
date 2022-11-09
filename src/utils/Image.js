@@ -6,10 +6,8 @@ import RequestHandler from "./RequestHandler.js";
 export default class Image extends EventEmitter {
     #data = null;
     #src = null;
-
     width = 0;
     height = 0;
-
     get data() {
         return this.#data;
     }
@@ -20,7 +18,6 @@ export default class Image extends EventEmitter {
 
     set src(value) {
         this.#src = value;
-
         RequestHandler.ajax({
             url: value,
             headers: {
@@ -42,7 +39,7 @@ export default class Image extends EventEmitter {
 
     /**
      * Load an image asynchronous
-     * @param {String} url 
+     * @param {string} url 
      * @returns {Promise<Uint8ClampedArray>}
      */
     static load(url) {
@@ -61,13 +58,12 @@ export default class Image extends EventEmitter {
 
     constructor(width, height) {
         super();
-
         if (width !== void 0) {
-            this.width = ~~width;
+            this.width = parseInt(width);
         }
 
         if (height !== void 0) {
-            this.height = ~~height;
+            this.height = parseInt(height);
         }
     }
 }

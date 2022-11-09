@@ -1,21 +1,24 @@
 import EventEmitter from "events";
 
 import { Events, GamepadEvents, GamepadKeymap } from "../src";
+import Comment from "../src/structures/Comment";
+import Race from "../src/structures/Race";
+import Track from "../src/structures/Track";
 import User from "../src/structures/User";
 
 //#region Functions
 
 export function getAuthorLeaderboard(page: number, callback: Function): Promise<object>;
 export function getCategory(category: number, callback: Function): Promise<object>;
-export function getComment(trackId: number, commendId: number, callback: Function): Promise<object>;
+export function getComment(trackId: number, commendId: number, callback: Function): Promise<Comment>;
 export function getFeaturedGhosts(callback: Function): Promise<object>;
 export function getHome(callback: Function): Promise<object>;
 export function getPlayerLeaderboard(page: number, callback: Function): Promise<object>;
-export function getRace(trackId: number, username: string, callback: Function): Promise<object>;
-export function getRandom(min?: number, max?: number, callback: Function): Promise<object>;
-export function getTrack(id: number, callback: Function): Promise<object>;
+export function getRace(trackId: number, username: string, callback: Function): Promise<Race>;
+export function getRandom(min?: number, max?: number, callback: Function): Promise<Track>;
+export function getTrack(id: number, callback: Function): Promise<Track>;
 export function getTrackLeaderboard(trackId: number, callback: Function): Promise<object>;
-export function getUser(user: string, callback: Function): Promise<object>;
+export function getUser(user: string, callback: Function): Promise<User>;
 
 //#endregion
 

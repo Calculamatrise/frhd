@@ -8,50 +8,9 @@ const terminal = new Terminal();
 
 terminal.when("builder", function(response) {
     const builder = new Builder();
-    response.write(`Type one of the following commands:
-    - arc
-    - arcTo
-    - beginPath
-    - bezierCurveTo
-    - clearRect
-    - closePath
-    - createImageData
-    - drawImage
-    - fill (disabled)
-    - fillRect
-    - getImageData
-    - getLineDash
-    - lineTo
-    - measureText
-    - moveTo
-    - oval
-    - putImageData
-    - quadraticCurveTo
-    - rect
-    - restore
-    - rotate
-    - save
-    - scale
-    - setLineDash
-    - stroke
-    - strokeLine
-    - strokeRect
-    - star
-    - boost
-    - gravity
-    - slowmo
-    - bomb
-    - checkpoint
-    - antigravity
-    - teleport
-    - heli
-    - truck
-    - balloon
-    - blob
-    - translate
-    - scale
-    
-> `, (input) => {
+    // Reflect.ownKeys(Builder.prototype).filter(key => key != 'constructor').filter(key => key.startsWith(query))
+    const methods = Reflect.ownKeys(Builder.prototype).filter(key => key != 'constructor' && typeof builder[key] == 'function');
+    response.write(`Type one of the following commands:\n  - ${methods.join('\n  - ')}\n\n> `, (input) => {
         const [ method, ...args ] = input.split(/\s+/g)
         if (typeof builder[method] === "function") {
             if (args.length !== builder[method].length) {

@@ -1,4 +1,12 @@
 export default class {
+    code = null;
+    desktop = true;
+    placement = null;
+    runTicks = 0;
+    runTime = null;
+    tablet = false;
+    user = null;
+    vehicle = 'MTB';
     constructor(data) {
         if (typeof data != "object") {
             throw new TypeError("INVALID_DATA_TYPE");
@@ -12,23 +20,26 @@ export default class {
             switch(t) {
                 case "u_id":
                     this.userId = data[t];
-                break;
+                    break;
 
                 case "tablet":
-                case "place":
                     this[t] = data[t];
-                break;
+                    break;
+
+                case "place":
+                    this.placement = data[t];
+                    break;
 
                 case "run_time":
                     this.runTime = data[t];
-                break;
+                    break;
 
                 case "race":
                     this.code = JSON.parse(data[t].code),
                     this.vehicle = data[t].vehicle,
                     this.desktop = data[t].desktop,
                     this.runTicks = data[t].run_ticks;
-                break;
+                    break;
 
                 case "user":
                     this.user = {
@@ -38,7 +49,7 @@ export default class {
                         avatar: data[t].img_url_small,
                         cosmetics: data[t].cosmetics
                     }
-                break;
+                    break;
             }
         }
     }

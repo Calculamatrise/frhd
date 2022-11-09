@@ -1,72 +1,46 @@
-import { token } from "../client/Client.js";
-
 import RequestHandler from "../utils/RequestHandler.js";
+import BaseManager from "./BaseManager.js";
 import getUser from "../getUser.js";
 
-export default class extends Array {
-    get(user) {
-        if (typeof user == "string")
-            return this.find(friend => friend.username === user) || null;
-
-        if (isNaN(+(+user).toFixed()))
-            throw new Error("INVALID_USER");
-
-        return this.find(friend => +friend.id === +user) || null;
-    }
-
+export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {Number|String} user
+     * @param {number|string} user
      * @returns {Object}
      */
     async fetch(user) {
-        isNaN(+(+user).toFixed()) && (user = await getUser(user).then(user => user.id));
+        if (isNaN(user)) {
+            user = await getUser(user).then(user => user.id);
+        }
 
-        user = this.get(user);
-
+        user = this.cache.get(user);
         if (user) {
             return getUser(user.username);
         }
     }
     
     /**
-     * 
+     * Sends a friend request to the specified user
      * @param {String} username 
      * @returns {Promise}
      */
     async add(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/friends/send_friend_request",
-            body: {
-                u_name: username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/friends/send_friend_request", {
+            u_name: username
+        }, true);
     }
 
     /**
-     * 
+     * Accept an incoming friend request
      * @param {String} username 
      * @returns {Promise}
      */
     async accept(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/friends/respond_to_friend_request",
-            body: {
-                u_name: username,
-                action: "accept",
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/friends/respond_to_friend_request", {
+            u_name: username,
+            action: "accept"
+        }, true);
     }
 
     /**
@@ -75,40 +49,25 @@ export default class extends Array {
      * @returns {Promise}
      */
     async reject(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/friends/respond_to_friend_request",
-            body: {
-                u_name: username,
-                action: "accept",
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/friends/respond_to_friend_request", {
+            u_name: username,
+            action: "reject"
+        }, true);
     }
 
     /**
      * 
-     * @param {Number|String} user 
+     * @param {number|string} user 
      * @returns {Promise}
      */
     async remove(user) {
-        isNaN(+(+user).toFixed()) && (user = await getUser(user).then(user => user.id));
+        if (isNaN(user)) {
+            user = await getUser(user).then(user => user.id);
+        }
 
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
-
-        return RequestHandler.ajax({
-            path: "/friends/remove_friend",
-            body: {
-                u_id: user,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        if (!user) throw new Error("INVALID_USER");
+        return RequestHandler.post("/friends/remove_friend", {
+            u_id: user
+        }, true);
     }
 }

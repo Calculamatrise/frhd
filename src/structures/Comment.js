@@ -1,7 +1,5 @@
 import RequestHandler from "../utils/RequestHandler.js";
 
-import { token } from "../client/Client.js";
-
 export default class Comment {
     id = null;
     message = null;
@@ -30,17 +28,11 @@ export default class Comment {
     }
 
     async reply(data) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        else if (!data) throw new Error("INVALID_MESSAGE");
-        return RequestHandler.ajax({
-            path: "/track_comments/post",
-            body: {
-                t_id: this.trackId,
-                msg: `@${this.author.displayName}, ${(data.content || data).toString().replace(/\s+/g, "+")}`,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(function(response) {
+        if (!data) throw new Error("INVALID_MESSAGE");
+        return RequestHandler.post("/track_comments/post", {
+            t_id: this.trackId,
+            msg: `@${this.author.displayName}, ${(data.content || data).toString().replace(/\s+/g, "+")}`
+        }, true).then(function(response) {
             if (response.result)
                 return new Comment(response.data.track_comments[0]);
 
@@ -49,14 +41,13 @@ export default class Comment {
     }
 
     async delete({ timeout = 0 } = {}) {
-        if (!token) throw new Error("INVALID_TOKEN");
-        else if (isNaN(timeout)) throw new Error("INVALID_TIMEOUT");
-        await new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             setTimeout(() => {
-                RequestHandler.ajax(`/track_comments/delete/${this.trackId}/${this.id}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then(resolve).catch(reject);
-            }, timeout);
+                RequestHandler.get(`/track_comments/delete/${this.trackId}/${this.id}`, true).then(resolve).catch(reject);
+            }, ~~timeout);
+        }).then(() => true).catch(err => {
+            this.client.debug && console.warn(err);
+            return false;
         });
-
-        return true;
     }
 }

@@ -1,10 +1,7 @@
 import RequestHandler from "../utils/RequestHandler.js";
-
-import { token } from "../client/Client.js";
-
+import CosmeticManager from "../managers/CosmeticManager.js";
 import FriendManager from "../managers/FriendManager.js";
 import TrackManager from "../managers/TrackManager.js";
-
 import getTrack from "../getTrack.js";
 
 export default class User {
@@ -13,12 +10,25 @@ export default class User {
     displayName = null;
     moderator = false;
     username = null;
+    cosmetics = new CosmeticManager();
     friends = new FriendManager();
     recentlyPlayed = new TrackManager();
     recentlyCompleted = new TrackManager();
-    createdTracks = new TrackManager();
     likedTracks = new TrackManager();
-    static async create(data) {
+
+    #createdTracks = null;
+    get createdTracks() {
+        if (!(this.#createdTracks instanceof TrackManager)) {
+            this.#createdTracks = new TrackManager();
+            for (const { id } of this.#createdTracks) {
+                this.#createdTracks.fetch(id);
+            }
+        }
+
+        return this.#createdTracks;
+    }
+
+    static async create(data, isCurrentUser = false) {
         if (typeof data != "object") {
             throw new TypeError("INVALID_DATA_TYPE");
         }
@@ -41,7 +51,7 @@ export default class User {
                 head: {
                     image: data.user.cosmetics.head.img,
                     spriteSheetURL() {
-                        return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${data.user.cosmetics.head.img.replace(/\s(.*)/gi, "")}.png`
+                        return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${data.user.cosmetics.head.img.replace(/\s(.*)/gi, '')}.png`
                     }
                 }
             }
@@ -97,13 +107,7 @@ export default class User {
         }
 
         if (data.created_tracks !== void 0) {
-            instance.createdTracks = await Promise.all(data.created_tracks.tracks.map(function(track) {
-                if (typeof track !== "object" || track["id"] === void 0) {
-                    return;
-                }
-                
-                return getTrack(track.id);
-            }));
+            instance.#createdTracks = data.created_tracks.tracks;
         }
 
         if (data.liked_tracks !== void 0) {
@@ -147,114 +151,50 @@ export default class User {
         return instance;
     }
 
-    /**
-     * 
-     * @returns {Promise}
-     */
-    buyHead() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/store/buy",
-            body: {
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
-    /**
-     * 
-     * @param {Number} itemId 
-     * @returns {Promise}
-     */
-    setHead(itemId) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!itemId)
-            throw new Error("INVALID_COSMETIC");
-
-        return RequestHandler.ajax({
-            path: "/store/equip",
-            body: {
-                item_id: itemId,
-                app_signed_request: token
-            },
-            method: "post"
-        });
-    }
-
     subscribe() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/track_api/subscribe",
-            body: {
-                sub_uid: this.id,
-                subscribe: 1,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/track_api/subscribe", {
+            sub_uid: this.id,
+            subscribe: 1
+        }, true);
     }
 
     unsubscribe() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/track_api/subscribe",
-            body: {
-                sub_uid: this.id,
-                subscribe: 0,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/track_api/subscribe", {
+            sub_uid: this.id,
+            subscribe: 0
+        }, true);
     }
 
     /**
      * 
-     * @param {String} username 
+     * @param {string} username 
      * @returns {Promise}
      */
     async changeUsername(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/moderator/change_username",
-            body: {
-                u_id: this.id,
-                username,
-                app_signed_request: token
-            },
-            method: "post"
-        }).then((response) => {
-            if (response.result) {
-                this.username = username;
-                return response;
-            }
-
-            RequestHandler.ajax({
-                path: "/account/edit_profile",
-                body: {
-                    name: "u_name",
-                    value: username,
-                    app_signed_request: token
-                },
-                method: "post"
-            }).then((response) => {
-                if (response.result) {
+        if (this.username == this.client.user.username) {
+            return RequestHandler.post("/account/edit_profile", {
+                name: "u_name",
+                value: username
+            }, true).then((res) => {
+                if (res.result) {
                     this.username = username;
-
                     return response;
                 }
 
-                throw new Error(response.msg || "Insufficeint privileges.");
+                throw new Error(res.msg || "Insufficeint privileges.");
             });
+        }
+
+        return RequestHandler.post("/moderator/change_username", {
+            u_id: this.id,
+            username
+        }, true).then((res) => {
+            if (res.result) {
+                this.username = username;
+                return res;
+            }
+
+            throw new Error(res.msg || "Insufficeint privileges.");
         });
     }
 
@@ -264,184 +204,107 @@ export default class User {
      * @returns {Promise}
      */
     changeUsernameAsAdmin(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/change_username",
-            body: {
-                change_username_current: this.username,
-                change_username_new: username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/change_username", {
+            change_username_current: this.username,
+            change_username_new: username
+        }, true);
     }
 
     /**
      * 
-     * @param {String} description 
+     * @param {string} description 
      * @returns {Promise}
      */
     changeDescription(description) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!description)
-            throw new Error("INVALID_DESCRIPTION");
-
-        return RequestHandler.ajax({
-            path: "/account/edit_profile",
-            body: {
-                name: "about",
-                value: description,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/account/edit_profile", {
+            name: "about",
+            value: String(description)
+        }, true);
     }
 
     /**
      * 
-     * @param {String} oldPassword 
-     * @param {String} newPassword 
+     * @param {string} oldPassword 
+     * @param {string} newPassword 
      * @returns {Promise}
      */
     changePassword(oldPassword, newPassword) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!oldPassword || !newPassword)
-            throw new Error("INVALID_PASSWORD");
-
-        return RequestHandler.ajax({
-            path: "/account/change_password",
-            body: {
-                old_password: oldPassword,
-                new_password: newPassword,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        // make sure new password matches restrictions
+        if (!newPassword) throw new Error("INVALID_PASSWORD");
+        return RequestHandler.post("/account/change_password", {
+            old_password: oldPassword,
+            new_password: newPassword
+        }, true);
     }
 
     /**
      * 
-     * @param {String} password 
+     * @param {string} password 
      * @returns {Promise}
      */
     changeForumPassword(password) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!password)
-            throw new Error("INVALID_PASSWORD");
-
-        return RequestHandler.ajax({
-            path: "/account/update_forum_account",
-            body: {
-                password,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/account/update_forum_account", {
+            password
+        }, true);
     }
 
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {String} email 
+     * @param {string} email 
      * @returns {Promise}
      */
     changeEmail(email) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/moderator/change_email",
-            body: {
-                u_id: this.id,
-                email,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/change_email", {
+            u_id: this.id,
+            email
+        }, true);
     }
 
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {String} email 
+     * @param {string} email 
      * @returns {Promise}
      */
     async changeEmailAsAdmin(email) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/change_user_email",
-            body: {
-                username: this.username,
-                email,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/change_user_email", {
+            username: this.username,
+            email
+        }, true);
     }
 
     /**
-     * 
+     * Moderator endpoint
      * @protected requires administrative privileges.
      * @returns {Promise}
      */
     toggleOA() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/moderator/toggle_official_author/" + this.id,
-            body: {
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/toggle_official_author/" + this.id, true);
     }
 
     /**
-     * 
+     * Admin endpoint
      * @protected requires administrative privileges.
      * @returns {Promise}
      */
     toggleClassicAuthorAsAdmin() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/toggle_classic_user/",
-            body: {
-                toggle_classic_uname: this.username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/toggle_classic_user/", {
+            toggle_classic_uname: this.username
+        }, true);
     }
 
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {Number} coins 
+     * @param {number} coins 
      * @returns {Promise}
      */
     addWonCoins(coins) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/add_won_coins",
-            body: {
-                coins_username: this.username,
-                num_coins: coins,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/add_won_coins", {
+            coins_username: this.username,
+            num_coins: coins
+        }, true);
     }
 
     /**
@@ -450,19 +313,11 @@ export default class User {
      * @returns {Promise}
      */
     addPlusDays(days, remove) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/add_plus_days",
-            body: {
-                add_plus_days: days,
-                username: this.username,
-                add_plus_remove: remove,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/add_plus_days", {
+            add_plus_days: days,
+            username: this.username,
+            add_plus_remove: remove
+        }, true);
     }
 
     /**
@@ -471,17 +326,9 @@ export default class User {
      * @returns {Promise}
      */
     messagingBan() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/user_ban_messaging",
-            body: {
-                messaging_ban_uname: this.username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/user_ban_messaging", {
+            messaging_ban_uname: this.username
+        }, true);
     }
 
     /**
@@ -490,61 +337,35 @@ export default class User {
      * @returns {Promise}
      */
     uploadingBan() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/user_ban_messaging",
-            body: {
-                messaging_ban_uname: this.username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/user_ban_messaging", {
+            messaging_ban_uname: this.username
+        }, true);
     }
 
     /**
-     * 
+     * Moderator endpoint
      * @protected requires administrative privileges.
      * @returns {Promise}
      */
     ban() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/moderator/ban_user",
-            body: {
-                u_id: this.id,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/ban_user", {
+            u_id: this.id
+        }, true);
     }
 
     /**
-     * 
+     * Admin endpoint
      * @protected requires administrative privileges.
-     * @param {Number|String} time 
+     * @param {number|string} time 
      * @param {Boolean} deleteRaces 
      * @returns {Promise}
      */
     banAsAdmin(time = 0, deleteRaces = !1) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (isNaN(+time))
-            throw new Error("INVALID_TIME");
-
-        return RequestHandler.ajax({
-            path: "/admin/ban_user",
-            body: {
-                ban_secs: time,
-                delete_race_stats: deleteRaces,
-                username: this.username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/ban_user", {
+            ban_secs: ~~time,
+            delete_race_stats: deleteRaces,
+            username: this.username
+        }, true);
     }
 
     /**
@@ -553,17 +374,9 @@ export default class User {
      * @returns {Promise}
      */
     deactivate() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/deactivate_user",
-            body: {
-                username: this.username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/deactivate_user", {
+            username: this.username
+        }, true);
     }
 
     /**
@@ -571,16 +384,8 @@ export default class User {
      * @returns {Promise}
      */
     delete() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/delete_user_account",
-            body: {
-                username: this.username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/delete_user_account", {
+            username: this.username
+        }, true);
     }
 }

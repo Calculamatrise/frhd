@@ -10,7 +10,6 @@ export default class extends EventEmitter {
     #lastLine = null;
     #reader = null;
     #xref = 0;
-
     get buffer() {
         return Buffer.concat(this.#buffers);
     }

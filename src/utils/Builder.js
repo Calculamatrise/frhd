@@ -275,12 +275,12 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x position x
-     * @param {Number|String} y position y
-     * @param {Number|String} radius radius of the arc
-     * @param {Number|String} startAngle angle in radians
-     * @param {Number|String} endAngle angle in radians
-     * @param {Boolean} counterClockwise decide the direction at which the arc is drawn
+     * @param {number|string} x position x
+     * @param {number|string} y position y
+     * @param {number|string} radius radius of the arc
+     * @param {number|string} startAngle angle in radians
+     * @param {number|string} endAngle angle in radians
+     * @param {boolean} counterClockwise decide the direction at which the arc is drawn
      * @returns {Builder} instance of Builder.
      */
     arc(x, y, radius, startAngle, endAngle, counterClockwise = false) {
@@ -330,11 +330,11 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} cpx position x of the control point
-     * @param {Number|String} cpy position y of the control point
-     * @param {Number|String} x position x of the end point
-     * @param {Number|String} y position y of the end point
-     * @param {Number|String} radius radius of the arc
+     * @param {number|string} cpx position x of the control point
+     * @param {number|string} cpy position y of the control point
+     * @param {number|string} x position x of the end point
+     * @param {number|string} y position y of the end point
+     * @param {number|string} radius radius of the arc
      * @returns {Builder} instance of Builder.
      */
     arcTo(cpx, cpy, x, y, radius) {
@@ -369,12 +369,12 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} p1x position x of the first control point
-     * @param {Number|String} p1y position y of the first control point
-     * @param {Number|String} p2x position x of the second control point
-     * @param {Number|String} p2y position y of the second control point
-     * @param {Number|String} p3x position x of the end point
-     * @param {Number|String} p3y position y of the end point
+     * @param {number|string} p1x position x of the first control point
+     * @param {number|string} p1y position y of the first control point
+     * @param {number|string} p2x position x of the second control point
+     * @param {number|string} p2y position y of the second control point
+     * @param {number|string} p3x position x of the end point
+     * @param {number|string} p3y position y of the end point
      * @returns {Builder} instance of Builder.
      */
     bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y) {
@@ -433,10 +433,10 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x rectangle clip position along the x-axis
-     * @param {Number|String} y rectangle clip position along the y-axis
-     * @param {Number|String} width clip rectangle width
-     * @param {Number|String} height clip rectangle height
+     * @param {number|string} x rectangle clip position along the x-axis
+     * @param {number|string} y rectangle clip position along the y-axis
+     * @param {number|string} width clip rectangle width
+     * @param {number|string} height clip rectangle height
      */
     clearRect(x, y, width, height) {
         if (width < 0 || height < 0) {
@@ -472,9 +472,9 @@ export default class {
 
     /**
      * 
-     * @param {Number} width the width to give to the new ImageData object.
-     * @param {Number} height the height to give to the new ImageData object.
-     * @returns {Object} ImageData object.
+     * @param {number} width the width to give to the new ImageData object.
+     * @param {number} height the height to give to the new ImageData object.
+     * @returns {object} ImageData object.
      */
     createImageData(width, height) {
         if (typeof width == "object" && height === void 0) {
@@ -499,14 +499,14 @@ export default class {
     /**
      * 
      * @param {Image} image instance of Image constructor
-     * @param {Number|String} sx source image position along the x-axis
-     * @param {Number|String} sy source image position along the y-axis
-     * @param {Number|String} sWidth source image width
-     * @param {Number|String} sHeight source image height
-     * @param {Number|String} dx image along the x-axis on the canvas
-     * @param {Number|String} dy image along the y-axis on the canvas
-     * @param {Number|String} dWidth image width on the canvas
-     * @param {Number|String} dHeight image height on the canvas
+     * @param {number|string} sx source image position along the x-axis
+     * @param {number|string} sy source image position along the y-axis
+     * @param {number|string} sWidth source image width
+     * @param {number|string} sHeight source image height
+     * @param {number|string} dx image along the x-axis on the canvas
+     * @param {number|string} dy image along the y-axis on the canvas
+     * @param {number|string} dWidth image width on the canvas
+     * @param {number|string} dHeight image height on the canvas
      * @returns {Builder} instance of Builder
      */
     drawImage(image, sx = 0, sy = 0, sWidth = image.width, sHeight = image.height, dx = 0, dy = 0, dWidth = sWidth, dHeight = sHeight) {
@@ -578,11 +578,11 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x 
-     * @param {Number|String} y 
-     * @param {Number|String} radiusX 
-     * @param {Number|String} radiusY 
-     * @param {Number|String} rotation 
+     * @param {number|string} x 
+     * @param {number|string} y 
+     * @param {number|string} radiusX 
+     * @param {number|string} radiusY 
+     * @param {number|string} rotation 
      */
     ellipse(x, y, radiusX, radiusY, rotation) {
         let old = {};
@@ -615,10 +615,10 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x position of the rectangle along the x-axis
-     * @param {Number|String} y position of the rectangle along the y-axis
-     * @param {Number|String} width width of the rectangle
-     * @param {Number|String} height height of the rectangle
+     * @param {number|string} x position of the rectangle along the x-axis
+     * @param {number|string} y position of the rectangle along the y-axis
+     * @param {number|string} width width of the rectangle
+     * @param {number|string} height height of the rectangle
      */
     fillRect(x, y, width, height) {
         for (const argument of arguments) {
@@ -639,11 +639,11 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x 
-     * @param {Number|String} y 
-     * @param {Number|String} width 
-     * @param {Number|String} height 
-     * @returns {String} 
+     * @param {number|string} x 
+     * @param {number|string} y 
+     * @param {number|string} width 
+     * @param {number|string} height 
+     * @returns {string} 
      */
     getImageData(x, y, width, height) {
         /* const array = Array.from({ length: width * height * 4 }, () => 255);
@@ -710,8 +710,8 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x position x of the end point
-     * @param {Number|String} y position y of the end point
+     * @param {number|string} x position x of the end point
+     * @param {number|string} y position y of the end point
      * @returns {Builder} instance of Builder.
      */
     lineTo(x, y) {
@@ -741,8 +741,8 @@ export default class {
 
     /**
      * 
-     * @param {String} text 
-     * @returns {Object} properties of text.
+     * @param {string} text 
+     * @returns {object} properties of text.
      */
     measureText(text) {
         return {
@@ -755,8 +755,8 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x position x of the starting point
-     * @param {Number|String} y position y of the starting point
+     * @param {number|string} x position x of the starting point
+     * @param {number|string} y position y of the starting point
      * @returns {Builder} instance of Builder.
      */
     moveTo(x, y) {
@@ -774,13 +774,13 @@ export default class {
 
     /**
      * 
-     * @param {Object} data an ImageData object containing the array of pixel values.
-     * @param {Number|String} dx horizontal position (x coordinate) at which to place the image data in the destination canvas.
-     * @param {Number|String} dy vertical position (y coordinate) at which to place the image data in the destination canvas.
-     * @param {Number|String} dirtyX horizontal position (x coordinate) of the top-left corner from which the image data will be extracted.
-     * @param {Number|String} dirtyY vertical position (y coordinate) of the top-left corner from which the image data will be extracted.
-     * @param {Number|String} dirtyWidth width of the rectangle to be drawn.
-     * @param {Number|String} dirtyHeight height of the rectangle to be drawn.
+     * @param {object} data an ImageData object containing the array of pixel values.
+     * @param {number|string} dx horizontal position (x coordinate) at which to place the image data in the destination canvas.
+     * @param {number|string} dy vertical position (y coordinate) at which to place the image data in the destination canvas.
+     * @param {number|string} dirtyX horizontal position (x coordinate) of the top-left corner from which the image data will be extracted.
+     * @param {number|string} dirtyY vertical position (y coordinate) of the top-left corner from which the image data will be extracted.
+     * @param {number|string} dirtyWidth width of the rectangle to be drawn.
+     * @param {number|string} dirtyHeight height of the rectangle to be drawn.
      */
     putImageData(data, dx = 0, dy = 0, dirtyX = 0, dirtyY = 0, dirtyWidth = data.width, dirtyHeight = data.height) {
         return this.drawImage(data, dirtyX, dirtyY, dirtyWidth, dirtyHeight, dx, dy);
@@ -821,10 +821,10 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x 
-     * @param {Number|String} y 
-     * @param {Number|String} width 
-     * @param {Number|String} height 
+     * @param {number|string} x 
+     * @param {number|string} y 
+     * @param {number|string} width 
+     * @param {number|string} height 
      * @returns {Builder} instance of Builder.
      */
     rect(x, y, width, height) {
@@ -972,10 +972,10 @@ export default class {
     /**
      * 
      * @deprecated this method may be removed in the near future
-     * @param {Number|String} x position x of the starting point
-     * @param {Number|String} y position y of the starting point
-     * @param {Number|String} x2 position x of the end point
-     * @param {Number|String} y2 position y of the end point
+     * @param {number|string} x position x of the starting point
+     * @param {number|string} y position y of the starting point
+     * @param {number|string} x2 position x of the end point
+     * @param {number|string} y2 position y of the end point
      * @returns {Builder} instance of Builder.
      */
     strokeLine(x, y, x2, y2) {
@@ -1003,10 +1003,10 @@ export default class {
 
     /**
      * 
-     * @param {Number|String} x 
-     * @param {Number|String} y 
-     * @param {Number|String} width 
-     * @param {Number|String} height 
+     * @param {number|string} x 
+     * @param {number|string} y 
+     * @param {number|string} width 
+     * @param {number|string} height 
      * @returns {Builder} instance of Builder.
      */
     strokeRect(x, y, width, height) {
@@ -1030,9 +1030,9 @@ export default class {
     /**
      * 
      * @throws this method is incomplete.
-     * @param {String} content 
-     * @param {Number|String} x 
-     * @param {Number|String} y 
+     * @param {string} content 
+     * @param {number|string} x 
+     * @param {number|string} y 
      */
     strokeText(content, x, y) {
         content = content.toUpperCase().split(/\n/g);

@@ -1,9 +1,15 @@
 import RequestHandler from "./utils/RequestHandler.js";
-
 import Race from "./structures/Race.js";
 
-export default function(trackId, username, callback = response => response) {
-    return RequestHandler.ajax(`/t/${trackId}/r/${username}`).then(function(response) {
+/**
+ * 
+ * @param {number|string} trackId
+ * @param {string} username
+ * @param {Function} callback
+ * @returns {Promise<Race>}
+ */
+export default function(trackId, username, callback = res => res) {
+    return RequestHandler.ajax(`/t/${parseInt(trackId)}/r/` + String(username)).then(function(response) {
         return new Race(response.race_leaderboard[0], response.game_settings.raceData[0]);
     }).then(callback);
 }

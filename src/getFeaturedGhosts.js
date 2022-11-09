@@ -1,8 +1,12 @@
 import RequestHandler from "./utils/RequestHandler.js";
 
-export default function(callback = response => response) {
-    return RequestHandler.ajax({
-        host: "raw.githubusercontent.com",
-        path: "/Calculamatrise/frhd_featured_ghosts/master/data.json"
+/**
+ * 
+ * @param {Function} callback
+ * @returns {Promise<object>}
+ */
+export default function(callback = res => res) {
+    return RequestHandler.ajax("/Calculamatrise/frhd_featured_ghosts/master/data.json", {
+        host: "raw.githubusercontent.com"
     }).then(callback);
 }

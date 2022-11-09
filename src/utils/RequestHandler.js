@@ -1,29 +1,28 @@
-import http from "http";
-import https from "https";
 import { readFileSync } from "fs";
+import { request } from "https";
+import { METHODS } from "http";
 
-import User from "../structures/User.js";
-import Track from "../structures/Track.js";
-import Notification from "../structures/Notification.js";
+import { token } from "../client/BaseClient.js";
 import Cosmetic from "../structures/Cosmetic.js";
+import Notification from "../structures/Notification.js";
+import Track from "../structures/Track.js";
+import User from "../structures/User.js";
 
-import { token } from "../client/Client.js";
-
-export default class RequestHandler {
+export default global.RequestHandler = new Proxy(class {
     /**
-     * 
-     * @param {String} option URI or options object
-     * @param {Object} options Options
+     * Make requests through HTTP
+     * @param {string} option URI or options object
+     * @param {object} options Options
      * @returns {Promise}
      */
-    static ajax(option, options = typeof option === "object" ? option : {}) {
+    static ajax(option, options = typeof option == "object" ? option : {}) {
         let host = options.hostname || options.host || 'www.freeriderhd.com';
         let path = options.pathname || options.path || (typeof option != 'object' && option) || '';
-        if (path.match(/^\.?\/?/) && host === "local") {
+        if (/^\.{1,2}\//.test(path)) {
             const body = readFileSync(path);
-            if (headers["content-type"].startsWith("image/png")) {
-                if (headers["content-type"].includes("base64")) {
-                    return "data:image/png; base64, " + body.toString("base64");
+            if (headers['content-type'].startsWith('image/')) {
+                if (headers['content-type'].includes('base64')) {
+                    return `data:${headers['content-type']}; base64, ` + body.toString("base64");
                 }
 
                 return body;
@@ -39,22 +38,27 @@ export default class RequestHandler {
         url.searchParams.set("ajax", true);
         url.searchParams.set("t_1", "ref");
         url.searchParams.set("t_2", "desk");
-        if (token !== null) {
+        if (token != null && options.requireToken !== false) {
             url.searchParams.set("app_signed_request", token);
+            delete options.requireToken;
+        } else if (options.requireToken === true) {
+            throw new Error("You aren't logged in!");
         }
 
-        let request = new Request(url, options);
-        if (!request.headers.has("Content-Type")) {
-            request.headers.set("Content-Type", "application/x-www-form-urlencoded");
+        let req = new Request(url, options);
+        if (!req.headers.has("Content-Type") || req.headers.get('Content-Type') == "text/plain;charset=UTF-8") {
+            req.headers.set("Content-Type", "application/x-www-form-urlencoded");
         }
 
-        let contentType = request.headers.get("Content-Type");
+        let contentType = req.headers.get("Content-Type");
         return new Promise((resolve, reject) => {
-            (/^https:$/i.test(url.protocol) ? https : http).request({
+            // resolve into a response?? new Response(data)
+            // maybe even create own response class extends response
+            request({
                 host: url.hostname,
                 path: url.pathname + url.search,
-                method: request.method,
-                headers: Object.fromEntries(request.headers.entries())
+                method: req.method,
+                headers: Object.fromEntries(req.headers.entries())
             }, async function(res) {
                 const buffers = [];
                 for await (const chunk of res) {
@@ -81,18 +85,18 @@ export default class RequestHandler {
 
     /**
      * 
-     * @param {Number} id 
+     * @param {number} id 
      * @returns {Promise}
      */
     cosmetics(id) {
-        return this.constructor.ajax(`/store/gear`).then(function(response) {
-            if (response.app_title.match(/Page\s+Not\s+Found/gi))
+        return this.constructor.ajax("/store/gear").then(function(res) {
+            if (res.result === false || /page\s+not\s+found/i.test(res.app_title))
                 throw new Error("COSMETIC_NOT_FOUND");
-            
+
             return {
-                heads: response.gear.head_gear.filter(function(head, index) {
+                heads: res.gear.head_gear.filter(function(head, index) {
                     if (id) {
-                        if (typeof id === "object") {
+                        if (typeof id == 'object') {
                             if (Array.isArray(id)) {
                                 return id.includes(head.id);
                             }
@@ -119,20 +123,19 @@ export default class RequestHandler {
      * @returns {Promise}
      */
     datapoll() {
-        return this.constructor.ajax({
-            path: "/datapoll/poll_request",
+        return this.constructor.ajax("/datapoll/poll_request", {
             body: {
-                notifications: !0,
-                app_signed_request: token
+                notifications: true
             },
-            method: "post"
+            method: "post",
+            requireToken: true
         });
     }
 
     /**
      * 
-     * @param {Number} count 
-     * @returns {Promise}
+     * @param {number} count 
+     * @returns {Promise<Notification>}
      */
     notifications(count = Infinity) {
         return this.constructor.ajax(`/notifications`).then(function({ notification_days }) {
@@ -146,10 +149,10 @@ export default class RequestHandler {
 
     /**
      * 
-     * @param {Number|String} id
+     * @param {number|string} id
      * @param {Array} fields 
-     * @param {String} fields[code] 
-     * @returns {Promise}
+     * @param {string} fields[code] 
+     * @returns {Promise<Track>}
      */
     tracks(id, fields) {
         if (fields !== void 0) {
@@ -161,30 +164,39 @@ export default class RequestHandler {
             });
         }
 
-        return this.constructor.ajax(`/t/${parseInt(id)}`).then(function(response) {
-            if (response.app_title.match(/Page\s+Not\s+Found/gi))
+        return this.constructor.ajax("/t/" + parseInt(id)).then(function(res) {
+            if (res.result === false || /page\s+not\s+found/i.test(res.app_title))
                 throw new Error("TRACK_NOT_FOUND");
             
-            return Track.create({
-                ...response.track,
-                campagin: response.campagin,
-                track_comments: response.track_comments,
-                track_stats: response.track_stats
-            });
+            return Track.create(res);
         });
     }
 
     /**
      * 
-     * @param {String} username 
-     * @returns {Promise}
+     * @param {string} username 
+     * @returns {Promise<User>}
      */
     users(username) {
-        return this.constructor.ajax(`/u/${username}`).then(function(response) {
-            if (response.app_title.match(/Page\s+Not\s+Found/gi))
+        return this.constructor.ajax("/u/" + username).then(function(res) {
+            if (res.result === false || /page\s+not\s+found/i.test(res.app_title))
                 throw new Error("USER_NOT_FOUND");
 
-            return User.create(response);
+            return User.create(res);
         });
     }
-}
+}, {
+    get(target, property, receiver) {
+        if (METHODS.indexOf(property.toUpperCase()) !== -1) {
+            return function(url, body, requireToken = typeof body == 'boolean' ? body : false) {
+                return receiver.ajax(String(url), {
+                    body: typeof body == 'boolean' ? null : body,
+                    method: property,
+                    requireToken
+                });
+            }
+        }
+
+        return Reflect.get(...arguments);
+    }
+});

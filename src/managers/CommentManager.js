@@ -1,36 +1,39 @@
 import RequestHandler from "../utils/RequestHandler.js";
-
+import BaseManager from "./BaseManager.js";
 import Comment from "../structures/Comment.js";
 
-import { token } from "../client/Client.js";
+export default class extends BaseManager {
+    /**
+     * 
+     * @param {object} options
+     * @param {boolean} options.force
+     * @returns {Comment}
+     */
+    async fetch(id, { force = false }) {
+        if (force || !this.cache.has(id)) {
+            // use 'show more' to find endpoint
+            const entry = await RequestHandler.post("/track_comments/get", {
+                t_id: this.client.id
+            }, true).then(function(response) {
+                if (response.result) {
+                    return new Comment(response.data.track_comments[0]);
+                }
 
-export default class extends Array {
-    get(id) {
-        if (isNaN(+(+id).toFixed()))
-            throw new Error("INVALID_COMMENT_ID");
-        
-        return this.find(comment => +comment.id === +id) || null;
+                return new Error(response.msg);
+            });
+            entry && this.cache.set(id, entry);
+        }
+
+        return this.cache.get(id);
     }
 
     async post(message) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!message)
-            throw new Error("INVALID_MESSAGE");
-            
-        return RequestHandler.ajax({
-            path: "/track_comments/post",
-            body: {
-                t_id: this.track.id,
-                msg: message.toString().replace(/\s+/g, "+"),
-                app_signed_request: token
-            },
-            method: "post"
-        }).then(function(response) {
+        return RequestHandler.post("/track_comments/post", {
+            t_id: this.client.id,
+            msg: String(message).replace(/\s+/g, "+")
+        }, true).then(function(response) {
             if (response.result) {
-                const comment = new Comment(response.data.track_comments[0]);
-
-                return comment;
+                return new Comment(response.data.track_comments[0]);
             }
 
             return new Error(response.msg);

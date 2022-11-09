@@ -1,5 +1,4 @@
 import EventEmitter from "events";
-
 import GamepadEvents from "./GamepadEvents.js";
 
 export default class extends EventEmitter {
@@ -9,7 +8,7 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {Number} [max]
+     * @param {number} [max]
      */
     tick(max = Infinity) {
         if (this.ticks >= max) {
@@ -27,7 +26,7 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {String} key
+     * @param {string} key
      */
     down(key) {
         if (arguments.length > 1) {
@@ -55,7 +54,7 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {String} key 
+     * @param {string} key 
      */
     toggle(key) {
         if (arguments.length > 1) {
@@ -75,7 +74,7 @@ export default class extends EventEmitter {
 
     /**
      * 
-     * @param {String} key 
+     * @param {string} key 
      */
     up(key) {
         if (arguments.length > 1) {

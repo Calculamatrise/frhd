@@ -1,48 +1,24 @@
 import RequestHandler from "../utils/RequestHandler.js";
-
-import RaceManager from "../managers/RaceManager.js";
 import CommentManager from "../managers/CommentManager.js";
-
-import Race from "./Race.js";
+import RaceManager from "../managers/RaceManager.js";
 import Comment from "./Comment.js";
-
-import { token } from "../client/Client.js";
+import Race from "./Race.js";
+import User from "./User.js";
 
 export default class Track {
+    #cdn = null;
     id = null;
     title = null;
-    author = null;
-    hidden = !1;
-    races = new RaceManager();
-    comments = new CommentManager();
-    #featured = !1;
-    get featured() {
-        return this.#featured;
-    }
-
+    allowedVehicles = new Set();
+    author = new User();
+    defaultVehicle = 'MTB';
+    featured = false;
+    hidden = false;
+    comments = new CommentManager(this);
+    races = new RaceManager(this);
     /**
      * 
-     * @param {Boolean} value 
-     * @returns {Boolean}
-     */
-    set featured(value) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        RequestHandler.ajax(`/track_api/feature_track/${this.id}/${+value}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then((response) => {
-            if (response.result) {
-                this.#featured = !!value;
-
-                return response;
-            }
-
-            throw new Error(response.msg || "Insufficient privileges");
-        });
-    }
-
-    /**
-     * 
-     * @param {Object} data 
+     * @param {object} data 
      * @returns {Track} 
      */
     static async create(data) {
@@ -51,102 +27,180 @@ export default class Track {
         }
 
         const track = new Track();
-        
         await track.init(data);
-
         return track;
     }
 
     /**
      * 
-     * @param {Object} options 
+     * @param {object} options 
      */
-    async init({
-        id,
-        title,
-        descr,
-        campaign,
-        featured,
-        hide,
-        author,
-        author_slug,
-        author_img_small,
-        u_id,
-        cdn,
-        vehicle,
-        vehicles,
-        img,
-        kb_size,
-        date,
-        date_ago,
-        track_stats,
-        track_comments,
-        totd,
-        game_settings
-    }) {
-        this.id = id;
-        this.title = title;
-        this.slug = id + "-" + title.trim().toLowerCase().replace(/\s+/g, "-");
-        this.description = descr;
-        this.#featured = featured;
-        this.hidden = !!hide;
-        this.author = {
-            id: u_id,
-            username: author_slug || author.toLowerCase(),
-            displayName: author,
-            avatar: author_img_small
-        }
+    async init(data) {
+        for (const key in data) {
+            switch(key) {
+                case 'campaign':
+                    this.isCampaign = data[key];
+                    break;
 
-        this.cdn = cdn;
-        this.vehicle = vehicle;
-        this.vehicles = vehicles;
-        this.thumbnail = img;
-        this.size = kb_size;
-        this.uploadDate = date;
-        this.uploadDateAgo = date_ago;
-        if (campaign !== void 0) {
-            this.isCampaign = campaign;
-        }
+                // not sure if these actually occur;
+                // try when key == track
+                // case 'featured':
+                // case 'id':
+                // case 'title':
+                //     this[key] = data[key];
+                //     break;
 
-        if (track_stats !== void 0) {
-            this.stats = {
-                likes: track_stats.up_votes,
-                dislikes: track_stats.dwn_votes,
-                votes: track_stats.votes,
-                likesAverage: track_stats.vote_percent,
-                plays: track_stats.plays,
-                runs: track_stats.runs,
-                firstRuns: track_stats.frst_runs,
-                averageTime: track_stats.avg_time,
-                completionRate: track_stats.cmpltn_rate
-            }
-        }
+                case 'track': {
+                    for (const property in data[key]) {
+                        switch(property) {
+                            case 'author': {
+                                this.author.username = String(data[key][property]).toLowerCase();
+                                this.author.displayName = data[key][property] ?? null;
+                                break;
+                            }
 
-        if (track_comments !== void 0) {
-            this.comments.push(...(await Promise.all(track_comments.map((comment) => {
-                comment.track = {
-                    id: this.id
+                            case 'author_img_small':
+                            case 'author_img_medium': 
+                            case 'author_img_large':
+                                this.author.avatarURL = data[key][property] ?? null;
+                                break;
+
+                            case 'cdn':
+                                // can be used to fetch more data (like track code)
+                                // save this in a private variable then access it in
+                                // getter to get track code and other metadata
+                                this.#cdn = data[key][property];
+                                break;
+
+                            case 'date':
+                                // ACCOUNT FOR new Date() ARGUMENT
+                                this.uploadDate = new Date(data[key][property]);
+                                break;
+
+                            case 'date_ago':
+                                this.uploadDateAgo = data[key][property];
+                                break;
+
+                            case 'descr':
+                                this.description = data[key];
+                                break;
+
+                            case 'featured':
+                            case 'id':
+                            case 'title':
+                                this[property] = data[key][property];
+                                break;
+
+                            case 'game_settings':
+                                // this might be useful
+                                // but for now, no.
+                                break;
+
+                            case 'hide':
+                                this.hidden = Boolean(data[key]);
+                                break;
+
+                            case 'img':
+                                this.thumbnailURL = data[key][property];
+                                break;
+
+                            case 'kb_size':
+                                this.size = data[key][property];
+                                break;
+
+                            case 'totd': {
+                                this.daily = this.daily ?? {};
+                                for (const statistic in data[key][property]) {
+                                    switch(statistic) {
+                                        case 'entries':
+                                            this.daily.entries = data[key][property][statistic];
+                                            break;
+
+                                        case 'gems':
+                                            this.daily.gems = data[key][property][statistic];
+                                            break;
+
+                                        case 'lives':
+                                            this.daily.lives = data[key][property][statistic];
+                                            break;
+
+                                        case 'refillCost':
+                                            this.daily.refillCost = data[key][property][statistic];
+                                            break;
+                                    }
+                                }
+                                break;
+                            }
+
+                            case 'u_id':
+                                this.author.id = data[key][property];
+                                break;
+
+                            case 'vehicle':
+                                this.defaultVehicle = data[key][property];
+                                break;
+
+                            case 'vehicles': {
+                                for (const vehicle of data[key][property]) {
+                                    this.allowedVehicles.add(vehicle);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    break;
                 }
 
-                return Comment.create(comment);
-            }))));
-        }
+                case 'track_comments': {
+                    // not sure whether this will be necessary
+                    for await (const commet of Promise.all(data[key].map((comment) => {
+                        comment.track = this;
+                        return Comment.create(comment);
+                    }))) {
+                        this.comments.cache.set(commet.id, commet);
+                    }
+                    break;
+                }
 
-        if (totd !== void 0) {
-            this.daily = {
-                gems: totd.gems,
-                lives: totd.lives,
-                refillCost: totd.refill_cost,
-                entries: totd.entries
+                case 'track_stats': {
+                    this.stats = this.stats ?? {};
+                    for (const property in data[key]) {
+                        switch(property) {
+                            case 'avg_time':
+                                this.stats.averageTime = data[key][property];
+                                break;
+
+                            case 'cmpltn_rate':
+                                this.stats.completionRate = data[key][property];
+                                break;
+
+                            case 'dwn_votes':
+                                this.stats.dislikes = data[key][property];
+                                break;
+
+                            case 'first_runs':
+                                this.stats.firstRuns = data[key][property];
+                                break;
+
+                            case 'plays':
+                            case 'runs':
+                            case 'votes':
+                                this.stats[property] = data[key][property];
+                                break;
+
+                            case 'up_votes':
+                                this.stats.likes = data[key][property];
+                                break;
+
+                            case 'vote_percent':
+                                this.stats.averageRating = data[key][property];
+                                break;
+                        }
+                    }
+                    break;
+                }
             }
         }
-
-        if (game_settings !== void 0) {
-            this.gameSettings = game_settings;
-        }
-
-        this.races.track = id;
-        this.comments.track = id;
     }
 
     /**
@@ -154,13 +208,8 @@ export default class Track {
      * @returns {Promise<Array>}
      */
     async getLeaderboard() {
-        return RequestHandler.ajax({
-            path: "/track_api/load_leaderboard",
-            body: {
-                t_id: this.id,
-                app_signed_request: token
-            },
-            method: "post"
+        return RequestHandler.post("/track_api/load_leaderboard", {
+            t_id: this.id
         }).then(function(response) {
             if (response.result) {
                 return response.track_leaderboard.map(function(race) {
@@ -178,46 +227,28 @@ export default class Track {
      * @param {Array} users 
      * @returns {Promise}
      */
-    sendChallenge(message, users) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (typeof message !== "string")
-            throw new Error("INVALID_MESSAGE");
-        else if (!users || typeof users !== "object")
-            throw new Error("INVALID_USERS");
+    challenge(message, users) {
+        if (typeof users != "object")
+            throw new TypeError("INVALID_USERS");
 
-        return RequestHandler.ajax({
-            path: "/challenge/send",
-            body: {
-                "users%5B%5D": users.join("&users%5B%5D="),
-                msg: message,
-                track_slug: this.id,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/challenge/send", {
+            // "users%5B%5D": users.join("&users%5B%5D="),
+            msg: message || '',
+            track_slug: this.id,
+            users
+        }, true);
     }
 
     /**
      * 
-     * @param {Number|Boolean} vote 
+     * @param {number|boolean} vote 
      * @returns {Promise}
      */
     vote(vote) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (isNaN(+vote))
-            throw new Error("INVALID_VOTE");
-
-        return RequestHandler.ajax({
-            path: "/track_api/vote",
-            body: {
-                t_id: this.id,
-                vote: +vote,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/track_api/vote", {
+            t_id: this.id,
+            vote: Boolean(vote)
+        }, true);
     }
 
     /**
@@ -229,20 +260,12 @@ export default class Track {
      * @returns {Promise}
      */
     addToDaily(lives, refillCost, gems) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-            
-        return RequestHandler.ajax({
-            path: "/moderator/add_track_of_the_day",
-            body: {
-                t_id: this.id,
-                lives,
-                rfll_cst: refillCost,
-                gems,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/add_track_of_the_day", {
+            t_id: this.id,
+            lives,
+            rfll_cst: refillCost,
+            gems
+        }, true);
     }
 
     /**
@@ -254,20 +277,12 @@ export default class Track {
      * @returns {Promise}
      */
     removeFromDaily() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-            
-        return RequestHandler.ajax({
-            path: "/admin/removeTrackOfTheDay",
-            body: {
-                t_id: this.id,
-                lives,
-                rfll_cst: refillCost,
-                gems,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/removeTrackOfTheDay", {
+            t_id: this.id,
+            lives,
+            rfll_cst: refillCost,
+            gems
+        }, true);
     }
 
     /**
@@ -277,6 +292,19 @@ export default class Track {
      */
     feature() {
         this.featured = !0;
+        if (this.featured) {
+            throw new Error("This track is already featured!");
+        }
+
+        this.featured = true;
+        return RequestHandler.get(`/track_api/feature_track/${this.id}/1`, true).then((response) => {
+            if (!response.result) {
+                this.featured = false;
+                throw new Error(response.msg || "Insufficient privileges");
+            }
+
+            return this.featured;
+        });
     }
 
     /**
@@ -285,7 +313,19 @@ export default class Track {
      * @returns {Boolean}
      */
     unfeature() {
-        this.featured = !1;
+        if (!this.featured) {
+            throw new Error("This track isn't featured!");
+        }
+
+        this.featured = false;
+        return RequestHandler.get(`/track_api/feature_track/${this.id}/0`, true).then((response) => {
+            if (!response.result) {
+                this.featured = true;
+                throw new Error(response.msg || "Insufficient privileges");
+            }
+
+            return this.featured;
+        });
     }
 
     /**
@@ -294,31 +334,18 @@ export default class Track {
      * @returns {Boolean}
      */
     toggleFeatured() {
-        return this.featured = !this.featured;
+        return this.featured ? this.unfeature() : this.feature();
     }
 
     /**
-     * 
-     * @protected requires administrative privileges.
-     * @returns {Boolean}
-     */
-    toggleHidden() {
-        return this.hidden = !this.hidden;
-    }
-
-    /**
-     * 
+     * Hide track as a moderator
      * @protected requires administrative privileges.
      * @returns {Promise}
      */
     async hide() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax(`/moderator/hide_track/${this.id}?ajax=true&app_signed_request=${token}&t_1=ref&t_2=desk`).then((response) => {
+        return RequestHandler.get(`/moderator/hide_track/${this.id}`, true).then((response) => {
             if (response.result) {
                 this.hidden = !0;
-
                 return response;
             }
 
@@ -327,21 +354,13 @@ export default class Track {
     }
 
     /**
-     * 
+     * Hide track as an admin
      * @protected requires administrative privileges.
      * @returns {Promise}
      */
     hideAsAdmin() {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/hide_track",
-            body: {
-                track_id: this.id,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/hide_track", {
+            track_id: this.id
+        }, true);
     }
 }

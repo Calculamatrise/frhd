@@ -1,25 +1,25 @@
 export default class {
+    id = null;
+    className = null;
+    cost = 0;
+    equiped = false;
+    image = null;
+    limited = false;
+    name = null;
+    options = {};
+    script = null;
+    show = false;
+    spritesheetId = null;
+    title = null;
+    type = null;
     constructor(data) {
         if (typeof data != "object" || data === null) {
             throw new TypeError("INVALID_DATA_TYPE");
         }
 
-        this.id = null,
-        this.title = null,
-        this.type = null,
-        this.name = null,
-        this.cost = null,
-        this.className = null,
-        this.options = null,
-        this.equiped = null,
-        this.spritesheetId = null,
-        this.image = null,
-        this.show = null,
-        this.script = null,
-        this.limited = null;
-        
         this.init(data);
     }
+
     init(data) {
         for (const t in data) {
             switch(t) {

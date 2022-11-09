@@ -3,15 +3,19 @@ import RequestHandler from "./utils/RequestHandler.js";
 import Track from "./structures/Track.js";
 import getTrack from "./getTrack.js";
 
-export default function(min, max, callback = response => response) {
-    if (min !== void 0 && max !== void 0) {
-        getTrack(Math.round(Math.random() * max) + min);
+/**
+ * 
+ * @param {number|string} min
+ * @param {number|string} max
+ * @param {Function} callback
+ * @returns {Promise<Track>}
+ */
+export default async function(min, max, callback = typeof arguments[arguments.length - 1] == 'function' ? arguments[arguments.length - 1] : res => res) {
+    if (typeof min == 'number' || typeof max == 'number') {
+        return getTrack(Math.round(Math.random() * Math.max(max, 1001) ?? await getCategory("recently-added").then(({ tracks }) => parseInt(tracks[0].slug))) + Math.max(min, 1001));
     }
 
-    return RequestHandler.ajax({
-        path: `/random/track/`,
-        method: "get"
-    }).then(function(track) {
+    return RequestHandler.ajax("/random/track/").then(function(track) {
         return new Track(track);
     }).then(callback);
 }

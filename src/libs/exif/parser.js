@@ -35,7 +35,6 @@ export default class extends EventEmitter {
 
 	constructor(options) {
         super();
-
         for (const key in options) {
             switch(key) {
                 case 'checkCRC': {

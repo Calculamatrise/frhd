@@ -1,6 +1,13 @@
 import Events from "../utils/Events.js";
 
 export default class {
+    id = null;
+    comment = null;
+    message = null;
+    user = null;
+    track = null;
+    timeAgo = null;
+    timestamp = null;
     constructor(data) {
         if (typeof data != "object" || data === null) {
             throw new TypeError("INVALID_DATA_TYPE");
@@ -47,11 +54,4 @@ export default class {
         this.timestamp = data.ts;
         this.init(data);
     }
-    id = null;
-    comment = null;
-    message = null;
-    user = null;
-    track = null;
-    timeAgo = null;
-    timestamp = null;
 }

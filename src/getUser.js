@@ -1,15 +1,14 @@
 import RequestHandler from "./utils/RequestHandler.js";
-
 import User from "./structures/User.js";
 
 /**
  * 
- * @param {String|Number} username username or user display name
+ * @param {string} username
  * @param {Function} callback callback function
- * @returns {User} 
+ * @returns {Promise<User>} 
  */
-export default function(user, callback = response => response) {
-    return RequestHandler.ajax(`/u/${user}`).then(function(response) {
-        return User.create(response);
+export default function(username, callback = res => res) {
+    return RequestHandler.ajax("/u/" + String(username)).then(function(res) {
+        return User.create(res);
     }).then(callback);
 }

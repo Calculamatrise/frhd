@@ -4,7 +4,7 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {Number|String} id
+     * @param {number|string} id
      * @returns object
      */
     async fetch(id) {
@@ -13,5 +13,24 @@ export default class extends BaseManager {
             this.cache.set(id, data);
 
         return data;
+    }
+
+    /**
+     * 
+     * @returns {Promise}
+     */
+    buyHead() {
+        return RequestHandler.post("/store/buy", true);
+    }
+
+    /**
+     * 
+     * @param {Cosmetic|number|string} item
+     * @returns {Promise}
+     */
+    setHead(item) {
+        return RequestHandler.post("/store/equip", {
+            item_id: Number(item instanceof Cosmetic ? item.id : item)
+        }, true);
     }
 }

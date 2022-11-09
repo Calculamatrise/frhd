@@ -4,10 +4,10 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {Number|String} count
+     * @param {number|string} count
      * @returns object
      */
-    async fetch(count) {
+    async fetch(count = 1) {
         const data = await this.client.api.notifications(count);
         this.cache.set(count, data);
         return data;

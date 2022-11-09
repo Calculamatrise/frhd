@@ -8,7 +8,7 @@ const client = new Client({
 client.on("ready", async function() {
     console.log("Yas!", this);
 });
-
+// test track challenge
 client.on("commentMention", function(comment) {
     console.log("commentMention", comment);
     comment.reply({
@@ -18,5 +18,5 @@ client.on("commentMention", function(comment) {
 
 client.login({
     username: "frai",
-    password: "password"
+    password: "allah"
 });

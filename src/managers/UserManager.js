@@ -4,370 +4,273 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {String} username
+     * @param {object|number|string} uid
+     * @param {object} [force]
      * @returns {Response}
      */
-    async fetch(username) {
-        const data = await this.client.api.users(username);
-        this.cache.set(username, data);
-        return data;
+    async fetch(uid, { force }) {
+        if (typeof uid == 'object') {
+            if (uid.hasOwn('id')) {
+                uid = parseInt(uid['id']);
+            } else if (uid.hasOwn('username')) {
+                uid = uid['username'];
+            }
+        }
+
+        if (force || !this.cache.has(uid)) {
+            if (typeof uid == 'number') {
+                await RequestHandler.post("/friends/remove_friend", { u_id: uid }, false).then(res => {
+                    // Response: "You are not friends with USERNAME, you cannot remove friendship."
+
+                });
+            }
+
+            const entry = await this.client.api.users(uid);
+            entry && this.cache.set(uid, entry);
+        }
+
+        return this.cache.get(uid);
     }
 
     /**
      * 
      * @async
-     * @param {Number|String} user ID or username
+     * @param {number|string} user id or username
      * @returns {Promise}
      */
     async subscribe(user) {
-        isNaN(parseInt(user)) && (user = await this.fetch(user).then(user => user.id));
+        if (typeof user != 'number') {
+            return this.fetch(String(user)).then(user => user.subscribe());
+        }
 
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
-
-        return RequestHandler.ajax({
-            path: "/track_api/subscribe",
-            body: {
-                sub_uid: user,
-                subscribe: 1,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/track_api/subscribe", {
+            sub_uid: user,
+            subscribe: 1
+        }, true);
     }
 
     /**
      * 
      * @async
-     * @param {Number|String} user ID or username
+     * @param {number|string} user id or username
      * @returns {Promise}
      */
     async unsubscribe(user) {
-        isNaN(parseInt(user)) && (user = await this.fetch(user).then(user => user.id));
+        if (typeof user != 'number') {
+            return this.fetch(String(user)).then(user => user.unsubscribe());
+        }
 
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
-
-        return RequestHandler.ajax({
-            path: "/track_api/subscribe",
-            body: {
-                sub_uid: user,
-                subscribe: 0,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/track_api/subscribe", {
+            sub_uid: user,
+            subscribe: 0
+        }, true);
     }
 
     /**
-     * 
+     * Change a user's username
      * @protected requires administrative privileges.
-     * @param {Number|String} user ID or username
-     * @param {String} username new username
+     * @param {number|string} user ID or username
+     * @param {string} username new username
      * @returns {Promise}
      */
     async changeUsername(user, username) {
-        isNaN(parseInt(user)) && (user = await this.fetch(user).then(user => user.id));
+        if (typeof user != 'number') {
+            return this.fetch(String(user)).then(user => user.changeUsername(username));
+        }
 
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
-
-        return RequestHandler.ajax({
-            path: "/moderator/change_username",
-            body: {
-                u_id: user,
-                username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/change_username", {
+            u_id: user,
+            username
+        }, true);
     }
 
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {Number|String} u_name username
-     * @param {String} username new username
+     * @param {number|string} u_name username
+     * @param {string} username new username
      * @returns {Promise}
      */
     changeUsernameAsAdmin(u_name, username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/change_username",
-            body: {
-                change_username_current: u_name,
-                change_username_new: username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/change_username", {
+            change_username_current: u_name,
+            change_username_new: username
+        }, true);
     }
 
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {Number|String} user ID or username
-     * @param {String} email 
+     * @param {number|string} user ID or username
+     * @param {string} email 
      * @returns {Promise}
      */
     async changeEmail(user, email) {
-        isNaN(parseInt(user)) && (user = await this.fetch(user).then(user => user.id));
+        if (typeof user != 'number') {
+            return this.fetch(String(user)).then(user => user.changeEmail(email));
+        }
 
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
-
-        return RequestHandler.ajax({
-            path: "/moderator/change_email",
-            body: {
-                u_id: user,
-                email,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/change_email", {
+            u_id: user,
+            email
+        }, true);
     }
 
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {String} username 
-     * @param {String} email 
+     * @param {string} username 
+     * @param {string} email 
      * @returns {Promise}
      */
     changeEmailAsAdmin(username, email) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/change_user_email",
-            body: {
-                username,
-                email,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/change_user_email", {
+            username,
+            email
+        }, true);
     }
 
     /**
      * 
-     * @param {Number|String} user ID or username
+     * @param {number|string} user ID or username
      * @returns {Promise}
      */
     async toggleOA(user) {
-        isNaN(parseInt(user)) && (user = await this.fetch(user).then(user => user.id));
+        if (typeof user != 'number') {
+            return this.fetch(String(user)).then(user => user.toggleOA());
+        }
 
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
-
-        return RequestHandler.ajax({
-            path: "/moderator/toggle_official_author/" + user,
-            body: {
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/toggle_official_author/" + user, true);
     }
 
     /**
      * 
-     * @param {String} user 
+     * @param {string} user 
      * @returns {Promise}
      */
     toggleClassicUserAsAdmin(user) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/toggle_classic_user/",
-            body: {
-                toggle_classic_uname: user,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/toggle_classic_user/", {
+            toggle_classic_uname: user
+        }, true);
     }
 
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {String} username 
-     * @param {Number|String} coins 
+     * @param {string} username 
+     * @param {number|string} coins 
      * @returns {Promise}
      */
     addWonCoins(username, coins) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/moderator/change_username",
-            body: {
-                coins_username: username,
-                num_coins: coins,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/change_username", {
+            coins_username: username,
+            num_coins: coins
+        }, true);
     }
 
     /**
      * 
      * @protected requires administrative privileges.
-     * @param {String} username 
-     * @param {Number|String} coins 
+     * @param {string} username
+     * @param {number|string} days
+     * @param {number|string|boolean} remove
      * @returns {Promise}
      */
-    addPlusDays(username, days, remove) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/add_plus_days",
-            body: {
-                add_plus_days: days,
-                username: username,
-                add_plus_remove: remove,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+    addPlusDays(username, days, remove = false) {
+        return RequestHandler.post("/admin/add_plus_days", {
+            add_plus_days: days,
+            username: username,
+            add_plus_remove: remove
+        }, true);
     }
 
     /**
      * 
-     * @param {String} username
+     * @param {string} username
      * @returns {Promise}
      */
     messagingBan(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (typeof username !== "string")
-            throw new Error("INVALID_USER");
+        if (typeof username == 'number') {
+            username = this.cache.get(username).username;
+        }
 
-        return RequestHandler.ajax({
-            path: "/admin/user_ban_messaging",
-            body: {
-                messaging_ban_uname: username.toLocaleLowerCase(),
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/user_ban_messaging", {
+            messaging_ban_uname: username
+        }, true);
     }
 
     /**
      * 
-     * @param {String} username
+     * @param {string} username
      * @returns {Promise}
      */
     uploadingBan(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (typeof username !== "string")
-            throw new Error("INVALID_USER");
+        if (typeof username == 'number') {
+            username = this.cache.get(username).username;
+        }
 
-        return RequestHandler.ajax({
-            path: "/admin/user_ban_uploading",
-            body: {
-                uploading_ban_uname: username.toLocaleLowerCase(),
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/user_ban_uploading", {
+            uploading_ban_uname: username
+        }, true);
     }
 
     /**
      * 
-     * @param {Number|String} user ID or username
+     * @param {number|string} user ID or username
      * @returns {Promise}
      */
     async ban(user) {
-        isNaN(parseInt(user)) && (user = await this.fetch(user).then(user => user.id));
+        if (typeof user != 'number') {
+            return this.fetch(String(user)).then(user => user.ban());
+        }
 
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-        else if (!user)
-            throw new Error("INVALID_USER");
-
-        return RequestHandler.ajax({
-            path: "/moderator/ban_user",
-            body: {
-                u_id: parseInt(user),
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/moderator/ban_user", {
+            u_id: parseInt(user)
+        }, true);
     }
 
      /**
      * 
-     * @param {Number|String} user 
-     * @param {Number|String} time 
+     * @param {number|string} user 
+     * @param {number|string} time 
      * @param {Boolean} deleteRaces
      * @returns {Promise} 
      */
     banAsAdmin(user, time = 0, deleteRaces = !1) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
-
-        return RequestHandler.ajax({
-            path: "/admin/ban_user",
-            body: {
-                ban_secs: time,
-                delete_race_stats: deleteRaces,
-                username: user,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/ban_user", {
+            ban_secs: time,
+            delete_race_stats: deleteRaces,
+            username: user
+        }, true);
     }
 
     /**
      * 
-     * @param {String} username 
+     * @param {string} username 
      * @returns {Promise} 
      */
-    deactivate(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
+    deactivate(user) {
+        if (typeof username == 'number') {
+            username = this.cache.get(username).username;
+        }
 
-        return RequestHandler.ajax({
-            path: "/admin/deactivate_user",
-            body: {
-                username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/deactivate_user", {
+            username: String(user)
+        }, true);
     }
 
     /**
      * 
-     * @param {String} username 
+     * @param {string} username 
      * @returns {Promise}
      */
-    delete(username) {
-        if (!token)
-            throw new Error("INVALID_TOKEN");
+    delete(user) {
+        if (typeof username == 'number') {
+            username = this.cache.get(username).username;
+        }
 
-        return RequestHandler.ajax({
-            path: "/admin/delete_user_account",
-            body: {
-                username,
-                app_signed_request: token
-            },
-            method: "post"
-        });
+        return RequestHandler.post("/admin/delete_user_account", {
+            username: String(user)
+        }, true);
     }
 }
