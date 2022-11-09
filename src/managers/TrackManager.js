@@ -157,7 +157,7 @@ export default class extends BaseManager {
      * @param {number|string} options.timeout 
      * @returns {string}
      */
-    async rateAll(rating, { startingTrackId, endingTrackId, timeout = 0 } = {}) {
+    async rateAll(rating, { startingTrackId, endingTrackId, timeout = 0 } => {}) {
         endingTrackId = Math.min(~~endingTrackId, await getCategory("recently-added").then(({ tracks }) => parseInt(tracks[0].slug)));
         if (isNaN(endingTrackId)) throw new Error("Ending track ID is NaN.");
         for (let trackId = Math.max(1001, ~~startingTrackId); trackId < endingTrackId; trackId++) {
