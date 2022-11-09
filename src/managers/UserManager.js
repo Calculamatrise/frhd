@@ -4,9 +4,10 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {object|number|string} uid
-     * @param {object} [force]
-     * @returns {Response}
+     * @param {object|number|string} uid id or username
+     * @param {object} [options]
+     * @param {boolean} [options.force]
+     * @returns {User}
      */
     async fetch(uid, { force }) {
         if (typeof uid == 'object') {
@@ -17,16 +18,24 @@ export default class extends BaseManager {
             }
         }
 
+        if (!force && this.cache.has(uid)) {
+            return this.cache.get(uid);
+        }
+
         if (force || !this.cache.has(uid)) {
             if (typeof uid == 'number') {
                 await RequestHandler.post("/friends/remove_friend", { u_id: uid }, false).then(res => {
                     // Response: "You are not friends with USERNAME, you cannot remove friendship."
-
+                    const matches = /[\w-]*(?=,)/.exec(res.msg);
+                    if (matches !== null) {
+                        uid = matches[0];
+                    }
                 });
             }
 
             const entry = await this.client.api.users(uid);
             entry && this.cache.set(uid, entry);
+            return entry;
         }
 
         return this.cache.get(uid);
@@ -35,16 +44,16 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {number|string} user id or username
+     * @param {number|string} uid id or username
      * @returns {Promise}
      */
-    async subscribe(user) {
-        if (typeof user != 'number') {
-            return this.fetch(String(user)).then(user => user.subscribe());
+    async subscribe(uid) {
+        if (typeof arguments[0] != 'number') {
+            return this.fetch(String(arguments[0])).then(user => user.subscribe());
         }
 
         return RequestHandler.post("/track_api/subscribe", {
-            sub_uid: user,
+            sub_uid: uid,
             subscribe: 1
         }, true);
     }
@@ -52,16 +61,16 @@ export default class extends BaseManager {
     /**
      * 
      * @async
-     * @param {number|string} user id or username
+     * @param {number|string} uid id or username
      * @returns {Promise}
      */
-    async unsubscribe(user) {
-        if (typeof user != 'number') {
-            return this.fetch(String(user)).then(user => user.unsubscribe());
+    async unsubscribe(uid) {
+        if (typeof arguments[0] != 'number') {
+            return this.fetch(String(arguments[0])).then(user => user.unsubscribe());
         }
 
         return RequestHandler.post("/track_api/subscribe", {
-            sub_uid: user,
+            sub_uid: uid,
             subscribe: 0
         }, true);
     }

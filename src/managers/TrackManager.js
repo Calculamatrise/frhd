@@ -21,15 +21,16 @@ export default class extends BaseManager {
      * @param {number|string} id track ID
      * @param {object} [options]
      * @param {boolean} [options.force]
-     * @returns {object}
+     * @returns {Track}
      */
     async fetch(id, { force }) {
-        if (force || !this.cache.has(id)) {
-            const entry = await this.client.api.tracks(id);
-            entry && this.cache.set(id, entry);
+        if (!force && this.cache.has(id)) {
+            return this.cache.get(id);
         }
 
-        return this.cache.get(id);
+        const entry = await this.client.api.tracks(id);
+        entry && this.cache.set(id, entry);
+        return entry;
     }
 
     /**
