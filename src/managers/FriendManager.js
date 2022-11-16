@@ -7,7 +7,7 @@ export default class extends BaseManager {
      * 
      * @async
      * @param {number|string} user
-     * @returns {Object}
+     * @returns {object}
      */
     async fetch(user) {
         if (isNaN(user)) {
@@ -22,7 +22,7 @@ export default class extends BaseManager {
     
     /**
      * Sends a friend request to the specified user
-     * @param {String} username 
+     * @param {string} username 
      * @returns {Promise}
      */
     async add(username) {
@@ -33,7 +33,7 @@ export default class extends BaseManager {
 
     /**
      * Accept an incoming friend request
-     * @param {String} username 
+     * @param {string} username 
      * @returns {Promise}
      */
     async accept(username) {
@@ -45,7 +45,7 @@ export default class extends BaseManager {
 
     /**
      * 
-     * @param {String} username 
+     * @param {string} username 
      * @returns {Promise}
      */
     async reject(username) {

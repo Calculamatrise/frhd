@@ -18,18 +18,15 @@ export default class Image extends EventEmitter {
 
     set src(value) {
         this.#src = value;
-        RequestHandler.ajax({
-            url: value,
+        RequestHandler.ajax(value, {
             headers: {
                 "Content-Type": "image/png"
             }
         }).then(image => {
-            const { width, height, data } = read(image);
-
-            this.width = width;
-            this.height = height;
+            const { data, height, width } = read(image);
             this.#data = new Uint8ClampedArray(data);
-
+            this.height = height;
+            this.width = width;
             this.emit("load", this);
             if (typeof this.onload == "function") {
                 this.onload.call(this);

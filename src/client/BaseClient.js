@@ -97,12 +97,12 @@ export default class extends EventEmitter {
                 asr = await RequestHandler.post("/auth/standard_login", {
                     login: asr.username,
                     password: asr.password
-                }).then(function(response) {
-                    if (response.result == false) {
-                        throw new Error(response.msg);
+                }).then(function(res) {
+                    if (res.result == false) {
+                        throw new Error(res.msg);
                     }
 
-                    return response.app_signed_request;
+                    return res.app_signed_request;
                 });
             } else if (asr.hasOwnProperty("token")) {
                 asr = asr.token;

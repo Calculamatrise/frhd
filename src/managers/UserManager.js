@@ -16,29 +16,27 @@ export default class extends BaseManager {
             } else if (uid.hasOwn('username')) {
                 uid = uid['username'];
             }
+            
+            if (uid.hasOwn('force')) {
+                force = uid.force;
+            }
         }
 
         if (!force && this.cache.has(uid)) {
             return this.cache.get(uid);
+        } else if (typeof uid == 'number') {
+            await RequestHandler.post("/friends/remove_friend", { u_id: uid }, false).then(res => {
+                // Response: "You are not friends with USERNAME, you cannot remove friendship."
+                const matches = /[\w-]+(?=,)/.exec(res.msg);
+                if (matches !== null) {
+                    uid = matches[0];
+                }
+            });
         }
 
-        if (force || !this.cache.has(uid)) {
-            if (typeof uid == 'number') {
-                await RequestHandler.post("/friends/remove_friend", { u_id: uid }, false).then(res => {
-                    // Response: "You are not friends with USERNAME, you cannot remove friendship."
-                    const matches = /[\w-]*(?=,)/.exec(res.msg);
-                    if (matches !== null) {
-                        uid = matches[0];
-                    }
-                });
-            }
-
-            const entry = await this.client.api.users(uid);
-            entry && this.cache.set(uid, entry);
-            return entry;
-        }
-
-        return this.cache.get(uid);
+        const entry = await this.client.api.users(uid);
+        entry && this.cache.set(uid, entry);
+        return entry;
     }
 
     /**
@@ -73,6 +71,10 @@ export default class extends BaseManager {
             sub_uid: uid,
             subscribe: 0
         }, true);
+    }
+
+    search(query) {
+        return RequestHandler.post("/search/u_mention_lookup/" + query);
     }
 
     /**
@@ -171,7 +173,7 @@ export default class extends BaseManager {
      * @returns {Promise}
      */
     addWonCoins(username, coins) {
-        return RequestHandler.post("/moderator/change_username", {
+        return RequestHandler.post("/admin/add_won_coins", {
             coins_username: username,
             num_coins: coins
         }, true);

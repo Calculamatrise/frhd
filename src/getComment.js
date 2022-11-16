@@ -9,12 +9,20 @@ import getTrack from "./getTrack.js";
  * @returns {Promise<Comment>}
  */
 export default function(trackId, commentId, callback = res => res) {
-    // user 'show more' to find the api endpoint
     return getTrack(trackId).then(({ track_comments }) => {
         for (const comment of track_comments) {
             if (comment.comment.id == commentId) {
                 return new Comment(comment);
             }
         }
+
+        // comment not found.. load more
+        // const entry = await RequestHandler.post("/track_comments/load_more/" + trackId).then(function(res) {
+        //     if (res.result !== true) {
+        //         throw new Error(res.msg);
+        //     }
+
+        //     return new Comment(res);
+        // });
     }).then(callback);
 }

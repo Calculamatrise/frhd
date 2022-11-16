@@ -12,28 +12,12 @@ export default global.RequestHandler = new Proxy(class {
     /**
      * Make requests through HTTP
      * @param {string} option URI or options object
-     * @param {object} options Options
+     * @param {object} [options] Options
      * @returns {Promise}
      */
     static ajax(option, options = typeof option == "object" ? option : {}) {
         let host = options.hostname || options.host || 'www.freeriderhd.com';
         let path = options.pathname || options.path || (typeof option != 'object' && option) || '';
-        if (/^\.{1,2}\//.test(path)) {
-            const body = readFileSync(path);
-            if (headers['content-type'].startsWith('image/')) {
-                if (headers['content-type'].includes('base64')) {
-                    return `data:${headers['content-type']}; base64, ` + body.toString("base64");
-                }
-
-                return body;
-            }
-
-            try {
-                return JSON.parse(body);
-            } catch {}
-            return body.toString("utf8");
-        }
-
         let url = new URL(options.url || `https://${host}${path}`);
         url.searchParams.set("ajax", true);
         url.searchParams.set("t_1", "ref");
@@ -51,35 +35,47 @@ export default global.RequestHandler = new Proxy(class {
         }
 
         let contentType = req.headers.get("Content-Type");
+        if (/^\.{1,2}\//.test(path)) {
+            const body = readFileSync(path);
+            if (/^image\/\w+/.test(contentType)) {
+                const matches = /(?<=[;\s]+)\w+/.exec(contentType);
+                if (matches !== null) {
+                    return Promise.resolve(`data:${contentType}, ` + body.toString(matches[0]));
+                }
+
+                return Promise.resolve(body);
+            }
+
+            return Promise.resolve(parseJSON(body.toString("utf8")));
+        }
+
         return new Promise((resolve, reject) => {
-            // resolve into a response?? new Response(data)
-            // maybe even create own response class extends response
             request({
                 host: url.hostname,
                 path: url.pathname + url.search,
                 method: req.method,
                 headers: Object.fromEntries(req.headers.entries())
             }, async function(res) {
+                res.once("error", reject);
                 const buffers = [];
                 for await (const chunk of res) {
                     buffers.push(chunk);
                 }
 
                 let data = Buffer.concat(buffers);
-                if (contentType.startsWith("image/png")) {
-                    if (contentType.includes("base64")) {
-                        data = 'data:image/png; base64, ' + data.toString("base64");
+                if (/^image\/\w+/.test(contentType)) {
+                    const matches = /(?<=[;\s]+)\w+/.exec(contentType);
+                    if (matches !== null) {
+                        data = `data:${contentType}, ` + data.toString(matches[0]);
                     }
 
                     return void resolve(data);
                 }
 
-                res.once("error", reject);
-                try {
-                    return void resolve(JSON.parse(data));
-                } catch {}
-                resolve(data.toString("utf8"));
-            }).end(contentType == "application/json" ? JSON.stringify(options.body) : (new URLSearchParams(options.body) || url.searchParams).toString());
+                resolve(parseJSON(data.toString("utf8")));
+            })
+            .once('error', reject)
+            .end(contentType == "application/json" ? JSON.stringify(options.body) : (new URLSearchParams(options.body) || url.searchParams).toString());
         });
     }
 
@@ -91,7 +87,7 @@ export default global.RequestHandler = new Proxy(class {
     cosmetics(id) {
         return this.constructor.ajax("/store/gear").then(function(res) {
             if (res.result === false || /page\s+not\s+found/i.test(res.app_title))
-                throw new Error("COSMETIC_NOT_FOUND");
+                throw new Error("Cosmetic not found.");
 
             return {
                 heads: res.gear.head_gear.filter(function(head, index) {
@@ -158,15 +154,15 @@ export default global.RequestHandler = new Proxy(class {
         if (fields !== void 0) {
             return this.constructor.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}`).then(function(response) {
                 if (response.result === false)
-                    throw new Error("TRACK_NOT_FOUND");
-                
+                    throw new Error("Track not found.");
+
                 return Track.create(response.data);
             });
         }
 
         return this.constructor.ajax("/t/" + parseInt(id)).then(function(res) {
             if (res.result === false || /page\s+not\s+found/i.test(res.app_title))
-                throw new Error("TRACK_NOT_FOUND");
+                throw new Error("Track not found.");
             
             return Track.create(res);
         });
@@ -178,9 +174,10 @@ export default global.RequestHandler = new Proxy(class {
      * @returns {Promise<User>}
      */
     users(username) {
+        // "/user_api/load_user?id=?" it exists for tracks, perhaps it exists for users?
         return this.constructor.ajax("/u/" + username).then(function(res) {
             if (res.result === false || /page\s+not\s+found/i.test(res.app_title))
-                throw new Error("USER_NOT_FOUND");
+                throw new Error("User not found.");
 
             return User.create(res);
         });
@@ -200,3 +197,11 @@ export default global.RequestHandler = new Proxy(class {
         return Reflect.get(...arguments);
     }
 });
+
+function parseJSON(string) {
+    try {
+        return JSON.parse(string);
+    } catch {
+        return string;
+    }
+}

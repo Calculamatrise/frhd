@@ -178,7 +178,7 @@ export default class User {
             }, true).then((res) => {
                 if (res.result) {
                     this.username = username;
-                    return response;
+                    return res;
                 }
 
                 throw new Error(res.msg || "Insufficeint privileges.");
@@ -354,7 +354,18 @@ export default class User {
     }
 
     /**
-     * Admin endpoint
+     * Moderator endpoint
+     * @protected requires administrative privileges.
+     * @returns {Promise}
+     */
+    unban() {
+        return RequestHandler.post("/moderator/unban_user", {
+            u_id: this.id
+        }, true);
+    }
+
+    /**
+     * Admin endpoint (uncertain about whether admin un-action endpoints exist)
      * @protected requires administrative privileges.
      * @param {number|string} time 
      * @param {Boolean} deleteRaces 
@@ -367,6 +378,7 @@ export default class User {
             username: this.username
         }, true);
     }
+
 
     /**
      * 

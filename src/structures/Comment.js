@@ -1,4 +1,5 @@
 import RequestHandler from "../utils/RequestHandler.js";
+import User from "./User.js";
 
 export default class Comment {
     id = null;
@@ -11,20 +12,65 @@ export default class Comment {
         }
 
         const comment = new Comment();
-        comment.id = data.comment.id;
-        comment.message = data.comment.msg;
-        comment.timeAgo = data.comment.time;
-        comment.author = {
-            username: data.user.u_name,
-            displayName: data.user.d_name,
-            avatar: data.user.img_url_small
-        }
-
-        if (data.track !== void 0) {
-            comment.trackId = data.track.id;
-        }
-
+        comment.init(data);
         return comment;
+    }
+
+    init(data) {
+        for (const key in data) {
+            switch(key) {
+                case 'comment': {
+                    for (const property in data[key]) {
+                        switch(property) {
+                            case 'id':
+                                this.id = data[key][property];
+                                break;
+
+                            case 'msg':
+                                this.message = data[key][property];
+                                break;
+
+                            case 'time':
+                                this.timeAgo = data[key][property];
+                                break;
+                        }
+                    }
+                    break;
+                }
+
+                case 'data':
+                    if ('track_comments' in data[key]) {
+                        return this.init(data[key]['track_comments'][0]);
+                    }
+
+                    return this.init(data[key]);
+
+                case 'track':
+                    this.trackId = data[key];
+                    break;
+
+                case 'user':
+                    this.author = new User();
+                    for (const property in data[key]) {
+                        switch(property) {
+                            case 'd_name':
+                                this.author.displayName = data[key][property];
+                                break;
+
+                            case 'img_url_small':
+                            case 'img_url_medium':
+                            case 'img_url_large':
+                                this.author.avatarURL = data[key][property];
+                                break;
+
+                            case 'u_name':
+                                this.author.username = data[key][property];
+                                break;
+                        }
+                    }
+                    break;
+            }
+        }
     }
 
     async reply(data) {

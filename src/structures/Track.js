@@ -33,7 +33,7 @@ export default class Track {
 
     /**
      * 
-     * @param {object} options 
+     * @param {object} data
      */
     async init(data) {
         for (const key in data) {

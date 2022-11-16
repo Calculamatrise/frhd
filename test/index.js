@@ -16,7 +16,4 @@ client.on("commentMention", function(comment) {
     });
 });
 
-client.login({
-    username: "frai",
-    password: "allah"
-});
+client.login("token");

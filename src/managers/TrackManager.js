@@ -35,14 +35,14 @@ export default class extends BaseManager {
 
     /**
      * 
-     * @param {object} options 
-     * @param {string} options.title 
-     * @param {string} options.description 
-     * @param {string} options.code 
-     * @param {string} options.defaultVehicle 
-     * @param {object} options.allowedVehicles
-     * @param {boolean} options.allowedVehiles.MTB 
-     * @param {boolean} options.allowedVehicles.BMX 
+     * @param {object} [options]
+     * @param {string} [options.title]
+     * @param {string} [options.description]
+     * @param {string} [options.code]
+     * @param {string} [options.defaultVehicle]
+     * @param {object} [options.allowedVehicles]
+     * @param {boolean} [options.allowedVehicles.MTB]
+     * @param {boolean} [options.allowedVehicles.BMX]
      * @returns {Promise}
      */
     async post(options) {
@@ -151,10 +151,10 @@ export default class extends BaseManager {
      * @async
      * @private
      * @param {number|boolean} rating
-     * @param {object} options
-     * @param {number|string} options.startingTrackId 
-     * @param {number|string} options.endingTrackId 
-     * @param {number|string} options.timeout 
+     * @param {object} [options]
+     * @param {number|string} [options.startingTrackId]
+     * @param {number|string} [options.endingTrackId]
+     * @param {number|string} [options.timeout]
      * @returns {string}
      */
     async rateAll(rating, { startingTrackId, endingTrackId, timeout = 0 } = {}) {
@@ -165,6 +165,9 @@ export default class extends BaseManager {
                 t_id: this.id,
                 vote: Boolean(vote)
             }, true).then(r => console.log(trackId, r.result || r.msg)).catch(console.error);
+            if (typeof arguments[arguments.length - 1] == 'function') {
+                arguments[arguments.length - 1].call(this, trackId);
+            }
             timeout && await new Promise(resolve => setTimeout(resolve, ~~timeout));
         }
 
@@ -175,14 +178,14 @@ export default class extends BaseManager {
      * Remove cheated ghosts on all tracks between a given range
      * @async
      * @protected requires administrative privileges.
-     * @param {object} options
-     * @param {Array<number|string>} options.users
-     * @param {number|string} options.startingTrackId
-     * @param {number|string} options.endingTrackId
-     * @param {number|string} timeout
+     * @param {object} [options]
+     * @param {Array<number|string>} [options.users]
+     * @param {number|string} [options.startingTrackId]
+     * @param {number|string} [options.endingTrackId]
+     * @param {number|string} [timeout]
      * @returns {string} 
      */
-    async deepClean({ users, startingTrackId, endingTrackId, timeout = 0 } = {}, callback = res => res) {
+    async deepClean({ users, startingTrackId, endingTrackId, timeout = 0 } = {}) {
         endingTrackId = Math.min(~~endingTrackId, await getCategory("recently-added").then(({ tracks }) => parseInt(tracks[0].slug)));
         if (isNaN(endingTrackId)) throw new Error("Ending track ID is NaN.");
         for (let trackId = Math.max(1001, ~~startingTrackId); trackId <= endingTrackId; trackId++) {
@@ -206,7 +209,9 @@ export default class extends BaseManager {
                 });
             }
 
-            callback(trackId);
+            if (typeof arguments[arguments.length - 1] == 'function') {
+                arguments[arguments.length - 1].call(this, trackId);
+            }
             timeout && await new Promise(resolve => setTimeout(resolve, ~~timeout));
         }
 
