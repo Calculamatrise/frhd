@@ -165,6 +165,45 @@ export default class User {
         }, true);
     }
 
+    updatePersonalData(name, value) {
+        return RequestHandler.post("/account/update_personal_data", {
+            name, value
+        }, true);
+    }
+
+    deletePersonalData() {
+        return RequestHandler.post("/account/delete_all_personal_data");
+    }
+
+    editProfile(name, value) {
+        return RequestHandler.post("/account/edit_profile", {
+            name, value
+        }, true);
+    }
+
+    selectProfileImage(type) {
+        return RequestHandler.post("/account/update_photo", {
+            img_type: type
+        });
+    }
+
+    changePassword(old_password, new_password) {
+        return RequestHandler.post("/account/change_password", {
+            old_password, new_password
+        }, true);
+    }
+
+    /**
+     * REQUIRES PRO
+     */
+    transferCoins(user, amount, message = '') {
+        return RequestHandler.post("/account/plus_transfer_coins", {
+            transfer_coins_to: user,
+            transfer_coins_amount: amount,
+            msg: message
+        });
+    }
+
     /**
      * 
      * @param {string} username 

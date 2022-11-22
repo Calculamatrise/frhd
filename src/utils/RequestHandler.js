@@ -8,7 +8,7 @@ import Notification from "../structures/Notification.js";
 import Track from "../structures/Track.js";
 import User from "../structures/User.js";
 
-export default global.RequestHandler = new Proxy(class {
+export default new Proxy(class {
     /**
      * Make requests through HTTP
      * @param {string} option URI or options object
@@ -121,6 +121,9 @@ export default global.RequestHandler = new Proxy(class {
     datapoll() {
         return this.constructor.ajax("/datapoll/poll_request", {
             body: {
+                // track: !1,
+                // track_timings: !1,
+                // check_status: !1,
                 notifications: true
             },
             method: "post",
@@ -134,6 +137,10 @@ export default global.RequestHandler = new Proxy(class {
      * @returns {Promise<Notification>}
      */
     notifications(count = Infinity) {
+        // return this.constructor.ajax(`/notifications/load_more/` + last_timestamp).then(function({ notification_days }) {
+        //     // ...
+        // });
+
         return this.constructor.ajax(`/notifications`).then(function({ notification_days }) {
             if (notification_days && notification_days.length > 0) {
                 return notification_days[0].notifications.slice(0, count).map(function(notification) {
@@ -185,7 +192,7 @@ export default global.RequestHandler = new Proxy(class {
 }, {
     get(target, property, receiver) {
         if (METHODS.indexOf(property.toUpperCase()) !== -1) {
-            return function(url, body, requireToken = typeof body == 'boolean' ? body : false) {
+            return function(url, body, requireToken = typeof body == 'boolean' ? body : null) {
                 return receiver.ajax(String(url), {
                     body: typeof body == 'boolean' ? null : body,
                     method: property,

@@ -8,7 +8,7 @@ import CosmeticManager from "../managers/CosmeticManager.js";
 
 /**
  * @callback Callback
- * @extends {EventEmitter}
+ * @extends {BaseClient}
  * @type {Client}
  */
 export default class extends BaseClient {

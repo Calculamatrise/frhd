@@ -18,7 +18,7 @@ export function getRace(trackId: number, username: string, callback: Function): 
 export function getRandom(min?: number, max?: number, callback: Function): Promise<Track>;
 export function getTrack(id: number, callback: Function): Promise<Track>;
 export function getTrackLeaderboard(trackId: number, callback: Function): Promise<object>;
-export function getUser(user: string, callback: Function): Promise<User>;
+export function getUser(uid: string|number, callback: Function): Promise<User>;
 
 //#endregion
 
@@ -27,27 +27,27 @@ export function getUser(user: string, callback: Function): Promise<User>;
 export class Builder {
     public constructor();
     public get fillStyle(): string;
-    public set fillStyle(value: string): string?;
+    public set fillStyle(value: string): string;
     public get font(): string;
-    public set font(value: string): string?;
+    public set font(value: string): string;
     public get globalCompositeOperation(): string;
-    public set globalCompositeOperation(value: string): string?;
+    public set globalCompositeOperation(value: string): string;
     public lineDash: Array;
     public get lineDashOffset(): number;
-    public set lineDashOffset(value: number): number?;
+    public set lineDashOffset(value: number): number;
     public get lineWidth(): number;
-    public set lineWidth(value: number): number?;
+    public set lineWidth(value: number): number;
     public get strokeStyle(): string;
-    public set strokeStyle(value: string): string?;
+    public set strokeStyle(value: string): string;
     public get textAlign(): string;
-    public set textAlign(value: string): string?;
+    public set textAlign(value: string): string;
     public get textBaseline(): string;
-    public set textBaseline(value: string): string?;
+    public set textBaseline(value: string): string;
     public get physics(): string;
     public get scenery(): string;
     public get powerups(): string;
     public get code(): string;
-    public set code(value: string): string?;
+    public set code(value: string): string;
 
     public arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterClockwise: boolean): this;
     public arc(...args: { x: number, y: number, radius: number, startAngle: number, endAngle: number, counterClockwise: boolean }[]): this;
@@ -135,7 +135,7 @@ export class Image {
     public get data(): Uint8ClampedArray | null;
     public height: number;
     public get src(): string;
-    public set src(value: string): string?;
+    public set src(value: string): string;
     public width: number;
 }
 

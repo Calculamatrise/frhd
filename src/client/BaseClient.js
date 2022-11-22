@@ -7,7 +7,7 @@ export let token = null;
 /**
  * @callback Callback
  * @extends {EventEmitter}
- * @type {Client}
+ * @type {BaseClient}
  */
 export default class extends EventEmitter {
     #api = new RequestHandler();
@@ -18,10 +18,6 @@ export default class extends EventEmitter {
     };
 
     get api() {
-        if (!token) {
-            throw new Error("INVALID_TOKEN");
-        }
-
         return this.#api;
     }
 
@@ -37,25 +33,25 @@ export default class extends EventEmitter {
      * @param {boolean} [options.listen] listen to incoming notifications
      */
     constructor(options = {}) {
-        if (typeof options != "object" || options instanceof Array) {
-            throw TypeError("Options must be of type: Object");
+        if (typeof options != 'object' || options instanceof Array) {
+            throw TypeError("Options must be of type: object");
         }
 
         super();
         for (const key in options) {
             switch(key.toLowerCase()) {
-                case "debug": {
+                case 'debug': {
                     this.debug = !!options[key];
                     // this.on(Events.Debug, console.log);
                     break;
                 }
 
-                case "interval": {
+                case 'interval': {
                     this.#options.interval = Math.max(1e3, ~~options[key]);
                     break;
                 }
 
-                case "listen": {
+                case 'listen': {
                     this.#options.listen = !!options[key];
                     break;
                 }
@@ -69,10 +65,10 @@ export default class extends EventEmitter {
             this.debug && console.log(notification);
             this.emit(Events.Raw, notification);
             if (notification.id === null) {
-                let error = new Error("UNKNOWN_NOTIFICATION_ID");
+                let error = new Error("Unregistered notification; " + JSON.stringify(notification));
                 console.warn(error, notification);
                 this.emit(Events.Error, error);
-            } else if (notification.id == Events.CommentMention) {
+            } else if (notification.id == 'commentMention') {
                 let track = await this.api.tracks(notification.track.id);
                 this.emit(notification.id, track.comments.get(notification.comment.id));
             } else {
@@ -83,17 +79,34 @@ export default class extends EventEmitter {
         setTimeout(this.#listen.bind(this), this.#options.interval);
     }
 
+    async #verifyToken(value, callback) {
+        if (value !== null) {
+            await RequestHandler.ajax("/account/settings?app_signed_request=" + value).then(async res => {
+                if ('user' in res) {
+                    token = value;
+                    typeof callback == 'function' && await callback(res.user);
+                    return true;
+                }
+
+                throw new Error("Invalid token!");
+            });
+        } else {
+            token = null;
+        }
+
+        return token !== null;
+    }
+
     /**
      * 
      * @param {(string|object)} asr app signed request token
      * @param {string} asr.username frhd login username
      * @param {string} asr.password frhd login password
-     * @param {string} asr.token app signed request token
      * @returns {Client}
      */
     async login(asr) {
-        if (typeof asr == "object") {
-            if (asr.hasOwnProperty("username") && asr.hasOwnProperty("password")) {
+        if (typeof asr == 'object') {
+            if (asr.hasOwnProperty('username') && asr.hasOwnProperty('password')) {
                 asr = await RequestHandler.post("/auth/standard_login", {
                     login: asr.username,
                     password: asr.password
@@ -104,29 +117,18 @@ export default class extends EventEmitter {
 
                     return res.app_signed_request;
                 });
-            } else if (asr.hasOwnProperty("token")) {
-                asr = asr.token;
             }
         }
 
-        if (typeof asr != "string")
-            throw new Error("INVALID_TOKEN");
-
-        token = asr;
-        let response = await RequestHandler.get(`/account/settings`);
-        if (!response || !response.user) {
-            token = null;
-            throw new Error("INVALID_TOKEN");
-        }
-
-        this.#user = await this.users.fetch(response.user.d_name) || null;
-        this.user.requests = new RequestManager();
-        this.user.moderator = response.user.moderator;
-
-        this.emit(Events.ClientReady);
-        if (this.#options.listen) {
-            this.#listen();
-        }
+        await this.#verifyToken(asr, async user => {
+            this.#user = await this.users.fetch(user.d_name) || null; // maybe create instance of User here instead of re-fetching
+            this.user.requests = new RequestManager(); // for friend requests
+            this.user.moderator = user.moderator;
+            this.emit(Events.ClientReady);
+            if (this.#options.listen) {
+                this.#listen();
+            }
+        });
 
         return this;
     }
@@ -135,7 +137,7 @@ export default class extends EventEmitter {
      * 
      * @returns {Client}
      */
-     logout() {
+    logout() {
         this.user = null;
         token = null;
         return this;

@@ -251,6 +251,10 @@ export default class Track {
         }, true);
     }
 
+    flag() {
+        return RequestHandler.get("/track_api/flag/" + this.id, true);
+    }
+
     /**
      * 
      * @protected requires administrative privileges.
@@ -343,13 +347,29 @@ export default class Track {
      * @returns {Promise}
      */
     async hide() {
-        return RequestHandler.get(`/moderator/hide_track/${this.id}`, true).then((response) => {
-            if (response.result) {
+        return RequestHandler.get(`/moderator/hide_track/${this.id}`, true).then(res => {
+            if (res.result) {
                 this.hidden = !0;
-                return response;
+                return res;
             }
 
-            throw new Error(response.msg || "Insufficient privileges");
+            throw new Error(res.msg || "Insufficient privileges");
+        });
+    }
+
+    /**
+     * Hide track as a moderator
+     * @protected requires administrative privileges.
+     * @returns {Promise}
+     */
+    async unhide() {
+        return RequestHandler.get(`/moderator/unhide_track/${this.id}`, true).then(res => {
+            if (res.result) {
+                this.hidden = false;
+                return res;
+            }
+
+            throw new Error(res.msg || "Insufficient privileges");
         });
     }
 
