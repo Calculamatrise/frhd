@@ -26,7 +26,7 @@ export default class extends BaseManager {
         return entry;
     }
 
-    async post(message) {
+    post(message) {
         return RequestHandler.post("/track_comments/post", {
             t_id: this.client.id,
             msg: String(message).replace(/\s+/g, "+")
@@ -38,4 +38,6 @@ export default class extends BaseManager {
             return new Comment(res);
         });
     }
+
+	delete() {}
 }

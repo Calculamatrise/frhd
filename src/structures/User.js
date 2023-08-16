@@ -2,441 +2,458 @@ import RequestHandler from "../utils/RequestHandler.js";
 import CosmeticManager from "../managers/CosmeticManager.js";
 import FriendManager from "../managers/FriendManager.js";
 import TrackManager from "../managers/TrackManager.js";
-import getTrack from "../getTrack.js";
+import FriendRequest from "./FriendRequest.js";
+import Track from "./Track.js";
 
 export default class User {
-    id = null;
-    avatar = null;
-    displayName = null;
-    moderator = false;
-    username = null;
-    cosmetics = new CosmeticManager();
-    friends = new FriendManager();
-    recentlyPlayed = new TrackManager();
-    recentlyCompleted = new TrackManager();
-    likedTracks = new TrackManager();
+	id = null;
+	admin = false;
+	avatar = null;
+	displayName = null;
+	moderator = false;
+	username = null;
+	cosmetics = new CosmeticManager(this);
+	friends = new FriendManager(this);
+	createdTracks = new TrackManager(this);
+	recentlyPlayed = new TrackManager(this);
+	recentlyCompleted = new TrackManager(this);
+	likedTracks = new TrackManager(this);
+	constructor(data) {
+		typeof data == 'object' && this._update(data);
+	}
 
-    #createdTracks = null;
-    get createdTracks() {
-        if (!(this.#createdTracks instanceof TrackManager)) {
-            this.#createdTracks = new TrackManager();
-            for (const { id } of this.#createdTracks) {
-                this.#createdTracks.fetch(id);
-            }
-        }
+	/**
+	 * 
+	 * @private
+	 * @param {object} data 
+	 */
+	_update(data) {
+		if (typeof data != 'object') {
+			console.warn("Invalid data type");
+			return;
+		}
 
-        return this.#createdTracks;
-    }
+		for (const key in data) {
+			switch (key) {
+				case 'user':
+					this._update(data[key]);
+					break;
 
-    static async create(data, isCurrentUser = false) {
-        if (typeof data != "object") {
-            throw new TypeError("INVALID_DATA_TYPE");
-        }
+				case 'a_ts':
+					this.lastPlayedTimestamp = data[key];
+					break;
+				case 'activity_time_ago':
+					this.lastPlayed = data[key];
+					break;
 
-        const instance = new User();
-        instance.id = data.u_id;
-        instance.username = data.u_name;
-        instance.displayName = data.d_name;
-        instance.avatar = data.img_url_small || data.img_url_medium;
-        if (data.user !== void 0) {
-            instance.id = instance.id || data.user.u_id;
-            instance.username = instance.username || data.user.u_name;
-            instance.displayName = instance.displayName || data.user.d_name;
-            instance.avatar = instance.avatar || data.user.img_url_medium;
-            instance.classic = data.user.classic;
-            instance.admin = data.user.admin;
-            instance.plus = data.user.plus;
-            instance.forums = data.user.forum_url || null;
-            instance.cosmetics = {
-                head: {
-                    image: data.user.cosmetics.head.img,
-                    spriteSheetURL() {
-                        return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${data.user.cosmetics.head.img.replace(/\s(.*)/gi, '')}.png`
-                    }
-                }
-            }
-        }
+				case 'admin':
+				case 'classic':
+				case 'moderator':
+				case 'plus':
+					this[key] = data[key];
 
-        if (data.user_stats !== void 0) {
-            instance.stats = {
-                totalPoints: data.user_stats.tot_pts,
-                completed: data.user_stats.cmpltd,
-                rated: data.user_stats.rtd,
-                comments: data.user_stats.cmmnts,
-                created: data.user_stats.crtd,
-                headCount: data.user_stats.head_cnt,
-                totalHeadCount: data.user_stats.total_head_cnt
-            }
-        }
+				case 'avatar':
+				case 'img_url_small':
+				case 'img_url_medium':
+				case 'img_url_large':
+					this.avatar = data[key];
+					break;
 
-        if (data.user_info) {
-            instance.bio = data.user_info.about; 
-        }
+				case 'cosmetics': {
+					this.cosmetics = {}
+					this.cosmetics.head = {}
+					if (typeof data[key] == 'object') {
+						this.cosmetics.head.image = data[key].head.img;
+						this.cosmetics.head.spriteSheetURL = function() {
+							return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${this.image.replace(/\s(.*)/gi, '')}.png`
+						}
+					}
+					break;
+				}
 
-        if (data.user_mobile_stats !== void 0) {
-            instance.mobileStats = {
-                level: data.user_mobile_stats.lvl,
-                wins: data.user_mobile_stats.wins,
-                headCount: data.user_mobile_stats.headCount,
-                connected: data.user_mobile_stats.connected
-            }
-        }
+				case 'created_tracks': {
+					for (let track of data[key].tracks.map(data => new Track(data))) {
+						this.createdTracks.cache.set(track.id, track);
+					}
+					break;
+				}
 
-        if (data.user_verify_reminder !== void 0) {
-            instance.verifiedEmail = data.user_verify_reminder;
-        }
+				case 'd_name':
+					this.displayName = data[key];
+					break;
+				case 'forum_url':
+					this.forums = data[key];
+					break;
+				case 'friends': {
+					this.friendCount = data[key].friend_cnt;
+					for (const friend of data[key].friends_data.map(data => new User(data))) {
+						this.friends.cache.set(friend.id, friend);
+					}
+					break;
+				}
 
-        if (data.recently_played_tracks !== void 0) {
-            instance.recentlyPlayed = await Promise.all(data.recently_played_tracks.tracks.map(async function(track) {
-                if (typeof track !== "object" || track["slug"] === void 0) {
-                    return;
-                }
-                
-                return getTrack(parseInt(track.slug));
-            }));
-        }
+				case 'friend_requests': {
+					this.friendRequestCount = data.friend_requests.request_cnt;
+					this.friendRequests = data.friend_requests.request_data.map(request => {
+						return new FriendRequest(request);
+					});
+					break;
+				}
 
-        if (data.recently_ghosted_tracks !== void 0) {
-            instance.recentlyCompleted = await Promise.all(data.recently_ghosted_tracks.tracks.map(function(track) {
-                if (typeof track !== "object" || track["slug"] === void 0) {
-                    return;
-                }
-                
-                return getTrack(parseInt(track.slug));
-            }));
-        }
+				case 'has_max_friends': {
+					this.friendLimitReached = data[key];
+					break;
+				}
 
-        if (data.created_tracks !== void 0) {
-            instance.#createdTracks = data.created_tracks.tracks;
-        }
+				case 'liked_tracks': {
+					for (let track of data[key].tracks.map(data => new Track(data))) {
+						this.likedTracks.cache.set(track.id, track);
+					}
+					break;
+				}
 
-        if (data.liked_tracks !== void 0) {
-            instance.likedTracks = await Promise.all(data.liked_tracks.tracks.map(async function(track) {
-                if (typeof track !== "object" || track["id"] === void 0) {
-                    return;
-                }
-                
-                return getTrack(track.id);
-            }));
-        }
+				case 'recently_ghosted_tracks': {
+					for (let track of data[key].tracks.map(data => new Track(data))) {
+						this.recentlyCompleted.cache.set(track.id, track);
+					}
+					break;
+				}
 
-        if (data.friends !== void 0) {
-            instance.friendCount = data.friends.friend_cnt;
-            instance.friends.push(...await Promise.all(data.friends.friends_data.map(function(user) {
-                return User.create(user);
-            })));
-        }
+				case 'recently_played_tracks': {
+					for (let track of data[key].tracks.map(data => new Track(data))) {
+						this.recentlyPlayed.cache.set(track.id, track);
+					}
+					break;
+				}
 
-        if (data.friend_requests !== void 0) {
-            instance.friendRequestCount = data.friend_requests.request_cnt;
-            instance.friendRequests = data.friend_requests.request_data;
-        }
-        
-        if (data.has_max_friends !== void 0) {
-            instance.friendLimitReached = data.has_max_friends;
-        }
+				case 'subscribe':
+					this.subscriberCount = ~~data[key].count;
+					break;
+				case 'u_id':
+					this.id = data[key];
+					break;
+				case 'u_name':
+					this.username = data[key];
+					break;
+				case 'user_info':
+					this.bio = typeof data[key] == 'object' && data[key].about;
+					break;
+				case 'user_mobile_stats': {
+					{
+						let mobileStats = data[key];
+						this.mobileStats = {
+							level: Number(mobileStats.lvl),
+							wins: Number(mobileStats.wins),
+							headCount: Number(mobileStats.headCount),
+							connected: Boolean(mobileStats.connected)
+						}
+					}
+					break;
+				}
 
-        if (data.subscribe !== void 0) {
-            instance.subscriberCount = data.subscribe.count;
-        }
+				case 'user_stats': {
+					{
+						let stats = data[key];
+						this.stats = {
+							totalPoints: stats.tot_pts,
+							completed: stats.cmpltd,
+							rated: stats.rtd,
+							comments: stats.cmmnts,
+							created: stats.crtd,
+							headCount: stats.head_cnt,
+							totalHeadCount: stats.total_head_cnt
+						}
+					}
+					break;
+				}
 
-        if (data.activity_time_ago !== void 0) {
-            instance.lastPlayed = data.activity_time_ago;
-        }
+				case 'user_verify_reminder':
+					this.verifiedEmail = data[key];
+					break;
+			}
+		}
+	}
 
-        if (data.a_ts !== void 0) {
-            instance.lastPlayedTimestamp = data.a_ts;
-        }
+	subscribe() {
+		return RequestHandler.post("/track_api/subscribe", {
+			sub_uid: this.id,
+			subscribe: 1
+		}, true);
+	}
 
-        return instance;
-    }
+	unsubscribe() {
+		return RequestHandler.post("/track_api/subscribe", {
+			sub_uid: this.id,
+			subscribe: 0
+		}, true);
+	}
 
-    subscribe() {
-        return RequestHandler.post("/track_api/subscribe", {
-            sub_uid: this.id,
-            subscribe: 1
-        }, true);
-    }
+	updatePersonalData(name, value) {
+		return RequestHandler.post("/account/update_personal_data", {
+			name, value
+		}, true);
+	}
 
-    unsubscribe() {
-        return RequestHandler.post("/track_api/subscribe", {
-            sub_uid: this.id,
-            subscribe: 0
-        }, true);
-    }
+	deletePersonalData() {
+		return RequestHandler.post("/account/delete_all_personal_data");
+	}
 
-    updatePersonalData(name, value) {
-        return RequestHandler.post("/account/update_personal_data", {
-            name, value
-        }, true);
-    }
+	selectProfileImage(type) {
+		return RequestHandler.post("/account/update_photo", {
+			img_type: type
+		});
+	}
 
-    deletePersonalData() {
-        return RequestHandler.post("/account/delete_all_personal_data");
-    }
+	/**
+	 * REQUIRES PRO/PLUS
+	 */
+	transferCoins(amount, message = '') {
+		// user.plus || user.proMember
+		return RequestHandler.post("/account/plus_transfer_coins", {
+			transfer_coins_to: this.username,
+			transfer_coins_amount: amount,
+			msg: message
+		});
+	}
 
-    editProfile(name, value) {
-        return RequestHandler.post("/account/edit_profile", {
-            name, value
-        }, true);
-    }
+	/**
+	 * 
+	 * @param {string} username 
+	 * @returns {Promise}
+	 */
+	async changeUsername(username) {
+		if (this.username == this.client.user.username) {
+			return RequestHandler.post("/account/edit_profile", {
+				name: "u_name",
+				value: username
+			}, true).then((res) => {
+				if (res.result) {
+					this.username = username;
+					return res;
+				}
 
-    selectProfileImage(type) {
-        return RequestHandler.post("/account/update_photo", {
-            img_type: type
-        });
-    }
+				throw new Error(res.msg || "Insufficeint privileges.");
+			});
+		}
 
-    changePassword(old_password, new_password) {
-        return RequestHandler.post("/account/change_password", {
-            old_password, new_password
-        }, true);
-    }
+		return RequestHandler.post("/moderator/change_username", {
+			u_id: this.id,
+			username
+		}, true).then((res) => {
+			if (res.result) {
+				this.username = username;
+				return res;
+			}
 
-    /**
-     * REQUIRES PRO
-     */
-    transferCoins(user, amount, message = '') {
-        return RequestHandler.post("/account/plus_transfer_coins", {
-            transfer_coins_to: user,
-            transfer_coins_amount: amount,
-            msg: message
-        });
-    }
+			throw new Error(res.msg || "Insufficeint privileges.");
+		});
+	}
 
-    /**
-     * 
-     * @param {string} username 
-     * @returns {Promise}
-     */
-    async changeUsername(username) {
-        if (this.username == this.client.user.username) {
-            return RequestHandler.post("/account/edit_profile", {
-                name: "u_name",
-                value: username
-            }, true).then((res) => {
-                if (res.result) {
-                    this.username = username;
-                    return res;
-                }
+	/**
+	 * 
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	changeUsernameAsAdmin(username) {
+		return RequestHandler.post("/admin/change_username", {
+			change_username_current: this.username,
+			change_username_new: username
+		}, true);
+	}
 
-                throw new Error(res.msg || "Insufficeint privileges.");
-            });
-        }
+	/**
+	 * 
+	 * @param {string} description 
+	 * @returns {Promise}
+	 */
+	changeDescription(description) {
+		return RequestHandler.post("/account/edit_profile", {
+			name: "about",
+			value: String(description)
+		}, true);
+	}
 
-        return RequestHandler.post("/moderator/change_username", {
-            u_id: this.id,
-            username
-        }, true).then((res) => {
-            if (res.result) {
-                this.username = username;
-                return res;
-            }
+	/**
+	 * 
+	 * @param {string} oldPassword 
+	 * @param {string} newPassword 
+	 * @returns {Promise}
+	 */
+	changePassword(oldPassword, newPassword) {
+		// make sure new password matches restrictions
+		if (!newPassword) throw new Error("INVALID_PASSWORD");
+		return RequestHandler.post("/account/change_password", {
+			old_password: oldPassword,
+			new_password: newPassword
+		}, true);
+	}
 
-            throw new Error(res.msg || "Insufficeint privileges.");
-        });
-    }
+	/**
+	 * 
+	 * @param {string} password 
+	 * @returns {Promise}
+	 */
+	changeForumPassword(password) {
+		return RequestHandler.post("/account/update_forum_account", {
+			password
+		}, true);
+	}
 
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    changeUsernameAsAdmin(username) {
-        return RequestHandler.post("/admin/change_username", {
-            change_username_current: this.username,
-            change_username_new: username
-        }, true);
-    }
+	/**
+	 * 
+	 * @protected requires administrative privileges.
+	 * @param {string} email 
+	 * @returns {Promise}
+	 */
+	changeEmail(email) {
+		return RequestHandler.post("/moderator/change_email", {
+			u_id: this.id,
+			email
+		}, true);
+	}
 
-    /**
-     * 
-     * @param {string} description 
-     * @returns {Promise}
-     */
-    changeDescription(description) {
-        return RequestHandler.post("/account/edit_profile", {
-            name: "about",
-            value: String(description)
-        }, true);
-    }
+	/**
+	 * 
+	 * @protected requires administrative privileges.
+	 * @param {string} email 
+	 * @returns {Promise}
+	 */
+	async changeEmailAsAdmin(email) {
+		return RequestHandler.post("/admin/change_user_email", {
+			username: this.username,
+			email
+		}, true);
+	}
 
-    /**
-     * 
-     * @param {string} oldPassword 
-     * @param {string} newPassword 
-     * @returns {Promise}
-     */
-    changePassword(oldPassword, newPassword) {
-        // make sure new password matches restrictions
-        if (!newPassword) throw new Error("INVALID_PASSWORD");
-        return RequestHandler.post("/account/change_password", {
-            old_password: oldPassword,
-            new_password: newPassword
-        }, true);
-    }
+	/**
+	 * Moderator endpoint
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	toggleOA() {
+		return RequestHandler.post("/moderator/toggle_official_author/" + this.id, true);
+	}
 
-    /**
-     * 
-     * @param {string} password 
-     * @returns {Promise}
-     */
-    changeForumPassword(password) {
-        return RequestHandler.post("/account/update_forum_account", {
-            password
-        }, true);
-    }
+	/**
+	 * Admin endpoint
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	toggleClassicAuthorAsAdmin() {
+		return RequestHandler.post("/admin/toggle_classic_user/", {
+			toggle_classic_uname: this.username
+		}, true);
+	}
 
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @param {string} email 
-     * @returns {Promise}
-     */
-    changeEmail(email) {
-        return RequestHandler.post("/moderator/change_email", {
-            u_id: this.id,
-            email
-        }, true);
-    }
+	/**
+	 * 
+	 * @protected requires administrative privileges.
+	 * @param {number} coins 
+	 * @returns {Promise}
+	 */
+	addWonCoins(coins) {
+		return RequestHandler.post("/admin/add_won_coins", {
+			coins_username: this.username,
+			num_coins: coins
+		}, true);
+	}
 
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @param {string} email 
-     * @returns {Promise}
-     */
-    async changeEmailAsAdmin(email) {
-        return RequestHandler.post("/admin/change_user_email", {
-            username: this.username,
-            email
-        }, true);
-    }
+	/**
+	 * 
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	addPlusDays(days, remove) {
+		return RequestHandler.post("/admin/add_plus_days", {
+			add_plus_days: days,
+			username: this.username,
+			add_plus_remove: remove
+		}, true);
+	}
 
-    /**
-     * Moderator endpoint
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    toggleOA() {
-        return RequestHandler.post("/moderator/toggle_official_author/" + this.id, true);
-    }
+	/**
+	 * 
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	messagingBan() {
+		return RequestHandler.post("/admin/user_ban_messaging", {
+			messaging_ban_uname: this.username
+		}, true);
+	}
 
-    /**
-     * Admin endpoint
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    toggleClassicAuthorAsAdmin() {
-        return RequestHandler.post("/admin/toggle_classic_user/", {
-            toggle_classic_uname: this.username
-        }, true);
-    }
+	/**
+	 * 
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	uploadingBan() {
+		return RequestHandler.post("/admin/user_ban_uploading", {
+			uploading_ban_uname: this.username
+		}, true);
+	}
 
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @param {number} coins 
-     * @returns {Promise}
-     */
-    addWonCoins(coins) {
-        return RequestHandler.post("/admin/add_won_coins", {
-            coins_username: this.username,
-            num_coins: coins
-        }, true);
-    }
+	/**
+	 * Moderator endpoint
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	ban() {
+		return RequestHandler.post("/moderator/ban_user", {
+			u_id: this.id
+		}, true);
+	}
 
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    addPlusDays(days, remove) {
-        return RequestHandler.post("/admin/add_plus_days", {
-            add_plus_days: days,
-            username: this.username,
-            add_plus_remove: remove
-        }, true);
-    }
+	/**
+	 * Moderator endpoint
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	unban() {
+		return RequestHandler.post("/moderator/unban_user", {
+			u_id: this.id
+		}, true);
+	}
 
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    messagingBan() {
-        return RequestHandler.post("/admin/user_ban_messaging", {
-            messaging_ban_uname: this.username
-        }, true);
-    }
+	/**
+	 * Admin endpoint (uncertain about whether admin un-action endpoints exist)
+	 * @protected requires administrative privileges.
+	 * @param {number|string} time 
+	 * @param {Boolean} deleteRaces 
+	 * @returns {Promise}
+	 */
+	banAsAdmin(time = 0, deleteRaces = !1) {
+		return RequestHandler.post("/admin/ban_user", {
+			ban_secs: ~~time,
+			delete_race_stats: deleteRaces,
+			username: this.username
+		}, true);
+	}
 
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    uploadingBan() {
-        return RequestHandler.post("/admin/user_ban_messaging", {
-            messaging_ban_uname: this.username
-        }, true);
-    }
+	/**
+	 * 
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	deactivate() {
+		return RequestHandler.post("/admin/deactivate_user", {
+			username: this.username
+		}, true);
+	}
 
-    /**
-     * Moderator endpoint
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    ban() {
-        return RequestHandler.post("/moderator/ban_user", {
-            u_id: this.id
-        }, true);
-    }
+	/**
+	 * @protected requires administrative privileges.
+	 * @returns {Promise}
+	 */
+	delete() {
+		return RequestHandler.post("/admin/delete_user_account", {
+			username: this.username
+		}, true);
+	}
 
-    /**
-     * Moderator endpoint
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    unban() {
-        return RequestHandler.post("/moderator/unban_user", {
-            u_id: this.id
-        }, true);
-    }
-
-    /**
-     * Admin endpoint (uncertain about whether admin un-action endpoints exist)
-     * @protected requires administrative privileges.
-     * @param {number|string} time 
-     * @param {Boolean} deleteRaces 
-     * @returns {Promise}
-     */
-    banAsAdmin(time = 0, deleteRaces = !1) {
-        return RequestHandler.post("/admin/ban_user", {
-            ban_secs: ~~time,
-            delete_race_stats: deleteRaces,
-            username: this.username
-        }, true);
-    }
-
-
-    /**
-     * 
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    deactivate() {
-        return RequestHandler.post("/admin/deactivate_user", {
-            username: this.username
-        }, true);
-    }
-
-    /**
-     * @protected requires administrative privileges.
-     * @returns {Promise}
-     */
-    delete() {
-        return RequestHandler.post("/admin/delete_user_account", {
-            username: this.username
-        }, true);
-    }
+	static async create(data) {
+		const instance = new this();
+		await instance._update(data);
+		return instance;
+	}
 }

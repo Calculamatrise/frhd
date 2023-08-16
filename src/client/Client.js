@@ -3,7 +3,6 @@ import RequestHandler from "../utils/RequestHandler.js";
 
 import UserManager from "../managers/UserManager.js";
 import TrackManager from "../managers/TrackManager.js";
-import NotificationManager from "../managers/NotificationManager.js";
 import CosmeticManager from "../managers/CosmeticManager.js";
 
 /**
@@ -12,13 +11,9 @@ import CosmeticManager from "../managers/CosmeticManager.js";
  * @type {Client}
  */
 export default class extends BaseClient {
-    constructor() {
-        super(...arguments);
-        this.cosmetics = new CosmeticManager(this);
-        this.notifications = new NotificationManager(this);
-        this.tracks = new TrackManager(this);
-        this.users = new UserManager(this);
-    }
+	cosmetics = new CosmeticManager(this);
+	tracks = new TrackManager(this);
+	users = new UserManager(this);
 
     /**
      * 
@@ -27,7 +22,7 @@ export default class extends BaseClient {
      * @param {Callback} callback 
      * @returns {Promise}
      */
-    async communitySignup(user, email, callback = res => res) {
+    async communitySignup(user, email, callback = r => r) {
         return RequestHandler.post("/admin/community_classic_signup", {
             classic_username: user,
             real_email: email
@@ -42,7 +37,7 @@ export default class extends BaseClient {
      * @param {Callback} callback
      * @returns {Promise}
      */
-    async communityTransfer(user, email, secondaryEmail, callback = res => res) {
+    async communityTransfer(user, email, secondaryEmail, callback = r => r) {
         return RequestHandler.post("/admin/community_classic_transfer", {
             classic_existing_email: email,
             classic_transfer_to_username: user,
@@ -58,7 +53,7 @@ export default class extends BaseClient {
      * @param {Callback} callback
      * @returns {Promise}
      */
-    async generateCoupon(platform, coins, gems, callback = res => res) {
+    async generateCoupon(platform, coins, gems, callback = r => r) {
         return RequestHandler.post("/admin/generate_coupon_code", {
             platform,
             coins,
@@ -72,7 +67,7 @@ export default class extends BaseClient {
      * @param {Callback} callback
      * @returns {Promise}
      */
-    async redeemCoupon(code, callback = res => res) {
+    async redeemCoupon(code, callback = r => r) {
         return RequestHandler.post("/store/redeemCouponCode", {
             coupon_code: code
         }, true).then(callback);

@@ -23,7 +23,7 @@ export default class extends BaseManager {
      * @param {boolean} [options.force]
      * @returns {Track}
      */
-    async fetch(id, { force }) {
+    async fetch(id, { force } = {}) {
         if (!force && this.cache.has(id)) {
             return this.cache.get(id);
         }
@@ -52,7 +52,9 @@ export default class extends BaseManager {
             throw new RangeError("Description must be between 6 and 300 characters.");
         } else if (String(code).trim().length < 500) {
             throw new RangeError("Track length is too small.");
-        }
+        } else if (String(code).trim().length > 5e4 || String(code).trim().length > 10e4 /* If the user is OA, 10,000k is the limit */) {
+			throw new RangeError("Track is too big.");
+		}
 
         return RequestHandler.post("/create/submit", {
             name: title,

@@ -409,22 +409,15 @@ export default class {
     }
 
     clear() {
-        this.#physics = new Set(),
-        this.#scenery = new Set(),
-        this.#powerups = {
-            targets: new Set(),
-            boosters: new Set(),
-            gravity: new Set(),
-            slowmos: new Set(),
-            bombs: new Set(),
-            checkpoints: new Set(),
-            antigravity: new Set(),
-            teleporters: new Set(),
-            vehicles: {
-                heli: new Set(),
-                truck: new Set(),
-                balloon: new Set(),
-                blob: new Set()
+        this.#physics.clear();
+        this.#scenery.clear();
+        for (const powerup in this.#powerups) {
+            if (typeof this.#powerups[powerup] == 'object') {
+                for (const vehicle in this.#powerups[powerup]) {
+                    this.#powerups[powerup][vehicle].clear();
+                }
+            } else {
+                this.#powerups[powerup].clear();
             }
         }
         
