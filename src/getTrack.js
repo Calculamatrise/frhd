@@ -8,7 +8,7 @@ import Track from "./structures/Track.js";
  * @param {Function} callback callback function
  * @returns {Promise<Track>}
  */
-export default function(id, fields, callback = typeof arguments[arguments.length - 1] == 'function' ? arguments[arguments.length - 1] : res => res) {
+export default function(id, fields, callback = typeof arguments[arguments.length - 1] == 'function' ? arguments[arguments.length - 1] : r => r) {
     if (typeof fields == 'object') {
         return RequestHandler.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}`).then(callback);
     }

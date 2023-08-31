@@ -119,6 +119,7 @@ export default class extends EventEmitter {
 
 		await this.#verifyToken(asr, async user => {
 			this.#user = await this.users.fetch(user.d_name) || null; // maybe create instance of User here instead of re-fetching
+			this.#user.admin = user.admin;
 			this.#user.moderator = user.moderator;
 			this.emit(Events.ClientReady);
 			if (this.#options.listen) {

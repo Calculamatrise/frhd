@@ -1,8 +1,18 @@
-# Official Documentation
+[Wiki documentation](https://github.com/Calculamatrise/frhd/wiki)
 
-https://calculamatrise.github.io/frhd/api/docs/
+### Installation
 
-# Demo Code
+**Node.js 18.0.0 or newer is required.**
+
+```
+npm install frhd
+```
+
+### Wiki
+
+More information here.
+
+### Example usage
 
 ```js
 import frhd, { Client } from "frhd";
@@ -15,7 +25,7 @@ client.on("ready", function() {
     console.log("Ready!");
 });
 
-client.on("commentMention", function(data) {
+client.on("trackCommentMention", function(data) {
     console.log(data);
 });
 
@@ -27,7 +37,7 @@ client.login("token");
 // })
 ```
 
-# Builder API
+### Builder API
 
 ```js
 import frhd, { Builder } from "frhd";
@@ -51,7 +61,7 @@ Expected Output:
 "-18 1i 18 1i##"
 ```
 
-# Gamepad API
+### Gamepad API
 
 ```js
 import frhd, { Gamepad } from "frhd";
@@ -98,7 +108,7 @@ Expected Output:
 }
 ```
 
-# Data Retrievers
+### Data Retrievers
 
 This api requests data from Free Rider HD
 

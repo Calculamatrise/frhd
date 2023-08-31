@@ -7,7 +7,7 @@ import User from "./structures/User.js";
  * @param {Function} callback callback function
  * @returns {Promise<User>} 
  */
-export default async function(uid, callback = res => res) {
+export default async function(uid, callback = r => r) {
     if (typeof uid == 'number') {
         await RequestHandler.post("/friends/remove_friend", { u_id: uid }, false).then(res => {
             // Response: "You are not friends with USERNAME, you cannot remove friendship."
