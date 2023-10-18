@@ -40,21 +40,15 @@ export default class extends EventEmitter {
 		super();
 		for (const key in options) {
 			switch(key.toLowerCase()) {
-				case 'debug': {
+				case 'debug':
 					this.debug = !!options[key];
 					// this.on(Events.Debug, console.log);
 					break;
-				}
-
-				case 'interval': {
+				case 'interval':
 					this.#options.interval = Math.max(1e3, ~~options[key]);
 					break;
-				}
-
-				case 'listen': {
+				case 'listen':
 					this.#options.listen = Boolean(options[key]);
-					break;
-				}
 			}
 		}
 	}
@@ -122,9 +116,7 @@ export default class extends EventEmitter {
 			this.#user.admin = user.admin;
 			this.#user.moderator = user.moderator;
 			this.emit(Events.ClientReady);
-			if (this.#options.listen) {
-				this.#listen();
-			}
+			this.#options.listen !== false && this.#listen();
 		});
 
 		return this;

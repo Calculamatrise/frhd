@@ -36,7 +36,6 @@ export default class Track {
 				case 'track':
 					this._update(data[key]);
 					break;
-
 				case 'author':
 					this.author.username = String(data[key]).toLowerCase();
 					this.author.displayName = data[key] ?? null;
@@ -65,7 +64,6 @@ export default class Track {
 				case 'descr':
 					this.description = data[key];
 					break;
-
 				case 'defaultVehicle':
 				case 'description':
 				case 'featured':
@@ -119,11 +117,9 @@ export default class Track {
 				case 'u_id':
 					this.author.id = data[key];
 					break;
-
 				case 'vehicle':
 					this.defaultVehicle = data[key];
 					break;
-
 				case 'vehicles': {
 					for (const vehicle of data[key]) {
 						this.allowedVehicles.add(vehicle);
@@ -144,27 +140,27 @@ export default class Track {
 					for (const property in data[key]) {
 						switch(property) {
 							case 'avg_time':
-								this.stats.averageTime = data[key];
+								this.stats.averageTime = data[key][property];
 								break;
 							case 'cmpltn_rate':
-								this.stats.completionRate = data[key];
+								this.stats.completionRate = data[key][property];
 								break;
 							case 'dwn_votes':
-								this.stats.dislikes = data[key];
+								this.stats.dislikes = data[key][property];
 								break;
 							case 'first_runs':
-								this.stats.firstRuns = data[key];
+								this.stats.firstRuns = data[key][property];
 								break;
 							case 'plays':
 							case 'runs':
 							case 'votes':
-								this.stats[property] = data[key];
+								this.stats[property] = data[key][property];
 								break;
 							case 'up_votes':
-								this.stats.likes = data[key];
+								this.stats.likes = data[key][property];
 								break;
 							case 'vote_percent':
-								this.stats.averageRating = data[key];
+								this.stats.averageRating = data[key][property];
 								break;
 						}
 					}
