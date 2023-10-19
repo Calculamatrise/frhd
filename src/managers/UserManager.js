@@ -47,10 +47,7 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	 */
 	async subscribe(uid) {
-		if (typeof arguments[0] != 'number') {
-			return this.fetch(String(arguments[0])).then(user => user.subscribe());
-		}
-
+		isNaN(arguments[0]) && (uid = await this.fetch(String(arguments[0])).then(user => user.id));
 		return RequestHandler.post("/track_api/subscribe", {
 			sub_uid: uid,
 			subscribe: 1
@@ -64,10 +61,7 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	 */
 	async unsubscribe(uid) {
-		if (typeof arguments[0] != 'number') {
-			return this.fetch(String(arguments[0])).then(user => user.unsubscribe());
-		}
-
+		isNaN(arguments[0]) && (uid = await this.fetch(String(arguments[0])).then(user => user.id));
 		return RequestHandler.post("/track_api/subscribe", {
 			sub_uid: uid,
 			subscribe: 0
@@ -81,17 +75,14 @@ export default class extends BaseManager {
 	/**
 	 * Change a user's username
 	 * @protected requires administrative privileges.
-	 * @param {number|string} user ID or username
+	 * @param {number|string} uid id or username
 	 * @param {string} username new username
 	 * @returns {Promise}
 	 */
-	async changeUsername(user, username) {
-		if (typeof user != 'number') {
-			return this.fetch(String(user)).then(user => user.changeUsername(username));
-		}
-
+	async changeUsername(uid, username) {
+		isNaN(arguments[0]) && (uid = await this.fetch(String(arguments[0])).then(user => user.id));
 		return RequestHandler.post("/moderator/change_username", {
-			u_id: user,
+			u_id: uid,
 			username
 		}, true);
 	}
@@ -113,17 +104,14 @@ export default class extends BaseManager {
 	/**
 	 * 
 	 * @protected requires administrative privileges.
-	 * @param {number|string} user ID or username
+	 * @param {number|string} uid ID or username
 	 * @param {string} email 
 	 * @returns {Promise}
 	 */
-	async changeEmail(user, email) {
-		if (typeof user != 'number') {
-			return this.fetch(String(user)).then(user => user.changeEmail(email));
-		}
-
+	async changeEmail(uid, email) {
+		isNaN(arguments[0]) && (uid = await this.fetch(String(arguments[0])).then(user => user.id));
 		return RequestHandler.post("/moderator/change_email", {
-			u_id: user,
+			u_id: uid,
 			email
 		}, true);
 	}
@@ -131,53 +119,66 @@ export default class extends BaseManager {
 	/**
 	 * 
 	 * @protected requires administrative privileges.
-	 * @param {string} username 
+	 * @param {string} uid username or id
 	 * @param {string} email 
 	 * @returns {Promise}
 	 */
-	changeEmailAsAdmin(username, email) {
+	async changeEmailAsAdmin(uid, email) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
+		}
+
 		return RequestHandler.post("/admin/change_user_email", {
-			username,
+			username: uid,
 			email
 		}, true);
 	}
 
 	/**
 	 * 
-	 * @param {number|string} user ID or username
+	 * @param {number|string} uid ID or username
 	 * @returns {Promise}
 	 */
-	async toggleOA(user) {
-		if (typeof user != 'number') {
-			return this.fetch(String(user)).then(user => user.toggleOA());
-		}
-
-		return RequestHandler.post("/moderator/toggle_official_author/" + user, true);
+	async toggleOA(uid) {
+		isNaN(arguments[0]) && (uid = await this.fetch(String(arguments[0])).then(user => user.id));
+		return RequestHandler.post("/moderator/toggle_official_author/" + uid, true);
 	}
 
 	/**
 	 * 
-	 * @param {string} user 
+	 * @param {string} uid username or id
 	 * @returns {Promise}
 	 */
-	toggleClassicUserAsAdmin(user) {
-		typeof user == 'number' && (user = this.cache.get(user)?.username);
+	async toggleClassicUserAsAdmin(uid) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
+		}
+
 		return RequestHandler.post("/admin/toggle_classic_user/", {
-			toggle_classic_uname: user
+			toggle_classic_uname: uid
 		}, true);
 	}
 
 	/**
 	 * 
 	 * @protected requires administrative privileges.
-	 * @param {string} user 
+	 * @param {string} uid username or id
 	 * @param {number|string} coins 
 	 * @returns {Promise}
 	 */
-	addWonCoins(user, coins) {
-		typeof user == 'number' && (user = this.cache.get(user)?.username);
+	async addWonCoins(uid, coins) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
+		}
+
 		return RequestHandler.post("/admin/add_won_coins", {
-			coins_username: user,
+			coins_username: uid,
 			num_coins: coins
 		}, true);
 	}
@@ -185,56 +186,68 @@ export default class extends BaseManager {
 	/**
 	 * 
 	 * @protected requires administrative privileges.
-	 * @param {string} user
+	 * @param {string} uid username or id
 	 * @param {number|string} days
 	 * @param {number|string|boolean} remove
 	 * @returns {Promise}
 	 */
-	addPlusDays(user, days, remove = false) {
-		typeof user == 'number' && (user = this.cache.get(user)?.username);
+	async addPlusDays(uid, days, remove = false) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
+		}
+
 		return RequestHandler.post("/admin/add_plus_days", {
 			add_plus_days: days,
-			username: user,
+			username: uid,
 			add_plus_remove: remove
 		}, true);
 	}
 
 	/**
 	 * 
-	 * @param {string} user
+	 * @param {string} uid username or id
 	 * @returns {Promise}
 	 */
-	messagingBan(user) {
-		typeof user == 'number' && (user = this.cache.get(user)?.username);
-		return RequestHandler.post("/admin/user_ban_messaging", {
-			messaging_ban_uname: user
-		}, true);
-	}
-
-	/**
-	 * 
-	 * @param {string} user
-	 * @returns {Promise}
-	 */
-	uploadingBan(user) {
-		typeof user == 'number' && (user = this.cache.get(user)?.username);
-		return RequestHandler.post("/admin/user_ban_uploading", {
-			uploading_ban_uname: user
-		}, true);
-	}
-
-	/**
-	 * 
-	 * @param {number|string} user ID or username
-	 * @returns {Promise}
-	 */
-	async ban(user) {
-		if (isNaN(user)) {
-			return this.fetch(String(user)).then(user => user.ban());
+	async messagingBan(uid) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
 		}
 
+		return RequestHandler.post("/admin/user_ban_messaging", {
+			messaging_ban_uname: uid
+		}, true);
+	}
+
+	/**
+	 * 
+	 * @param {string} user
+	 * @returns {Promise}
+	 */
+	async uploadingBan(uid) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
+		}
+
+		return RequestHandler.post("/admin/user_ban_uploading", {
+			uploading_ban_uname: uid
+		}, true);
+	}
+
+	/**
+	 * 
+	 * @param {number|string} uid id or username
+	 * @returns {Promise}
+	 */
+	async ban(uid) {
+		isNaN(arguments[0]) && (uid = await this.fetch(String(arguments[0])).then(user => user.id));
 		return RequestHandler.post("/moderator/ban_user", {
-			u_id: parseInt(user)
+			u_id: parseInt(uid)
 		}, true);
 	}
 
@@ -245,11 +258,17 @@ export default class extends BaseManager {
 	 * @param {Boolean} deleteRaces
 	 * @returns {Promise} 
 	 */
-	banAsAdmin(user, time = 0, deleteRaces = !1) {
+	async banAsAdmin(uid, time = 0, deleteRaces = !1) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
+		}
+
 		return RequestHandler.post("/admin/ban_user", {
 			ban_secs: time,
 			delete_race_stats: deleteRaces,
-			username: user
+			username: uid
 		}, true);
 	}
 
@@ -258,24 +277,34 @@ export default class extends BaseManager {
 	 * @param {string} username 
 	 * @returns {Promise} 
 	 */
-	deactivate(user) {
-		typeof user == 'number' && (user = this.cache.get(user)?.username);
+	async deactivate(uid) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
+		}
+
 		return RequestHandler.post("/admin/deactivate_user", {
-			username: String(user)
+			username: String(uid)
 		}, true);
 	}
 
 	/**
 	 * 
-	 * @param {string} user 
+	 * @param {string} uid username or id
 	 * @returns {Promise}
 	 */
-	delete(user) {
-		typeof user == 'number' && (user = this.cache.get(user)?.username);
+	async delete(uid) {
+		if (isFinite(uid)) {
+			let user = this.cache.get(uid);
+			user || (user = await this.fetch(uid));
+			uid = user.username;
+		}
+
 		return RequestHandler.post("/admin/delete_user_account", {
-			username: String(user)
+			username: String(uid)
 		}, true).then(res => {
-			// this.cache.delete(Array.from(this.cache.values()).find(u => u.username === user).id);
+			// this.cache.delete(Array.from(this.cache.values()).find(u => u.username === uid).id);
 			return res;
 		});
 	}
