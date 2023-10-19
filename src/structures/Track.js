@@ -260,7 +260,6 @@ export default class Track {
 	 * @returns {Boolean}
 	 */
 	feature() {
-		this.featured = !0;
 		if (this.featured) {
 			throw new Error("This track is already featured!");
 		}
