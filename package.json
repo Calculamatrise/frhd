@@ -1,7 +1,7 @@
 {
     "name": "frhd",
     "alias": "@Calculamatrise/frhd",
-    "version": "0.0.17",
+    "version": "0.0.19",
     "author": "Calculamatrise",
     "description": "An app to communicacte with FRHD",
     "directories": {

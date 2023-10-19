@@ -1,7 +1,6 @@
-import RequestHandler from "../utils/RequestHandler.js";
-
 import BaseManager from "./BaseManager.js";
 import Builder from "../utils/Builder.js";
+import RequestHandler from "../utils/RequestHandler.js";
 
 import getCategory from "../getCategory.js";
 import getTrackLeaderboard from "../getTrackLeaderboard.js";

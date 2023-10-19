@@ -1,4 +1,5 @@
 import BaseManager from "./BaseManager.js";
+import RequestHandler from "../utils/RequestHandler.js";
 
 export default class extends BaseManager {
 	/**
@@ -228,7 +229,7 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	 */
 	async ban(user) {
-		if (typeof user != 'number') {
+		if (isNaN(user)) {
 			return this.fetch(String(user)).then(user => user.ban());
 		}
 

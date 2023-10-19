@@ -1,4 +1,5 @@
 import BaseManager from "./BaseManager.js";
+import RequestHandler from "../utils/RequestHandler.js";
 
 export default class extends BaseManager {
     /**
