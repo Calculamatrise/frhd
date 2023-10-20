@@ -8,6 +8,7 @@ import Cosmetic from "../structures/Cosmetic.js";
 import Notification from "../structures/Notification.js";
 import Track from "../structures/Track.js";
 import User from "../structures/User.js";
+import Race from "../structures/Race.js";
 
 export default new Proxy(class {
 	/**
@@ -57,7 +58,7 @@ export default new Proxy(class {
 				// check_status: !1,
 				notifications: true
 			},
-			method: "post",
+			method: 'post',
 			requireToken: true
 		});
 	}
@@ -72,12 +73,34 @@ export default new Proxy(class {
 		//     // ...
 		// });
 
-		return this.constructor.ajax(`/notifications`).then(function({ notification_days }) {
+		return this.constructor.ajax('/notifications').then(function({ notification_days }) {
 			if (notification_days && notification_days.length > 0) {
 				return notification_days[0].notifications.slice(0, count).map(function(notification) {
 					return new Notification(notification)
 				}).sort((t, e) => e.ts - t.ts);
 			}
+		});
+	}
+
+	/**
+	 * 
+	 * @param {number|string} id track id
+	 * @param {number|string} uids user id or username
+	 * @returns {Promise<Notification>}
+	 */
+	races(id, uid) {
+		return this.constructor.ajax('/track_api/load_races', {
+			body: {
+				t_id: id,
+				u_ids: uid
+			},
+			method: 'post'
+		}).then(res => {
+			if (res.result === false)
+				throw new Error("Race not found.");
+			return res.data.map(race => {
+				return new Race(Object.assign(race, { track: { id }}));
+			})
 		});
 	}
 

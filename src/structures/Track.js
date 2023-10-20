@@ -33,138 +33,132 @@ export default class Track {
 
 		for (const key in data) {
 			switch(key) {
-				case 'track':
-					this._update(data[key]);
-					break;
-				case 'author':
-					this.author.username = String(data[key]).toLowerCase();
-					this.author.displayName = data[key] ?? null;
-					break;
-				case 'author_img_small':
-				case 'author_img_medium': 
-				case 'author_img_large':
-					this.author.avatarURL = data[key] ?? null;
-					break;
-				case 'campaign':
-					this.isCampaign = data[key];
-					break;
-				case 'cdn':
-					// can be used to fetch more data (like track code)
-					// save this in a private variable then access it in
-					// getter to get track code and other metadata
-					this.#cdn = data[key];
-					break;
-				case 'date':
-					// ACCOUNT FOR new Date() ARGUMENT
-					this.uploadDate = new Date(data[key]);
-					break;
-				case 'date_ago':
-					this.uploadDateAgo = data[key];
-					break;
-				case 'descr':
-					this.description = data[key];
-					break;
-				case 'defaultVehicle':
-				case 'description':
-				case 'featured':
-				case 'hidden':
-				case 'id':
-				case 'isCampaign':
-				case 'size':
-				case 'thumbnailURL':
-				case 'title':
-				case 'uploadDate':
-				case 'uploadDateAgo':
-					this[key] = data[key];
-					break;
-				case 'game_settings':
-					// this might be useful
-					// but for now, no.
-					break;
-				case 'hide':
-					this.hidden = Boolean(data[key]);
-					break;
-				case 'img':
-					this.thumbnailURL = data[key];
-					break;
-				case 'kb_size':
-					this.size = data[key];
-					break;
-				case 'slug':
-					this.id ??= parseInt(data[key]);
-					break;
-				case 'totd': {
-					this.daily = this.daily ?? {};
-					for (const statistic in data[key]) {
-						switch(statistic) {
-							case 'entries':
-								this.daily.entries = data[key][statistic];
-								break;
-							case 'gems':
-								this.daily.gems = data[key][statistic];
-								break;
-							case 'lives':
-								this.daily.lives = data[key][statistic];
-								break;
-							case 'refillCost':
-								this.daily.refillCost = data[key][statistic];
-								break;
-						}
+			case 'track':
+				this._update(data[key]);
+				break;
+			case 'author':
+				this.author.username = String(data[key]).toLowerCase();
+				this.author.displayName = data[key] ?? null;
+				break;
+			case 'author_img_small':
+			case 'author_img_medium': 
+			case 'author_img_large':
+				this.author.avatarURL = data[key] ?? null;
+				break;
+			case 'campaign':
+				this.isCampaign = data[key];
+				break;
+			case 'cdn':
+				// can be used to fetch more data (like track code)
+				// save this in a private variable then access it in
+				// getter to get track code and other metadata
+				this.#cdn = data[key];
+				break;
+			case 'date':
+				// ACCOUNT FOR new Date() ARGUMENT
+				this.uploadDate = new Date(data[key]);
+				this.timestamp = this.uploadDate.getTime();
+				break;
+			case 'date_ago':
+				this.uploadDateAgo = data[key];
+				break;
+			case 'descr':
+				this.description = data[key];
+				break;
+			case 'defaultVehicle':
+			case 'description':
+			case 'featured':
+			case 'hidden':
+			case 'id':
+			case 'isCampaign':
+			case 'size':
+			case 'thumbnailURL':
+			case 'title':
+			case 'uploadDate':
+			case 'uploadDateAgo':
+				this[key] = data[key];
+				break;
+			case 'game_settings':
+				// this might be useful
+				// but for now, no.
+				break;
+			case 'hide':
+				this.hidden = Boolean(data[key]);
+				break;
+			case 'img':
+				this.thumbnailURL = data[key];
+				break;
+			case 'kb_size':
+				this.size = data[key];
+				break;
+			case 'slug':
+				this.id ??= parseInt(data[key]);
+				break;
+			case 'totd': {
+				this.daily = this.daily ?? {};
+				for (const property in data[key]) {
+					switch (property) {
+					case 'entries':
+						this.daily.entries = data[key][property];
+						break;
+					case 'gems':
+						this.daily.gems = data[key][property];
+						break;
+					case 'lives':
+						this.daily.lives = data[key][property];
+						break;
+					case 'refillCost':
+						this.daily.refillCost = data[key][property];
 					}
-					break;
 				}
-
-				case 'u_id':
-					this.author.id = data[key];
-					break;
-				case 'vehicle':
-					this.defaultVehicle = data[key];
-					break;
-				case 'vehicles': {
-					for (const vehicle of data[key]) {
-						this.allowedVehicles.add(vehicle);
-					}
-					break;
+				break;
+			}
+			case 'u_id':
+				this.author.id = data[key];
+				break;
+			case 'vehicle':
+				this.defaultVehicle = data[key];
+				break;
+			case 'vehicles': {
+				for (const vehicle of data[key]) {
+					this.allowedVehicles.add(vehicle);
 				}
-
-				case 'track_comments': {
-					// not sure whether this will be necessary
-					for (const commet of data[key].map(comment => new Comment(Object.assign({}, data, comment)))) {
-						this.comments.cache.set(commet.id, commet);
-					}
-					break;
+				break;
+			}
+			case 'track_comments': {
+				// not sure whether this will be necessary
+				for (const commet of data[key].map(comment => new Comment(Object.assign({}, data, comment)))) {
+					this.comments.cache.set(commet.id, commet);
 				}
-
-				case 'track_stats': {
-					this.stats ??= {};
-					for (const property in data[key]) {
-						switch(property) {
-							case 'avg_time':
-								this.stats.averageTime = data[key][property];
-								break;
-							case 'cmpltn_rate':
-								this.stats.completionRate = data[key][property];
-								break;
-							case 'dwn_votes':
-								this.stats.dislikes = data[key][property];
-								break;
-							case 'first_runs':
-								this.stats.firstRuns = data[key][property];
-								break;
-							case 'plays':
-							case 'runs':
-							case 'votes':
-								this.stats[property] = data[key][property];
-								break;
-							case 'up_votes':
-								this.stats.likes = data[key][property];
-								break;
-							case 'vote_percent':
-								this.stats.averageRating = data[key][property];
-								break;
-						}
+				break;
+			}
+			case 'track_stats':
+				this.stats ??= {};
+				for (const property in data[key]) {
+					switch(property) {
+						case 'avg_time':
+							this.stats.averageTime = data[key][property];
+							break;
+						case 'cmpltn_rate':
+							this.stats.completionRate = data[key][property];
+							break;
+						case 'dwn_votes':
+							this.stats.dislikes = data[key][property];
+							break;
+						case 'first_runs':
+							this.stats.firstRuns = data[key][property];
+							break;
+						case 'plays':
+						case 'runs':
+						case 'votes':
+							this.stats[property] = data[key][property];
+							break;
+						case 'up_votes':
+							this.stats.likes = data[key][property];
+							break;
+						case 'vote_percent':
+							this.stats.averageRating = data[key][property];
 					}
-					break;
 				}
 			}
 		}
@@ -264,14 +258,13 @@ export default class Track {
 			throw new Error("This track is already featured!");
 		}
 
-		this.featured = true;
 		return RequestHandler.get(`/track_api/feature_track/${this.id}/1`, true).then((response) => {
 			if (!response.result) {
-				this.featured = false;
+				this.featured &&= !1;
 				throw new Error(response.msg || "Insufficient privileges");
 			}
 
-			return this.featured;
+			return this.featured ||= !0;
 		});
 	}
 
@@ -285,14 +278,13 @@ export default class Track {
 			throw new Error("This track isn't featured!");
 		}
 
-		this.featured = false;
 		return RequestHandler.get(`/track_api/feature_track/${this.id}/0`, true).then((response) => {
 			if (!response.result) {
-				this.featured = true;
+				this.featured ||= !0;
 				throw new Error(response.msg || "Insufficient privileges");
 			}
 
-			return this.featured;
+			return this.featured &&= !1;
 		});
 	}
 
@@ -312,12 +304,11 @@ export default class Track {
 	 */
 	async hide() {
 		return RequestHandler.get(`/moderator/hide_track/${this.id}`, true).then(res => {
-			if (res.result) {
-				this.hidden = !0;
-				return res;
+			if (!res || res.result !== true) {
+				throw new Error(res.msg || "Insufficient privileges");
 			}
 
-			throw new Error(res.msg || "Insufficient privileges");
+			return this.hidden ||= !0;
 		});
 	}
 
@@ -328,12 +319,11 @@ export default class Track {
 	 */
 	async unhide() {
 		return RequestHandler.get(`/moderator/unhide_track/${this.id}`, true).then(res => {
-			if (res.result) {
-				this.hidden = false;
-				return res;
+			if (!res || res.result !== true) {
+				throw new Error(res.msg || "Insufficient privileges");
 			}
 
-			throw new Error(res.msg || "Insufficient privileges");
+			return this.hidden &&= !1;
 		});
 	}
 

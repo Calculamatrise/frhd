@@ -35,141 +35,127 @@ export default class User {
 
 		for (const key in data) {
 			switch (key) {
-				case 'user':
-					this._update(data[key]);
-					break;
-
-				case 'a_ts':
-					this.lastPlayedTimestamp = data[key];
-					break;
-				case 'activity_time_ago':
-					this.lastPlayed = data[key];
-					break;
-
-				case 'admin':
-				case 'classic':
-				case 'moderator':
-				case 'plus':
-					this[key] = data[key];
-
-				case 'avatar':
-				case 'img_url_small':
-				case 'img_url_medium':
-				case 'img_url_large':
-					this.avatar = data[key];
-					break;
-
-				case 'cosmetics': {
-					this.cosmetics = {}
-					this.cosmetics.head = {}
-					if (typeof data[key] == 'object') {
-						this.cosmetics.head.image = data[key].head.img;
-						this.cosmetics.head.spriteSheetURL = function() {
-							return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${this.image.replace(/\s(.*)/gi, '')}.png`
-						}
+			case 'a_ts':
+				this.lastPlayedTimestamp = data[key];
+				break;
+			case 'activity_time_ago':
+				this.lastPlayed = data[key];
+				break;
+			case 'admin':
+			case 'classic':
+			case 'moderator':
+			case 'plus':
+				this[key] = data[key];
+				break;
+			case 'avatar':
+			case 'img_url_small':
+			case 'img_url_medium':
+			case 'img_url_large':
+				this.avatar = data[key];
+				break;
+			case 'cosmetics': {
+				this.cosmetics = {}
+				this.cosmetics.head = {}
+				if (typeof data[key] == 'object') {
+					this.cosmetics.head.image = data[key].head.img;
+					this.cosmetics.head.spriteSheetURL = function() {
+						return `https://cdn.freeriderhd.com/free_rider_hd/assets/inventory/head/spritesheets/${this.image.replace(/\s(.*)/gi, '')}.png`
 					}
-					break;
 				}
-
-				case 'created_tracks': {
-					for (let track of data[key].tracks.map(data => new Track(data))) {
-						this.createdTracks.cache.set(track.id, track);
+				break;
+			}
+			case 'created_tracks': {
+				for (let track of data[key].tracks.map(data => new Track(data))) {
+					this.createdTracks.cache.set(track.id, track);
+				}
+				break;
+			}
+			case 'd_name':
+				this.displayName = data[key];
+				break;
+			case 'forum_url':
+				this.forums = data[key];
+				break;
+			case 'friends': {
+				this.friendCount = data[key].friend_cnt;
+				for (const friend of data[key].friends_data.map(data => new User(data))) {
+					this.friends.cache.set(friend.id, friend);
+				}
+				break;
+			}
+			case 'friend_requests': {
+				this.friendRequestCount = data.friend_requests.request_cnt;
+				this.friendRequests = data.friend_requests.request_data.map(request => {
+					return new FriendRequest(request);
+				});
+				break;
+			}
+			case 'has_max_friends': {
+				this.friendLimitReached = data[key];
+				break;
+			}
+			case 'liked_tracks': {
+				for (let track of data[key].tracks.map(data => new Track(data))) {
+					this.likedTracks.cache.set(track.id, track);
+				}
+				break;
+			}
+			case 'recently_ghosted_tracks': {
+				for (let track of data[key].tracks.map(data => new Track(data))) {
+					this.recentlyCompleted.cache.set(track.id, track);
+				}
+				break;
+			}
+			case 'recently_played_tracks': {
+				for (let track of data[key].tracks.map(data => new Track(data))) {
+					this.recentlyPlayed.cache.set(track.id, track);
+				}
+				break;
+			}
+			case 'subscribe':
+				this.subscriberCount = ~~data[key].count;
+				break;
+			case 'u_id':
+				this.id = data[key];
+				break;
+			case 'u_name':
+				this.username = data[key];
+				break;
+			case 'user':
+				this._update(data[key]);
+				break;
+			case 'user_info':
+				this.bio = typeof data[key] == 'object' && data[key].about;
+				break;
+			case 'user_mobile_stats': {
+				{
+					let mobileStats = data[key];
+					this.mobileStats = {
+						level: Number(mobileStats.lvl),
+						wins: Number(mobileStats.wins),
+						headCount: Number(mobileStats.headCount),
+						connected: Boolean(mobileStats.connected)
 					}
-					break;
 				}
-
-				case 'd_name':
-					this.displayName = data[key];
-					break;
-				case 'forum_url':
-					this.forums = data[key];
-					break;
-				case 'friends': {
-					this.friendCount = data[key].friend_cnt;
-					for (const friend of data[key].friends_data.map(data => new User(data))) {
-						this.friends.cache.set(friend.id, friend);
+				break;
+			}
+			case 'user_stats': {
+				{
+					let stats = data[key];
+					this.stats = {
+						totalPoints: stats.tot_pts,
+						completed: stats.cmpltd,
+						rated: stats.rtd,
+						comments: stats.cmmnts,
+						created: stats.crtd,
+						headCount: stats.head_cnt,
+						totalHeadCount: stats.total_head_cnt
 					}
-					break;
 				}
-
-				case 'friend_requests': {
-					this.friendRequestCount = data.friend_requests.request_cnt;
-					this.friendRequests = data.friend_requests.request_data.map(request => {
-						return new FriendRequest(request);
-					});
-					break;
-				}
-
-				case 'has_max_friends': {
-					this.friendLimitReached = data[key];
-					break;
-				}
-
-				case 'liked_tracks': {
-					for (let track of data[key].tracks.map(data => new Track(data))) {
-						this.likedTracks.cache.set(track.id, track);
-					}
-					break;
-				}
-
-				case 'recently_ghosted_tracks': {
-					for (let track of data[key].tracks.map(data => new Track(data))) {
-						this.recentlyCompleted.cache.set(track.id, track);
-					}
-					break;
-				}
-
-				case 'recently_played_tracks': {
-					for (let track of data[key].tracks.map(data => new Track(data))) {
-						this.recentlyPlayed.cache.set(track.id, track);
-					}
-					break;
-				}
-
-				case 'subscribe':
-					this.subscriberCount = ~~data[key].count;
-					break;
-				case 'u_id':
-					this.id = data[key];
-					break;
-				case 'u_name':
-					this.username = data[key];
-					break;
-				case 'user_info':
-					this.bio = typeof data[key] == 'object' && data[key].about;
-					break;
-				case 'user_mobile_stats': {
-					{
-						let mobileStats = data[key];
-						this.mobileStats = {
-							level: Number(mobileStats.lvl),
-							wins: Number(mobileStats.wins),
-							headCount: Number(mobileStats.headCount),
-							connected: Boolean(mobileStats.connected)
-						}
-					}
-					break;
-				}
-
-				case 'user_stats': {
-					{
-						let stats = data[key];
-						this.stats = {
-							totalPoints: stats.tot_pts,
-							completed: stats.cmpltd,
-							rated: stats.rtd,
-							comments: stats.cmmnts,
-							created: stats.crtd,
-							headCount: stats.head_cnt,
-							totalHeadCount: stats.total_head_cnt
-						}
-					}
-					break;
-				}
-
-				case 'user_verify_reminder':
-					this.verifiedEmail = data[key];
-					break;
+				break;
+			}
+			case 'user_verify_reminder':
+				this.verifiedEmail = data[key];
 			}
 		}
 	}

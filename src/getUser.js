@@ -8,7 +8,7 @@ import User from "./structures/User.js";
  * @returns {Promise<User>} 
  */
 export default async function(uid, callback = r => r) {
-    if (typeof uid == 'number') {
+    if (isFinite(uid)) {
         await RequestHandler.post("/friends/remove_friend", { u_id: uid }, false).then(res => {
             // Response: "You are not friends with USERNAME, you cannot remove friendship."
             const matches = /[\w-]*(?=,)/.exec(res.msg);

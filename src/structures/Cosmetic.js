@@ -13,33 +13,41 @@ export default class Cosmetic {
 	title = null;
 	type = null;
 	constructor(data) {
-		if (typeof data != 'object') return;
-		for (const t in data) {
-			switch(t) {
-				case "id":
-				case "title":
-				case "type":
-				case "name":
-				case "cost":
-				case "options":
-				case "equiped":
-				case "show":
-				case "script":
-				case "limited":
-					this[t] = isNaN(parseInt(data[t])) ? data[t] : parseFloat(data[t]);
-				break;
+		typeof data == 'object' && this._update(data);
+	}
 
-				case "classname":
-					this.className = data[t];
-				break;
-				
-				case "spritesheet_id":
-					this.spritesheetId = data[t];
-				break;
+	_update(data) {
+		if (typeof data != 'object') {
+			console.warn("Invalid data type");
+			return;
+		}
 
-				case "img":
-					this.image = data[t];
+		for (const key in data) {
+			switch (key) {
+			case 'classname':
+				this.className = data[key];
 				break;
+			case 'cost':
+			case 'id':
+				this[key] = data[key] | 0;
+				break;
+			case 'equipped':
+			case 'limited':
+			case 'show':
+				this[key] = Boolean(data[key]);
+				break;
+			case 'img':
+				this.image = data[t];
+				break;
+			case 'name':
+			case 'options':
+			case 'script':
+			case 'title':
+			case 'type':
+				this[key] = data[key];
+				break;
+			case 'spritesheet_id':
+				this.spritesheetId = data[key];
 			}
 		}
 	}

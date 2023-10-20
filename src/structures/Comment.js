@@ -13,44 +13,43 @@ export default class Comment {
 	}
 
 	_update(data) {
+		if (typeof data != 'object') {
+			console.warn("Invalid data type");
+			return;
+		}
+
 		for (const key in data) {
 			switch(key) {
-				case 'comment':
-					this._update(data[key]);
-					break;
-
-				case 'data': {
-					if (typeof data[key] == 'object' && data[key]['track_comments']) {
-						return this._update(data[key]['track_comments'][0]);
-					}
-
-					return this._update(data[key]);
+			case 'comment':
+				this._update(data[key]);
+				break;
+			case 'data': {
+				if (typeof data[key] == 'object' && data[key]['track_comments']) {
+					return this._update(data[key]['track_comments'][0]);
 				}
 
-				case 'id':
-					this[key] = data[key];
-					break;
+				return this._update(data[key]);
+			}
 
-				case 'msg':
-					this.message = data[key];
+			case 'id':
+				this[key] = data[key];
+				break;
+			case 'msg':
+				this.message = data[key];
+				break;
+			case 'time':
+				this.timeAgo = data[key];
+				break;
+			case 'track':
+				if (typeof data[key] == 'object') {
+					this.track._update(data[key]);
 					break;
+				}
 
-				case 'time':
-					this.timeAgo = data[key];
-					break;
-
-				case 'track':
-					if (typeof data[key] == 'object') {
-						this.track._update(data[key]);
-						break;
-					}
-
-					this.track.id = data[key];
-					break;
-
-				case 'user':
-					this.author._update(data[key]);
-					break;
+				this.track.id = data[key];
+				break;
+			case 'user':
+				this.author._update(data[key]);
 			}
 		}
 	}

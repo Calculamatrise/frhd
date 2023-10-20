@@ -1,10 +1,13 @@
-import frhd, { Client, Builder, Gamepad, Image } from "../src/index.js";
+import frhd, { Client, Builder, Gamepad, Image, getRace } from "../src/index.js";
 
 // const client = new Client({
 // 	debug: true,
 // 	listen: true,
 // 	interval: 3e3
 // });
+
+let res = await getRace('1001', 'calculus')
+console.log(res)
 
 // client.on("ready", async function() {
 // 	console.log("Yas!", this);
