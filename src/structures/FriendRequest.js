@@ -32,7 +32,7 @@ export default class FriendRequest {
 				this.username = data[key];
 				break;
 			case 'user':
-				this._update(data);
+				this._update(data[key]);
 			}
 		}
 	}

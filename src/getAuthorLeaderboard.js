@@ -7,5 +7,5 @@ import RequestHandler from "./utils/RequestHandler.js";
  * @returns {Promise}
  */
 export default function(page = 1, callback = r => r) {
-    return RequestHandler.ajax("/leaderboards/author/lifetime/" + parseInt(page)).then(callback);
+	return RequestHandler.ajax("/leaderboards/author/lifetime/" + parseInt(page)).then(callback);
 }

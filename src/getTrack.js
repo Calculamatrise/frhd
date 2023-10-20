@@ -9,11 +9,11 @@ import Track from "./structures/Track.js";
  * @returns {Promise<Track>}
  */
 export default function(id, fields, callback = typeof arguments[arguments.length - 1] == 'function' ? arguments[arguments.length - 1] : r => r) {
-    if (typeof fields == 'object') {
-        return RequestHandler.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}`).then(callback);
-    }
+	if (typeof fields == 'object') {
+		return RequestHandler.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}`).then(callback);
+	}
 
-    return RequestHandler.ajax("/t/" + parseInt(id)).then(function(res) {
-        return Track.create(res);
-    }).then(callback);
+	return RequestHandler.ajax("/t/" + parseInt(id)).then(function(res) {
+		return Track.create(res);
+	}).then(callback);
 }
