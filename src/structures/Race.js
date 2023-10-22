@@ -80,13 +80,28 @@ export default class Race {
 					for (const property in stats) {
 						switch (property) {
 						case 'best_date':
-							if (stats.u_id === this.user.id) {
-								this.uploadDate = new Date(stats[key]);
-								this.uploadTimestamp = this.uploadDate.getTime();
+							if (stats.u_id === this.user.id && stats[key]) {
+								let date = new Date(stats[key].split('/').reverse().join('/'));
+								this.uploadDate = date;
+								this.timestamp = date.getTime();
+								const DAY_MILLISECONDS = 1000 * 60 * 60 * 24;
+								const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "always" });
+								let units = Math.floor((this.timestamp - new Date().getTime()) / DAY_MILLISECONDS);
+								let style = 'day';
+								units <= -7 && (units /= 7,
+								style = 'week');
+								units <= -4 && (units /= 4,
+								style = 'month');
+								units <= -12 && (units /= 12,
+								style = 'year');
+								this.uploadDateAgo = rtf.format(Math.floor(units), style);
 							}
 						}
 					}
 				}
+				break;
+			default:
+				this.hasOwnProperty(key) && (this[key] = data[key]);
 			}
 		}
 	}

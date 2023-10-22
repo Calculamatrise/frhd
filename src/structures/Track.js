@@ -65,22 +65,11 @@ export default class Track {
 			case 'descr':
 				this.description = data[key];
 				break;
-			case 'defaultVehicle':
-			case 'description':
 			case 'featured':
-			case 'hidden':
 			case 'id':
-			case 'isCampaign':
 			case 'size':
-			case 'thumbnailURL':
 			case 'title':
-			case 'uploadDate':
-			case 'uploadDateAgo':
 				this[key] = data[key];
-				break;
-			case 'game_settings':
-				// this might be useful
-				// but for now, no.
 				break;
 			case 'hide':
 				this.hidden = Boolean(data[key]);
@@ -160,6 +149,9 @@ export default class Track {
 							this.stats.averageRating = data[key][property];
 					}
 				}
+				break;
+			default:
+				this.hasOwnProperty(key) && (this[key] = data[key]);
 			}
 		}
 	}

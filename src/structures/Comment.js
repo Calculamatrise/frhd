@@ -50,6 +50,9 @@ export default class Comment {
 				break;
 			case 'user':
 				this.author._update(data[key]);
+				break;
+			default:
+				this.hasOwnProperty(key) && (this[key] = data[key]);
 			}
 		}
 	}

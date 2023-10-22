@@ -9,6 +9,7 @@ export default class User {
 	id = null;
 	admin = false;
 	avatar = null;
+	banned = null;
 	displayName = null;
 	moderator = false;
 	username = null;
@@ -42,10 +43,11 @@ export default class User {
 				this.lastPlayed = data[key];
 				break;
 			case 'admin':
+			case 'banned':
 			case 'classic':
 			case 'moderator':
 			case 'plus':
-				this[key] = data[key];
+				this[key] = Boolean(data[key]);
 				break;
 			case 'avatar':
 			case 'img_url_small':
@@ -156,6 +158,9 @@ export default class User {
 			}
 			case 'user_verify_reminder':
 				this.verifiedEmail = data[key];
+				break;
+			default:
+				this.hasOwnProperty(key) && (this[key] = data[key]);
 			}
 		}
 	}
