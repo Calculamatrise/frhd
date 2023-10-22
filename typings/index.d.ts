@@ -14,7 +14,7 @@ export function getComment(trackId: number, commendId: number, callback: Functio
 export function getFeaturedGhosts(callback: Function): Promise<object>;
 export function getHome(callback: Function): Promise<object>;
 export function getPlayerLeaderboard(page: number, callback: Function): Promise<object>;
-export function getRace(trackId: number, username: string, callback: Function): Promise<Race>;
+export function getRace(trackId: number, uid: number|string, callback: Function): Promise<Race>;
 export function getRandom(min?: number, max?: number, callback: Function): Promise<Track>;
 export function getTrack(id: number, callback: Function): Promise<Track>;
 export function getTrackLeaderboard(trackId: number, callback: Function): Promise<object>;
@@ -96,8 +96,8 @@ export class Builder {
 
 export class Client extends EventEmitter {
     public constructor(options?: ClientOptions);
-    public communitySignup(user: string, email: string, callback?: Function): Promise<object>;
-    public communityTransfer(user: string, email: string, secondaryEmail: string, callback?: Function): Promise<object>;
+    public communitySignup(username: string, email: string, callback?: Function): Promise<object>;
+    public communityTransfer(username: string, email: string, secondaryEmail: string, callback?: Function): Promise<object>;
     public generateCoupon(platform: string, coins: number, gems: number, callback: Function): Promise<object>;
     public login(asr: string | { username: string, password: string }): this;
     public logout(): this;

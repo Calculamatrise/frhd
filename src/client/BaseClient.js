@@ -72,7 +72,7 @@ export default class extends EventEmitter {
 
 	async #verifyToken(value, callback) {
 		if (value !== null) {
-			await RequestHandler.ajax("/account/settings?app_signed_request=" + value).then(async res => {
+			await RequestHandler.ajax("account/settings?app_signed_request=" + value).then(async res => {
 				if ('user' in res) {
 					token = value;
 					typeof callback == 'function' && await callback(res.user);
@@ -98,29 +98,26 @@ export default class extends EventEmitter {
 	async login(asr) {
 		if (typeof asr == 'object') {
 			if (asr.hasOwnProperty('username') && asr.hasOwnProperty('password')) {
-				asr = await RequestHandler.post("/auth/standard_login", {
+				asr = await RequestHandler.post("auth/standard_login", {
 					login: asr.username,
 					password: asr.password
-				}).then(function(res) {
-					if (res.result == false) {
-						throw new Error(res.msg);
-					}
-
+				}).then(res => {
 					return res.app_signed_request;
 				});
 			}
 		}
 
 		await this.#verifyToken(asr, async user => {
-			this.#user = await this.users.fetch(user.d_name) || null; // maybe create instance of User here instead of re-fetching
-			this.#user.admin = user.admin;
-			this.#user.moderator = user.moderator;
+			this.#user = await this.users.fetch(user.d_name); // maybe create instance of User here instead of re-fetching
+			this.#user._update(user);
 			this.emit(Events.ClientReady);
 			this.#options.listen !== false && this.#listen();
 		});
 
 		return this;
 	}
+
+	refreshToken() {}
 
 	/**
 	 * 

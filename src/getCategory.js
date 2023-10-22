@@ -7,5 +7,5 @@ import RequestHandler from "./utils/RequestHandler.js";
  * @returns {Promise}
  */
 export default function(category, callback = r => r) {
-	return RequestHandler.ajax(`/${category}`).then(callback);
+	return RequestHandler.ajax(category).then(callback);
 }

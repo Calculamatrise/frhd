@@ -113,7 +113,7 @@ export default class Race {
 	 * @returns {Promise}
 	 */
 	async remove() {
-		return RequestHandler.post("/moderator/remove_race", {
+		return RequestHandler.post("moderator/remove_race", {
 			t_id: this.track.id,
 			u_id: this.user.id
 		}, true);

@@ -58,7 +58,7 @@ export default class extends BaseManager {
 		else if (isNaN(ticks))
 			throw new Error("INVALID_TIME");
 
-		return RequestHandler.post("/track_api/track_run_complete", {
+		return RequestHandler.post("track_api/track_run_complete", {
 			t_id: this.client.id,
 			u_id: user,
 			code: typeof code == 'object' ? JSON.stringify(code) : code,
@@ -82,7 +82,7 @@ export default class extends BaseManager {
 		}
 
 		if (!user) throw new Error("INVALID_USER");
-		return RequestHandler.post("/moderator/remove_race", {
+		return RequestHandler.post("moderator/remove_race", {
 			t_id: this.client.id,
 			u_id: user
 		}, true);

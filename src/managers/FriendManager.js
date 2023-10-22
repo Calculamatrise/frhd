@@ -26,7 +26,7 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	 */
 	async add(username) {
-		return RequestHandler.post("/friends/send_friend_request", {
+		return RequestHandler.post("friends/send_friend_request", {
 			u_name: username
 		}, true);
 	}
@@ -41,7 +41,7 @@ export default class extends BaseManager {
 			user = await getUser(user).then(u => u.id);
 		}
 
-		return RequestHandler.post("/friends/respond_to_friend_request", {
+		return RequestHandler.post("friends/respond_to_friend_request", {
 			u_id: user,
 			action: 'accept'
 		}, true).then(res => {
@@ -60,7 +60,7 @@ export default class extends BaseManager {
 			user = await getUser(user).then(u => u.id);
 		}
 
-		return RequestHandler.post("/friends/respond_to_friend_request", {
+		return RequestHandler.post("friends/respond_to_friend_request", {
 			u_id: user,
 			action: 'reject'
 		}, true);
@@ -77,7 +77,7 @@ export default class extends BaseManager {
 		}
 
 		if (!user) throw new Error("INVALID_USER");
-		return RequestHandler.post("/friends/remove_friend", {
+		return RequestHandler.post("friends/remove_friend", {
 			u_id: user
 		}, true);
 	}

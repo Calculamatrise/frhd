@@ -11,7 +11,7 @@ import getUser from "./getUser.js";
  */
 export default async function(trackId, uid, callback = r => r) {
 	isNaN(uid) && (uid = await getUser(uid).then(user => user.id));
-	return RequestHandler.post("/track_api/load_races", {
+	return RequestHandler.post("track_api/load_races", {
 		t_id: trackId,
 		u_ids: uid
 	}).then(res => {

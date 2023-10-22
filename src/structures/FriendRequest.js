@@ -38,17 +38,18 @@ export default class FriendRequest {
 	}
 
     accept() {
-		return RequestHandler.post("/friends/respond_to_friend_request", {
-			action: 'accept',
-			u_id: this.id
-		}, true);
+		return this.respond('accept')
 	}
 
     reject() {
-		return RequestHandler.post("/friends/respond_to_friend_request", {
-			action: 'reject',
+		return this.respond('reject')
+	}
+
+	respond(action) {
+		return RequestHandler.post("friends/respond_to_friend_request", {
+			action,
 			u_id: this.id
-		}, true);
+		}, true)
 	}
 
 	static async create(data) {
@@ -56,6 +57,6 @@ export default class FriendRequest {
 			throw new TypeError('Invalid data type');
 		}
 
-		return new this(data);
+		return new this(data)
 	}
 }

@@ -17,36 +17,39 @@ export default class extends BaseClient {
 
     /**
      * 
-     * @param {string} user 
+	 * @protected requires administrative priviledges
+     * @param {string} username 
      * @param {string} email 
      * @param {Callback} callback 
      * @returns {Promise}
      */
-    async communitySignup(user, email, callback = r => r) {
-        return RequestHandler.post("/admin/community_classic_signup", {
-            classic_username: user,
+    async communitySignup(username, email, callback = r => r) {
+        return RequestHandler.post("admin/community_classic_signup", {
+            classic_username: username,
             real_email: email
         }, true).then(callback);
     }
 
     /**
      * 
-     * @param {string} user
+	 * @protected requires administrative priviledges
+     * @param {string} username
      * @param {string} email
      * @param {string} secondaryEmail
      * @param {Callback} callback
      * @returns {Promise}
      */
-    async communityTransfer(user, email, secondaryEmail, callback = r => r) {
-        return RequestHandler.post("/admin/community_classic_transfer", {
+    async communityTransfer(username, email, secondaryEmail, callback = r => r) {
+        return RequestHandler.post("admin/community_classic_transfer", {
             classic_existing_email: email,
-            classic_transfer_to_username: user,
+            classic_transfer_to_username: username,
             classic_secondary_email: secondaryEmail
         }, true).then(callback);
     }
 
     /**
      * 
+	 * @protected requires administrative priviledges
      * @param {string} platform
      * @param {number} coins
      * @param {number} gems
@@ -54,7 +57,7 @@ export default class extends BaseClient {
      * @returns {Promise}
      */
     async generateCoupon(platform, coins, gems, callback = r => r) {
-        return RequestHandler.post("/admin/generate_coupon_code", {
+        return RequestHandler.post("admin/generate_coupon_code", {
             platform,
             coins,
             gems
@@ -68,7 +71,7 @@ export default class extends BaseClient {
      * @returns {Promise}
      */
     async redeemCoupon(code, callback = r => r) {
-        return RequestHandler.post("/store/redeemCouponCode", {
+        return RequestHandler.post("store/redeemCouponCode", {
             coupon_code: code
         }, true).then(callback);
     }

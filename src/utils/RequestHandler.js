@@ -155,7 +155,7 @@ export default new Proxy(class {
 	static ajax(option, options = typeof option == 'object' ? option : {}) {
 		let host = options.hostname || options.host || 'www.freeriderhd.com';
 		let path = options.pathname || options.path || (typeof option != 'object' && option) || '';
-		let url = new URL(options.url || `https://${host}${path}`);
+		let url = new URL(options.url || `https://${host.replace(/\/$/, '')}/${path.replace(/^\//, '')}`);
 		url.searchParams.set('ajax', true);
 		url.searchParams.set('t_1', "ref");
 		url.searchParams.set('t_2', "desk");

@@ -8,12 +8,13 @@ import User from "./User.js";
 export default class Track {
 	#cdn = null;
 	id = null;
-	title = null;
 	allowedVehicles = new Set();
 	author = new User();
 	defaultVehicle = 'MTB';
 	featured = false;
 	hidden = false;
+	size = null;
+	title = null;
 	comments = new CommentManager(this);
 	races = new RaceManager(this);
 	constructor(data) {
@@ -37,13 +38,13 @@ export default class Track {
 				this._update(data[key]);
 				break;
 			case 'author':
-				this.author.username = String(data[key]).toLowerCase();
-				this.author.displayName = data[key] ?? null;
+				this.author.displayName = String(data[key]);
+				this.author.username = this.author.displayName.toLowerCase();
 				break;
 			case 'author_img_small':
-			case 'author_img_medium': 
+			case 'author_img_medium':
 			case 'author_img_large':
-				this.author.avatarURL = data[key] ?? null;
+				this.author.avatarURL = data[key];
 				break;
 			case 'campaign':
 				this.isCampaign = data[key];
@@ -57,7 +58,6 @@ export default class Track {
 			case 'date':
 				// ACCOUNT FOR new Date() ARGUMENT
 				this.uploadDate = new Date(data[key]);
-				this.timestamp = this.uploadDate.getTime();
 				break;
 			case 'date_ago':
 				this.uploadDateAgo = data[key];
@@ -67,7 +67,6 @@ export default class Track {
 				break;
 			case 'featured':
 			case 'id':
-			case 'size':
 			case 'title':
 				this[key] = data[key];
 				break;
@@ -78,7 +77,7 @@ export default class Track {
 				this.thumbnailURL = data[key];
 				break;
 			case 'kb_size':
-				this.size = data[key];
+				this.size = Number(data[key]);
 				break;
 			case 'slug':
 				this.id ??= parseInt(data[key]);
@@ -122,31 +121,31 @@ export default class Track {
 				break;
 			}
 			case 'track_stats':
-				this.stats ??= {};
+				this.stats ||= {};
 				for (const property in data[key]) {
 					switch(property) {
-						case 'avg_time':
-							this.stats.averageTime = data[key][property];
-							break;
-						case 'cmpltn_rate':
-							this.stats.completionRate = data[key][property];
-							break;
-						case 'dwn_votes':
-							this.stats.dislikes = data[key][property];
-							break;
-						case 'first_runs':
-							this.stats.firstRuns = data[key][property];
-							break;
-						case 'plays':
-						case 'runs':
-						case 'votes':
-							this.stats[property] = data[key][property];
-							break;
-						case 'up_votes':
-							this.stats.likes = data[key][property];
-							break;
-						case 'vote_percent':
-							this.stats.averageRating = data[key][property];
+					case 'avg_time':
+						this.stats.averageTime = data[key][property];
+						break;
+					case 'cmpltn_rate':
+						this.stats.completionRate = data[key][property];
+						break;
+					case 'dwn_votes':
+						this.stats.dislikes = data[key][property];
+						break;
+					case 'first_runs':
+						this.stats.firstRuns = data[key][property];
+						break;
+					case 'plays':
+					case 'runs':
+					case 'votes':
+						this.stats[property] = data[key][property];
+						break;
+					case 'up_votes':
+						this.stats.likes = data[key][property];
+						break;
+					case 'vote_percent':
+						this.stats.averageRating = data[key][property];
 					}
 				}
 				break;
@@ -161,7 +160,7 @@ export default class Track {
 	 * @returns {Promise<Array>}
 	 */
 	async getLeaderboard() {
-		return RequestHandler.post("/track_api/load_leaderboard", {
+		return RequestHandler.post("track_api/load_leaderboard", {
 			t_id: this.id
 		}).then(function(response) {
 			if (response.result) {
@@ -184,7 +183,7 @@ export default class Track {
 		if (typeof users != 'object')
 			throw new TypeError("INVALID_USERS");
 
-		return RequestHandler.post("/challenge/send", {
+		return RequestHandler.post("challenge/send", {
 			// "users%5B%5D": users.join("&users%5B%5D="),
 			msg: message || '',
 			track_slug: this.id,
@@ -198,14 +197,14 @@ export default class Track {
 	 * @returns {Promise}
 	 */
 	vote(vote) {
-		return RequestHandler.post("/track_api/vote", {
+		return RequestHandler.post("track_api/vote", {
 			t_id: this.id,
 			vote: Number(vote)
 		}, true);
 	}
 
 	flag() {
-		return RequestHandler.get("/track_api/flag/" + this.id, true);
+		return RequestHandler.get("track_api/flag/" + this.id, true);
 	}
 
 	/**
@@ -217,7 +216,7 @@ export default class Track {
 	 * @returns {Promise}
 	 */
 	addToDaily(lives = 30, refillCost = 10, gems = 500) {
-		return RequestHandler.post("/moderator/add_track_of_the_day", {
+		return RequestHandler.post("moderator/add_track_of_the_day", {
 			t_id: this.id,
 			lives,
 			rfll_cst: refillCost,
@@ -234,7 +233,7 @@ export default class Track {
 	 * @returns {Promise}
 	 */
 	removeFromDaily() {
-		return RequestHandler.post("/admin/removeTrackOfTheDay", {
+		return RequestHandler.post("admin/removeTrackOfTheDay", {
 			t_id: this.id,
 			d_ts: Date.now()
 		}, true);
@@ -250,7 +249,7 @@ export default class Track {
 			throw new Error("This track is already featured!");
 		}
 
-		return RequestHandler.get(`/track_api/feature_track/${this.id}/1`, true).then((response) => {
+		return RequestHandler.get(`track_api/feature_track/${this.id}/1`, true).then((response) => {
 			if (!response.result) {
 				this.featured &&= !1;
 				throw new Error(response.msg || "Insufficient privileges");
@@ -270,7 +269,7 @@ export default class Track {
 			throw new Error("This track isn't featured!");
 		}
 
-		return RequestHandler.get(`/track_api/feature_track/${this.id}/0`, true).then((response) => {
+		return RequestHandler.get(`track_api/feature_track/${this.id}/0`, true).then((response) => {
 			if (!response.result) {
 				this.featured ||= !0;
 				throw new Error(response.msg || "Insufficient privileges");
@@ -295,7 +294,7 @@ export default class Track {
 	 * @returns {Promise}
 	 */
 	async hide() {
-		return RequestHandler.get(`/moderator/hide_track/${this.id}`, true).then(res => {
+		return RequestHandler.get("moderator/hide_track/" + this.id, true).then(res => {
 			if (!res || res.result !== true) {
 				throw new Error(res.msg || "Insufficient privileges");
 			}
@@ -310,7 +309,7 @@ export default class Track {
 	 * @returns {Promise}
 	 */
 	async unhide() {
-		return RequestHandler.get(`/moderator/unhide_track/${this.id}`, true).then(res => {
+		return RequestHandler.get("moderator/unhide_track/" + this.id, true).then(res => {
 			if (!res || res.result !== true) {
 				throw new Error(res.msg || "Insufficient privileges");
 			}
@@ -325,7 +324,7 @@ export default class Track {
 	 * @returns {Promise}
 	 */
 	hideAsAdmin() {
-		return RequestHandler.post("/admin/hide_track", {
+		return RequestHandler.post("admin/hide_track", {
 			track_id: this.id
 		}, true);
 	}

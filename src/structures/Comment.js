@@ -59,7 +59,7 @@ export default class Comment {
 
 	reply(data) {
 		if (!data) throw new Error("INVALID_MESSAGE");
-		return RequestHandler.post("/track_comments/post", {
+		return RequestHandler.post("track_comments/post", {
 			t_id: this.track.id,
 			msg: `@${this.author.displayName}, ${(data.content || data).toString().replace(/\s+/g, "+")}`
 		}, true).then(function(response) {
@@ -73,7 +73,7 @@ export default class Comment {
 	delete({ timeout = 0 } = {}) {
 		return new Promise((resolve, reject) => {
 			setTimeout(() => {
-				RequestHandler.get(`/track_comments/delete/${this.track.id}/${this.id}`, true)
+				RequestHandler.get(`track_comments/delete/${this.track.id}/${this.id}`, true)
 				.then(resolve)
 				.catch(reject);
 			}, ~~timeout);

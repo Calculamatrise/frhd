@@ -4,13 +4,18 @@ import FriendManager from "../managers/FriendManager.js";
 import TrackManager from "../managers/TrackManager.js";
 import FriendRequest from "./FriendRequest.js";
 import Track from "./Track.js";
+import getRace from "../getRace.js";
 
 export default class User {
 	id = null;
+	activityDate = null;
+	activityTimeAgo = null;
 	admin = false;
 	avatar = null;
 	banned = null;
+	bio = null;
 	displayName = null;
+	installDate = null;
 	moderator = false;
 	username = null;
 	cosmetics = new CosmeticManager(this);
@@ -37,10 +42,10 @@ export default class User {
 		for (const key in data) {
 			switch (key) {
 			case 'a_ts':
-				this.lastPlayedTimestamp = data[key];
+				this.activityDate = new Date(data[key] * 1e3);
 				break;
 			case 'activity_time_ago':
-				this.lastPlayed = data[key];
+				this.activityTimeAgo = new Date(data[key] * 1e3);
 				break;
 			case 'admin':
 			case 'banned':
@@ -85,17 +90,18 @@ export default class User {
 				}
 				break;
 			}
-			case 'friend_requests': {
+			case 'friend_requests':
 				this.friendRequestCount = data.friend_requests.request_cnt;
 				this.friendRequests = data.friend_requests.request_data.map(request => {
 					return new FriendRequest(request);
 				});
 				break;
-			}
-			case 'has_max_friends': {
-				this.friendLimitReached = data[key];
+			case 'has_max_friends':
+				this.friendLimitReached = Boolean(data[key]);
 				break;
-			}
+			case 'i_ts':
+				this.installDate = new Date(data[key] * 1e3);
+				break;
 			case 'liked_tracks': {
 				for (let track of data[key].tracks.map(data => new Track(data))) {
 					this.likedTracks.cache.set(track.id, track);
@@ -127,7 +133,7 @@ export default class User {
 				this._update(data[key]);
 				break;
 			case 'user_info':
-				this.bio = typeof data[key] == 'object' && data[key].about;
+				this.bio = typeof data[key] == 'object' && data[key].about || null;
 				break;
 			case 'user_mobile_stats': {
 				{
@@ -166,45 +172,49 @@ export default class User {
 	}
 
 	subscribe() {
-		return RequestHandler.post("/track_api/subscribe", {
+		return RequestHandler.post("track_api/subscribe", {
 			sub_uid: this.id,
 			subscribe: 1
 		}, true);
 	}
 
 	unsubscribe() {
-		return RequestHandler.post("/track_api/subscribe", {
+		return RequestHandler.post("track_api/subscribe", {
 			sub_uid: this.id,
 			subscribe: 0
 		}, true);
 	}
 
 	updatePersonalData(name, value) {
-		return RequestHandler.post("/account/update_personal_data", {
+		return RequestHandler.post("account/update_personal_data", {
 			name, value
 		}, true);
 	}
 
 	deletePersonalData() {
-		return RequestHandler.post("/account/delete_all_personal_data");
+		return RequestHandler.post("account/delete_all_personal_data", true);
 	}
 
 	selectProfileImage(type) {
-		return RequestHandler.post("/account/update_photo", {
+		return RequestHandler.post("account/update_photo", {
 			img_type: type
-		});
+		}, true);
 	}
 
 	/**
+	 * 
 	 * REQUIRES PRO/PLUS
+	 * @param amount
+	 * @param message
+	 * @returns {Promise<object>}
 	 */
 	transferCoins(amount, message = '') {
 		// user.plus || user.proMember
-		return RequestHandler.post("/account/plus_transfer_coins", {
+		return RequestHandler.post("account/plus_transfer_coins", {
 			transfer_coins_to: this.username,
 			transfer_coins_amount: amount,
 			msg: message
-		});
+		}, true);
 	}
 
 	/**
@@ -214,29 +224,23 @@ export default class User {
 	 */
 	async changeUsername(username) {
 		if (this.username == this.client.user.username) {
-			return RequestHandler.post("/account/edit_profile", {
+			return RequestHandler.post("account/edit_profile", {
 				name: "u_name",
 				value: username
-			}, true).then((res) => {
-				if (res.result) {
-					this.username = username;
-					return res;
-				}
-
-				throw new Error(res.msg || "Insufficeint privileges.");
+			}, true).then(res => {
+				this.displayName = String(username);
+				this.username = this.displayName.toLowerCase();
+				return res.msg;
 			});
 		}
 
-		return RequestHandler.post("/moderator/change_username", {
+		return RequestHandler.post("moderator/change_username", {
 			u_id: this.id,
 			username
-		}, true).then((res) => {
-			if (res.result) {
-				this.username = username;
-				return res;
-			}
-
-			throw new Error(res.msg || "Insufficeint privileges.");
+		}, true).then(res => {
+			this.displayName = String(username);
+			this.username = this.displayName.toLowerCase();
+			return res.msg;
 		});
 	}
 
@@ -246,7 +250,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	changeUsernameAsAdmin(username) {
-		return RequestHandler.post("/admin/change_username", {
+		return RequestHandler.post("admin/change_username", {
 			change_username_current: this.username,
 			change_username_new: username
 		}, true);
@@ -258,7 +262,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	changeDescription(description) {
-		return RequestHandler.post("/account/edit_profile", {
+		return RequestHandler.post("account/edit_profile", {
 			name: "about",
 			value: String(description)
 		}, true);
@@ -273,7 +277,7 @@ export default class User {
 	changePassword(oldPassword, newPassword) {
 		// make sure new password matches restrictions
 		if (!newPassword) throw new Error("INVALID_PASSWORD");
-		return RequestHandler.post("/account/change_password", {
+		return RequestHandler.post("account/change_password", {
 			old_password: oldPassword,
 			new_password: newPassword
 		}, true);
@@ -285,7 +289,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	changeForumPassword(password) {
-		return RequestHandler.post("/account/update_forum_account", {
+		return RequestHandler.post("account/update_forum_account", {
 			password
 		}, true);
 	}
@@ -297,7 +301,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	changeEmail(email) {
-		return RequestHandler.post("/moderator/change_email", {
+		return RequestHandler.post("moderator/change_email", {
 			u_id: this.id,
 			email
 		}, true);
@@ -310,7 +314,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	async changeEmailAsAdmin(email) {
-		return RequestHandler.post("/admin/change_user_email", {
+		return RequestHandler.post("admin/change_user_email", {
 			username: this.username,
 			email
 		}, true);
@@ -322,7 +326,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	toggleOA() {
-		return RequestHandler.post("/moderator/toggle_official_author/" + this.id, true);
+		return RequestHandler.post("moderator/toggle_official_author/" + this.id, true);
 	}
 
 	/**
@@ -331,7 +335,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	toggleClassicAuthorAsAdmin() {
-		return RequestHandler.post("/admin/toggle_classic_user/", {
+		return RequestHandler.post("admin/toggle_classic_user/", {
 			toggle_classic_uname: this.username
 		}, true);
 	}
@@ -343,7 +347,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	addWonCoins(coins) {
-		return RequestHandler.post("/admin/add_won_coins", {
+		return RequestHandler.post("admin/add_won_coins", {
 			coins_username: this.username,
 			num_coins: coins
 		}, true);
@@ -355,7 +359,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	addPlusDays(days, remove) {
-		return RequestHandler.post("/admin/add_plus_days", {
+		return RequestHandler.post("admin/add_plus_days", {
 			add_plus_days: days,
 			username: this.username,
 			add_plus_remove: remove
@@ -368,7 +372,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	messagingBan() {
-		return RequestHandler.post("/admin/user_ban_messaging", {
+		return RequestHandler.post("admin/user_ban_messaging", {
 			messaging_ban_uname: this.username
 		}, true);
 	}
@@ -379,7 +383,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	uploadingBan() {
-		return RequestHandler.post("/admin/user_ban_uploading", {
+		return RequestHandler.post("admin/user_ban_uploading", {
 			uploading_ban_uname: this.username
 		}, true);
 	}
@@ -390,7 +394,11 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	ban() {
-		return RequestHandler.post("/moderator/ban_user", {
+		if (this.banned) {
+			throw new Error("User is already banned!");
+		}
+
+		return RequestHandler.post("moderator/ban_user", {
 			u_id: this.id
 		}, true);
 	}
@@ -401,7 +409,11 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	unban() {
-		return RequestHandler.post("/moderator/unban_user", {
+		if (!this.banned) {
+			throw new Error("User is not banned!");
+		}
+
+		return RequestHandler.post("moderator/unban_user", {
 			u_id: this.id
 		}, true);
 	}
@@ -414,7 +426,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	banAsAdmin(time = 0, deleteRaces = !1) {
-		return RequestHandler.post("/admin/ban_user", {
+		return RequestHandler.post("admin/ban_user", {
 			ban_secs: ~~time,
 			delete_race_stats: deleteRaces,
 			username: this.username
@@ -427,7 +439,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	deactivate() {
-		return RequestHandler.post("/admin/deactivate_user", {
+		return RequestHandler.post("admin/deactivate_user", {
 			username: this.username
 		}, true);
 	}
@@ -437,9 +449,38 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	delete() {
-		return RequestHandler.post("/admin/delete_user_account", {
+		return RequestHandler.post("admin/delete_user_account", {
 			username: this.username
 		}, true);
+	}
+
+	/**
+	 * Remove cheated ghosts on all tracks between a given range
+	 * @async
+	 * @protected requires administrative privileges.
+	 * @param {object} [options]
+	 * @param {Array<number|string>} [options.users]
+	 * @param {number|string} [options.startingTrackId]
+	 * @param {number|string} [options.endingTrackId]
+	 * @param {number|string} [timeout]
+	 * @returns {string} 
+	  */
+	async removeAllRaces({ startingTrackId, endingTrackId, timeout = 0 } = {}) {
+		endingTrackId = Math.min(~~endingTrackId, await getCategory("recently-added").then(({ tracks }) => parseInt(tracks[0].slug)));
+		if (isNaN(endingTrackId)) throw new Error("Ending track ID is NaN.");
+		for (let trackId = Math.max(1001, ~~startingTrackId); trackId <= endingTrackId; trackId++) {
+			const race = await getRace(trackId, this.id);
+			race && await RequestHandler.post("moderator/remove_race", {
+				t_id: trackId,
+				u_id: this.id
+			}, true);
+			if (typeof arguments[arguments.length - 1] == 'function') {
+				arguments[arguments.length - 1].call(this, trackId);
+			}
+			timeout && await new Promise(resolve => setTimeout(resolve, ~~timeout));
+		}
+
+		return `All of ${this.displayName}'s races have been successfully removed!`;
 	}
 
 	static async create(data) {

@@ -13,7 +13,7 @@ export default function(id, fields, callback = typeof arguments[arguments.length
 		return RequestHandler.ajax(`/track_api/load_track?id=${parseInt(id)}&fields[]=${fields.join("&fields[]=")}`).then(callback);
 	}
 
-	return RequestHandler.ajax("/t/" + parseInt(id)).then(function(res) {
+	return RequestHandler.ajax("t/" + parseInt(id)).then(function(res) {
 		return Track.create(res);
 	}).then(callback);
 }
