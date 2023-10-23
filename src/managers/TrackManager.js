@@ -20,7 +20,7 @@ export default class extends BaseManager {
 	 * @param {number|string} id track ID
 	 * @param {object} [options]
 	 * @param {boolean} [options.force]
-	 * @returns {Track}
+	 * @returns {Promise<Track>}
 	  */
 	async fetch(id, { force } = {}) {
 		if (!force && this.cache.has(id)) {

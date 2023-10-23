@@ -16,6 +16,10 @@ export default class Cosmetic {
 		typeof data == 'object' && this._update(data);
 	}
 
+	/**
+	 * 
+	 * @private
+	 */
 	_update(data) {
 		if (typeof data != 'object') {
 			console.warn("Invalid data type");
@@ -29,7 +33,7 @@ export default class Cosmetic {
 				break;
 			case 'cost':
 			case 'id':
-				this[key] = data[key] | 0;
+				this[key] = parseInt(data[key]) | 0;
 				break;
 			case 'equipped':
 			case 'limited':
@@ -37,7 +41,11 @@ export default class Cosmetic {
 				this[key] = Boolean(data[key]);
 				break;
 			case 'img':
-				this.image = data[t];
+				this.image = data[key];
+				let match = this.image.match(/\d/);
+				if (match && match.length > 0) {
+					this.spritesheetId = match[0];
+				}
 				break;
 			case 'name':
 			case 'options':
@@ -48,10 +56,26 @@ export default class Cosmetic {
 				break;
 			case 'spritesheet_id':
 				this.spritesheetId = data[key];
+				break;
+			default:
+				this.hasOwnProperty(key) && (this[key] = data[key]);
 			}
 		}
 	}
 
+	/**
+	 * 
+	 * @deprecated
+	 */
 	buy() {}
-	equip() {}
+
+	/**
+	 * 
+	 * @returns {Promise<Cosmetic>}
+	 */
+	equip() {
+		return RequestHandler.post("store/equip", {
+			item_id: this.id
+		}, true).then(() => this);
+	}
 }

@@ -9,16 +9,13 @@ export default class extends BaseManager {
 	/**
 	 * 
 	 * @async
-	 * @param {number|string} user
-	 * @returns {Race}
+	 * @param {number|string} uid id or username
+	 * @returns {Promise<Race>}
 	 */
-	async fetch(user) {
-		if (isNaN(user)) {
-			user = await getUser(user).then(user => user.id);
-		}
-
-		if (!user) throw new Error("INVALID_USER");
-		return RequestHandler.get(`/track_api/load_races?t_id=${this.client.id}&u_ids=${user}`).then(res => {
+	async fetch(uid) {
+		isNaN(uid) && (uid = await getUser(uid).then(user => user.id));
+		if (!uid) throw new Error("INVALID_USER");
+		return RequestHandler.get(`/track_api/load_races?t_id=${this.client.id}&u_ids=${uid}`).then(res => {
 			return res.data.map(race => {
 				race = new Race(Object.assign({ track: this.client }, race));
 				this.cache.set(race.user.id, race);
@@ -34,57 +31,48 @@ export default class extends BaseManager {
 	 * @returns {object}
 	 */
 	clone(user) {
-		return this.fetch(user).then(res => this.post(res.race.code, res.race.vehicle, res.race.runTicks));
+		return this.fetch(user).then(res => this.post(res.race.code, res.race.vehicle, res.race.runTicks, res.race.vehicle));
 	}
 
 	/**
 	 * 
 	 * @private
-	 * @param {number|string} user 
+	 * @param {number|string} uid 
 	 * @param {object|string} code 
-	 * @param {number} ticks 
-	 * @param {string} vehicle 
-	 * @returns {object}
+	 * @param {number|string} ticks 
+	 * @param {string} [vehicle] default is MTB
+	 * @returns {Promise<object>}
 	 */
-	async post(user, code, ticks, vehicle = 'MTB') {
-		if (isNaN(user)) {
-			user = await getUser(user).then(user => user.id);
-		}
-
-		if (!user)
-			throw new Error("INVALID_CLIENT");
-		else if (!code)
-			throw new Error("INVALID_RACE_DATA");
-		else if (isNaN(ticks))
-			throw new Error("INVALID_TIME");
-
+	async post(uid, code, ticks, vehicle = 'MTB') {
+		isNaN(uid) && (uid = await getUser(uid).then(user => user.id));
+		code instanceof Object && (code = JSON.stringify(code));
+		if (!uid) throw new Error("INVALID_CLIENT");
+		else if (typeof code != 'string') throw new TypeError("Race data must be of type: object or string");
+		else if (isNaN(ticks)) throw new Error("Ticks must be of type: number");
 		return RequestHandler.post("track_api/track_run_complete", {
 			t_id: this.client.id,
-			u_id: user,
-			code: typeof code == 'object' ? JSON.stringify(code) : code,
+			u_id: uid,
+			code,
 			vehicle,
 			run_ticks: ticks,
 			fps: 25,
 			time: t2t(ticks),
-			sig: crypto.createHash('sha256').update(`${this.client.id}|${user}|${code}|${ticks}|${vehicle}|25|erxrHHcksIHHksktt8933XhwlstTekz`).digest('hex')
+			sig: crypto.createHash('sha256').update(`${this.client.id}|${uid}|${code}|${ticks}|${vehicle}|25|erxrHHcksIHHksktt8933XhwlstTekz`).digest('hex')
 		}, true);
 	}
 
 	/**
 	 * 
 	 * @protected requires administrative privileges.
-	 * @param {number|string} user id or username
+	 * @param {number|string} uid id or username
 	 * @returns {Promise}
 	 */
-	async remove(user) {
-		if (isNaN(user)) {
-			user = await getUser(user).then(user => user.id);
-		}
-
-		if (!user) throw new Error("INVALID_USER");
+	async remove(uid) {
+		isNaN(uid) && (uid = await getUser(uid).then(user => user.id));
+		if (!uid) throw new Error("INVALID_USER");
 		return RequestHandler.post("moderator/remove_race", {
 			t_id: this.client.id,
-			u_id: user
+			u_id: uid
 		}, true);
 	}
 }

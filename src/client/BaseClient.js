@@ -90,16 +90,17 @@ export default class extends EventEmitter {
 
 	/**
 	 * 
+	 * @emits Events.ClientReady
 	 * @param {(string|object)} asr app signed request token
 	 * @param {string} asr.username frhd login username
 	 * @param {string} asr.password frhd login password
-	 * @returns {Client}
+	 * @returns {Promise<Client>}
 	 */
 	async login(asr) {
 		if (typeof asr == 'object') {
-			if (asr.hasOwnProperty('username') && asr.hasOwnProperty('password')) {
+			if ((asr.hasOwnProperty('login') || asr.hasOwnProperty('username')) && asr.hasOwnProperty('password')) {
 				asr = await RequestHandler.post("auth/standard_login", {
-					login: asr.username,
+					login: asr.login || asr.username,
 					password: asr.password
 				}).then(res => {
 					return res.app_signed_request;
@@ -117,7 +118,26 @@ export default class extends EventEmitter {
 		return this;
 	}
 
-	refreshToken() {}
+	/**
+	 * 
+	 * @param {string} password
+	 * @returns {Promise<Client>}
+	 */
+	async refreshToken(password) {
+		let newPassword = password + '_';
+		await RequestHandler.post("account/change_password", {
+			old_password: password,
+			new_password: newPassword
+		}, true);
+		await RequestHandler.post("account/change_password", {
+			old_password: newPassword,
+			new_password: password
+		}, true);
+		return this.login({
+			username: this.#user.username,
+			password
+		});
+	}
 
 	/**
 	 * 

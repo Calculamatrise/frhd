@@ -12,6 +12,10 @@ export default class Comment {
 		typeof data == 'object' && this._update(data);
 	}
 
+	/**
+	 * 
+	 * @private
+	 */
 	_update(data) {
 		if (typeof data != 'object') {
 			console.warn("Invalid data type");
@@ -58,16 +62,15 @@ export default class Comment {
 	}
 
 	reply(data) {
-		if (!data) throw new Error("INVALID_MESSAGE");
+		typeof data == 'object' && (data = data.content);
+		let content = `@${this.author.displayName}, ${data.replace(/\s+/g, '+')}`;
+		if (typeof content != 'string') throw new TypeError("Content must be of type: string");
+		else if (content.length < 4) throw new RangeError("Comment is too short!");
+		else if (content.length > 500) throw new RangeError("Yo, comment too long! Must be 500 characters or less.");
 		return RequestHandler.post("track_comments/post", {
 			t_id: this.track.id,
-			msg: `@${this.author.displayName}, ${(data.content || data).toString().replace(/\s+/g, "+")}`
-		}, true).then(function(response) {
-			if (response.result)
-				return new Comment(response.data.track_comments[0]);
-
-			return new Error(response.msg);
-		});
+			msg: content
+		}, true).then(res => new Comment(res.data.track_comments[0]));
 	}
 
 	delete({ timeout = 0 } = {}) {

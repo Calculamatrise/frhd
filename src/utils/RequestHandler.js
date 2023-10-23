@@ -13,35 +13,17 @@ import Race from "../structures/Race.js";
 export default new Proxy(class {
 	/**
 	 * 
-	 * @param {number} id 
+	 * @param {number|string} id 
 	 * @returns {Promise}
 	 */
-	cosmetics(id) {
-		return this.constructor.ajax("/store/gear").then(function(res) {
+	cosmetics(id, { limit } = {}) {
+		limit ||= typeof id == 'object' && id.limit;
+		return this.constructor.ajax("/store/gear").then(res => {
 			if (res.result === false || /page\s+not\s+found/i.test(res.app_title))
 				throw new Error("Cosmetic not found.");
 
 			return {
-				heads: res.gear.head_gear.filter(function(head, index) {
-					if (id) {
-						if (typeof id == 'object') {
-							if (Array.isArray(id)) {
-								return id.includes(head.id);
-							}
-
-							const { limit } = id;
-							if (limit) {
-								return index < limit;
-							}
-						}
-
-						return head.id == id;
-					}
-
-					return true;
-				}).map(function(head) {
-					return new Cosmetic(head);
-				})
+				heads: res.gear.head_gear.slice(0, limit).filter(head => id ? head.id == id : true).map(head => new Cosmetic(head))
 			}
 		});
 	}

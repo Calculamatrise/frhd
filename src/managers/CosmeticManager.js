@@ -1,37 +1,46 @@
 import BaseManager from "./BaseManager.js";
 import RequestHandler from "../utils/RequestHandler.js";
+import Cosmetic from "../structures/Cosmetic.js";
 
 export default class extends BaseManager {
 	/**
 	 * 
 	 * @async
 	 * @param {number|string} id
-	 * @returns object
+	 * @returns {Promise<object>}
 	 */
-	async fetch(id) {
-		const data = await this.client.api.cosmetics(id);
-		if (typeof id != "object" && !Array.isArray(id))
-			this.cache.set(id, data);
+	async fetch(id, { force } = {}) {
+		if (!force && this.cache.has(id)) {
+			return this.cache.get(id);
+		}
 
+		const data = await this.client.api.cosmetics(id);
+		for (const headGear in data.heads)
+			this.cache.set(headGear.id, headGear);
 		return data;
 	}
 
 	/**
 	 * 
-	 * @returns {Promise}
+	 * @returns {Promise<Cosmetic>}
 	 */
-	buyHead() {
-		return RequestHandler.post("store/buy", true);
+	buy() {
+		return RequestHandler.post("store/buy", true).then(res => {
+			let headGear = new Cosmetic(res.data.head_gear);
+			this.cache.set(headGear.id, headGear);
+			return headGear;
+		});
 	}
 
 	/**
 	 * 
 	 * @param {Cosmetic|number|string} item
-	 * @returns {Promise}
+	 * @returns {Promise<Cosmetic>}
 	 */
-	setHead(item) {
+	equip(item) {
+		item instanceof Object && (item = item.id);
 		return RequestHandler.post("store/equip", {
-			item_id: Number(item instanceof Cosmetic ? item.id : item)
-		}, true);
+			item_id: item
+		}, true).then(() => this.cache.get(item));
 	}
 }

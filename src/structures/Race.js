@@ -19,7 +19,6 @@ export default class Race {
 	/**
 	 * 
 	 * @private
-	 * @param {object} data
 	 */
 	_update(data) {
 		if (typeof data != 'object') {

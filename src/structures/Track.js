@@ -24,7 +24,6 @@ export default class Track {
 	/**
 	 * 
 	 * @private
-	 * @param {object} data
 	 */
 	_update(data) {
 		if (typeof data != 'object') {

@@ -9,6 +9,10 @@ export default class FriendRequest {
 		typeof data == 'object' && this._update(data);
 	}
 
+	/**
+	 * 
+	 * @private
+	 */
 	_update(data) {
 		if (typeof data != 'object') {
 			console.warn("Invalid data type");
@@ -33,6 +37,9 @@ export default class FriendRequest {
 				break;
 			case 'user':
 				this._update(data[key]);
+				break;
+			default:
+				this.hasOwnProperty(key) && (this[key] = data[key]);
 			}
 		}
 	}

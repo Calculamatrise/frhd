@@ -31,7 +31,6 @@ export default class User {
 	/**
 	 * 
 	 * @private
-	 * @param {object} data 
 	 */
 	_update(data) {
 		if (typeof data != 'object') {
@@ -220,7 +219,7 @@ export default class User {
 	/**
 	 * 
 	 * @param {string} username 
-	 * @returns {Promise}
+	 * @returns {Promise<object>}
 	 */
 	async changeUsername(username) {
 		if (this.username == this.client.user.username) {
@@ -230,7 +229,7 @@ export default class User {
 			}, true).then(res => {
 				this.displayName = String(username);
 				this.username = this.displayName.toLowerCase();
-				return res.msg;
+				return res;
 			});
 		}
 
@@ -240,13 +239,13 @@ export default class User {
 		}, true).then(res => {
 			this.displayName = String(username);
 			this.username = this.displayName.toLowerCase();
-			return res.msg;
+			return res;
 		});
 	}
 
 	/**
 	 * 
-	 * @protected requires administrative privileges.
+	 * @protected requires administrative privileges
 	 * @returns {Promise}
 	 */
 	changeUsernameAsAdmin(username) {
@@ -296,7 +295,7 @@ export default class User {
 
 	/**
 	 * 
-	 * @protected requires administrative privileges.
+	 * @protected requires moderation privileges
 	 * @param {string} email 
 	 * @returns {Promise}
 	 */
@@ -309,7 +308,7 @@ export default class User {
 
 	/**
 	 * 
-	 * @protected requires administrative privileges.
+	 * @protected requires administrative privileges
 	 * @param {string} email 
 	 * @returns {Promise}
 	 */
@@ -321,8 +320,8 @@ export default class User {
 	}
 
 	/**
-	 * Moderator endpoint
-	 * @protected requires administrative privileges.
+	 * 
+	 * @protected requires moderation privileges
 	 * @returns {Promise}
 	 */
 	toggleOA() {
@@ -330,9 +329,9 @@ export default class User {
 	}
 
 	/**
-	 * Admin endpoint
-	 * @protected requires administrative privileges.
-	 * @returns {Promise}
+	 * 
+	 * @protected requires administrative privileges
+	 * @returns {Promise<object>}
 	 */
 	toggleClassicAuthorAsAdmin() {
 		return RequestHandler.post("admin/toggle_classic_user/", {
@@ -342,34 +341,36 @@ export default class User {
 
 	/**
 	 * 
-	 * @protected requires administrative privileges.
-	 * @param {number} coins 
-	 * @returns {Promise}
+	 * @protected requires administrative privileges
+	 * @param {number} coins
+	 * @returns {Promise<object>}
 	 */
 	addWonCoins(coins) {
 		return RequestHandler.post("admin/add_won_coins", {
 			coins_username: this.username,
-			num_coins: coins
+			num_coins: coins | 0
 		}, true);
 	}
 
 	/**
 	 * 
-	 * @protected requires administrative privileges.
-	 * @returns {Promise}
+	 * @protected requires administrative privileges
+	 * @param {number} [days] defaults to 7
+	 * @param {number} [remove] defaults to 0
+	 * @returns {Promise<object>}
 	 */
-	addPlusDays(days, remove) {
+	addPlusDays(days = 7, remove) {
 		return RequestHandler.post("admin/add_plus_days", {
-			add_plus_days: days,
+			add_plus_days: days | 0,
 			username: this.username,
-			add_plus_remove: remove
+			add_plus_remove: remove | 0
 		}, true);
 	}
 
 	/**
 	 * 
-	 * @protected requires administrative privileges.
-	 * @returns {Promise}
+	 * @protected requires administrative privileges
+	 * @returns {Promise<object}
 	 */
 	messagingBan() {
 		return RequestHandler.post("admin/user_ban_messaging", {
@@ -379,8 +380,8 @@ export default class User {
 
 	/**
 	 * 
-	 * @protected requires administrative privileges.
-	 * @returns {Promise}
+	 * @protected requires administrative privileges
+	 * @returns {Promise<object>}
 	 */
 	uploadingBan() {
 		return RequestHandler.post("admin/user_ban_uploading", {
@@ -389,54 +390,48 @@ export default class User {
 	}
 
 	/**
-	 * Moderator endpoint
-	 * @protected requires administrative privileges.
-	 * @returns {Promise}
+	 * 
+	 * @protected requires moderation privileges
+	 * @returns {Promise<object>}
 	 */
 	ban() {
-		if (this.banned) {
-			throw new Error("User is already banned!");
-		}
-
+		if (this.banned) throw new Error("User is already banned!");
 		return RequestHandler.post("moderator/ban_user", {
 			u_id: this.id
 		}, true);
 	}
 
 	/**
-	 * Moderator endpoint
-	 * @protected requires administrative privileges.
-	 * @returns {Promise}
+	 * 
+	 * @protected requires moderation privileges
+	 * @returns {Promise<object>}
 	 */
 	unban() {
-		if (!this.banned) {
-			throw new Error("User is not banned!");
-		}
-
+		if (!this.banned) throw new Error("User is not banned!");
 		return RequestHandler.post("moderator/unban_user", {
 			u_id: this.id
 		}, true);
 	}
 
 	/**
-	 * Admin endpoint (uncertain about whether admin un-action endpoints exist)
-	 * @protected requires administrative privileges.
-	 * @param {number|string} time 
-	 * @param {Boolean} deleteRaces 
-	 * @returns {Promise}
+	 * 
+	 * @protected requires administrative privileges
+	 * @param {number|string} [time] defaults to 365 days
+	 * @param {Boolean} [deleteRaces] defaults to false
+	 * @returns {Promise<object>}
 	 */
-	banAsAdmin(time = 0, deleteRaces = !1) {
+	banAsAdmin(time = 31536000, deleteRaces = !1) {
 		return RequestHandler.post("admin/ban_user", {
-			ban_secs: ~~time,
-			delete_race_stats: deleteRaces,
+			ban_secs: time | 0,
+			delete_race_stats: Boolean(deleteRaces),
 			username: this.username
 		}, true);
 	}
 
 	/**
 	 * 
-	 * @protected requires administrative privileges.
-	 * @returns {Promise}
+	 * @protected requires administrative privileges
+	 * @returns {Promise<object>}
 	 */
 	deactivate() {
 		return RequestHandler.post("admin/deactivate_user", {
@@ -445,8 +440,8 @@ export default class User {
 	}
 
 	/**
-	 * @protected requires administrative privileges.
-	 * @returns {Promise}
+	 * @protected requires administrative privileges
+	 * @returns {Promise<object>}
 	 */
 	delete() {
 		return RequestHandler.post("admin/delete_user_account", {
@@ -457,7 +452,7 @@ export default class User {
 	/**
 	 * Remove cheated ghosts on all tracks between a given range
 	 * @async
-	 * @protected requires administrative privileges.
+	 * @protected requires administrative privileges
 	 * @param {object} [options]
 	 * @param {Array<number|string>} [options.users]
 	 * @param {number|string} [options.startingTrackId]

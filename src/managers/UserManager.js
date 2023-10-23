@@ -8,7 +8,7 @@ export default class extends BaseManager {
 	 * @param {object|number|string} uid id or username
 	 * @param {object} [options]
 	 * @param {boolean} [options.force]
-	 * @returns {User}
+	 * @returns {Promise<User>}
 	  */
 	async fetch(uid, { force } = {}) {
 		if (typeof uid == 'object') {
