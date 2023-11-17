@@ -44,7 +44,7 @@ export default class User {
 				this.activityDate = new Date(data[key] * 1e3);
 				break;
 			case 'activity_time_ago':
-				this.activityTimeAgo = new Date(data[key] * 1e3);
+				this.activityTimeAgo = data[key];
 				break;
 			case 'admin':
 			case 'banned':
