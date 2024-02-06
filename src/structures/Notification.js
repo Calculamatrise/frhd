@@ -47,6 +47,6 @@ export default class Notification {
 		this.timeAgo = data.time;
 		this.timestamp = data.ts;
 
-		this.rawData = data;
+		Object.defineProperty(this, 'rawData', { value: data, writable: true })
 	}
 }

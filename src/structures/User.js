@@ -1,55 +1,58 @@
+import BaseStructure from "./BaseStructure.js";
 import RequestHandler from "../utils/RequestHandler.js";
 import CosmeticManager from "../managers/CosmeticManager.js";
 import FriendManager from "../managers/FriendManager.js";
 import TrackManager from "../managers/TrackManager.js";
-import FriendRequest from "./FriendRequest.js";
 import Track from "./Track.js";
-import getRace from "../getRace.js";
 
-export default class User {
-	id = null;
-	activityDate = null;
-	activityTimeAgo = null;
-	admin = false;
-	avatar = null;
-	banned = null;
-	bio = null;
-	displayName = null;
-	installDate = null;
-	moderator = false;
-	username = null;
+export default class User extends BaseStructure {
+	#avatarURL = null;
+	classic = null;
 	cosmetics = new CosmeticManager(this);
-	friends = new FriendManager(this);
 	createdTracks = new TrackManager(this);
-	recentlyPlayed = new TrackManager(this);
+	displayName = null;
+	forumId = null;
+	friends = new FriendManager(this);
 	recentlyCompleted = new TrackManager(this);
-	likedTracks = new TrackManager(this);
+	recentlyPlayed = new TrackManager(this);
+	username = null;
 	constructor(data) {
-		typeof data == 'object' && this._update(data);
+		super({
+			activityAt: { value: null, writable: true },
+			activityTimeAgo: { value: null, writable: true },
+			activityTimestamp: { value: null, writable: true },
+			admin: { value: null, writable: true },
+			banned: { value: null, writable: true },
+			description: { value: null, writable: true },
+			moderator: { value: null, writable: true },
+			subscribers: { value: null, writable: true }
+		});
+		data instanceof Object && this._patch(data)
 	}
 
-	/**
-	 * 
-	 * @private
-	 */
-	_update(data) {
-		if (typeof data != 'object') {
+	_patch(data) {
+		if (typeof data != 'object' || data === null) {
 			console.warn("Invalid data type");
 			return;
 		}
 
+		super._patch(...arguments);
 		for (const key in data) {
 			switch (key) {
 			case 'a_ts':
-				this.activityDate = new Date(data[key] * 1e3);
+				this.activityTimestamp = data[key] * 1e3;
+				this.activityAt = new Date(this.lastActivityTimestamp);
 				break;
 			case 'activity_time_ago':
 				this.activityTimeAgo = data[key];
 				break;
 			case 'admin':
 			case 'banned':
-			case 'classic':
 			case 'moderator':
+				if (this[key] !== null) break;
+				Object.defineProperty(this, key, { value: data[key], writable: false });
+				break;
+			case 'classic':
 			case 'plus':
 				this[key] = Boolean(data[key]);
 				break;
@@ -57,9 +60,11 @@ export default class User {
 			case 'img_url_small':
 			case 'img_url_medium':
 			case 'img_url_large':
-				this.avatar = data[key];
+				let url = URL.canParse(data[key]) && new URL(data[key]);
+				url && (url.search = '',
+				this.#avatarURL = url.toString());
 				break;
-			case 'cosmetics': {
+			case 'cosmetics':
 				this.cosmetics = {}
 				this.cosmetics.head = {}
 				if (typeof data[key] == 'object') {
@@ -69,58 +74,40 @@ export default class User {
 					}
 				}
 				break;
-			}
-			case 'created_tracks': {
+			case 'created_tracks':
 				for (let track of data[key].tracks.map(data => new Track(data))) {
 					this.createdTracks.cache.set(track.id, track);
 				}
 				break;
-			}
 			case 'd_name':
 				this.displayName = data[key];
+				this.username ||= this.displayName.toLowerCase();
 				break;
 			case 'forum_url':
-				this.forums = data[key];
+				let matches = String(data[key]).match(/\d+(?=\/)/g);
+				matches !== null && matches.length > 0 && (this.forumId = isFinite(matches[0]) ? parseInt(matches[0]) : matches[0]);
 				break;
-			case 'friends': {
+			case 'friends':
 				this.friendCount = data[key].friend_cnt;
 				for (const friend of data[key].friends_data.map(data => new User(data))) {
 					this.friends.cache.set(friend.id, friend);
 				}
 				break;
-			}
-			case 'friend_requests':
-				this.friendRequestCount = data.friend_requests.request_cnt;
-				this.friendRequests = data.friend_requests.request_data.map(request => {
-					return new FriendRequest(request);
-				});
-				break;
 			case 'has_max_friends':
 				this.friendLimitReached = Boolean(data[key]);
 				break;
-			case 'i_ts':
-				this.installDate = new Date(data[key] * 1e3);
-				break;
-			case 'liked_tracks': {
-				for (let track of data[key].tracks.map(data => new Track(data))) {
-					this.likedTracks.cache.set(track.id, track);
-				}
-				break;
-			}
-			case 'recently_ghosted_tracks': {
+			case 'recently_ghosted_tracks':
 				for (let track of data[key].tracks.map(data => new Track(data))) {
 					this.recentlyCompleted.cache.set(track.id, track);
 				}
 				break;
-			}
-			case 'recently_played_tracks': {
+			case 'recently_played_tracks':
 				for (let track of data[key].tracks.map(data => new Track(data))) {
 					this.recentlyPlayed.cache.set(track.id, track);
 				}
 				break;
-			}
 			case 'subscribe':
-				this.subscriberCount = ~~data[key].count;
+				this.subscribers = ~~data[key].count;
 				break;
 			case 'u_id':
 				this.id = data[key];
@@ -129,10 +116,10 @@ export default class User {
 				this.username = data[key];
 				break;
 			case 'user':
-				this._update(data[key]);
+				this._patch(data[key]);
 				break;
 			case 'user_info':
-				this.bio = typeof data[key] == 'object' && data[key].about || null;
+				this.description = typeof data[key] == 'object' && data[key].about || null;
 				break;
 			case 'user_mobile_stats': {
 				{
@@ -150,13 +137,13 @@ export default class User {
 				{
 					let stats = data[key];
 					this.stats = {
-						totalPoints: stats.tot_pts,
-						completed: stats.cmpltd,
-						rated: stats.rtd,
 						comments: stats.cmmnts,
+						completed: stats.cmpltd,
 						created: stats.crtd,
 						headCount: stats.head_cnt,
-						totalHeadCount: stats.total_head_cnt
+						rated: stats.rtd,
+						totalHeadCount: stats.total_head_cnt,
+						totalPoints: stats.tot_pts
 					}
 				}
 				break;
@@ -170,34 +157,32 @@ export default class User {
 		}
 	}
 
+	avatarURL({ size = 50 } = {}) {
+		return this.#avatarURL + (size ? '?sz=' + size : '')
+	}
+
+	forumURL() {
+		return 'https://community.' + RequestHandler.host + '/members/' + this.username + '.' + this.forumId + '/'
+	}
+
 	subscribe() {
 		return RequestHandler.post("track_api/subscribe", {
 			sub_uid: this.id,
 			subscribe: 1
-		}, true);
+		}, true).then(res => {
+			this.subscribers++;
+			return res
+		})
 	}
 
 	unsubscribe() {
 		return RequestHandler.post("track_api/subscribe", {
 			sub_uid: this.id,
 			subscribe: 0
-		}, true);
-	}
-
-	updatePersonalData(name, value) {
-		return RequestHandler.post("account/update_personal_data", {
-			name, value
-		}, true);
-	}
-
-	deletePersonalData() {
-		return RequestHandler.post("account/delete_all_personal_data", true);
-	}
-
-	selectProfileImage(type) {
-		return RequestHandler.post("account/update_photo", {
-			img_type: type
-		}, true);
+		}, true).then(res => {
+			this.subscribers--;
+			return res
+		})
 	}
 
 	/**
@@ -213,7 +198,7 @@ export default class User {
 			transfer_coins_to: this.username,
 			transfer_coins_amount: amount,
 			msg: message
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -222,25 +207,13 @@ export default class User {
 	 * @returns {Promise<object>}
 	 */
 	async changeUsername(username) {
-		if (this.username == this.client.user.username) {
-			return RequestHandler.post("account/edit_profile", {
-				name: "u_name",
-				value: username
-			}, true).then(res => {
-				this.displayName = String(username);
-				this.username = this.displayName.toLowerCase();
-				return res;
-			});
-		}
-
 		return RequestHandler.post("moderator/change_username", {
 			u_id: this.id,
 			username
 		}, true).then(res => {
-			this.displayName = String(username);
-			this.username = this.displayName.toLowerCase();
-			return res;
-		});
+			this._patch({ d_name: username });
+			return res
+		})
 	}
 
 	/**
@@ -252,45 +225,7 @@ export default class User {
 		return RequestHandler.post("admin/change_username", {
 			change_username_current: this.username,
 			change_username_new: username
-		}, true);
-	}
-
-	/**
-	 * 
-	 * @param {string} description 
-	 * @returns {Promise}
-	 */
-	changeDescription(description) {
-		return RequestHandler.post("account/edit_profile", {
-			name: "about",
-			value: String(description)
-		}, true);
-	}
-
-	/**
-	 * 
-	 * @param {string} oldPassword 
-	 * @param {string} newPassword 
-	 * @returns {Promise}
-	 */
-	changePassword(oldPassword, newPassword) {
-		// make sure new password matches restrictions
-		if (!newPassword) throw new Error("INVALID_PASSWORD");
-		return RequestHandler.post("account/change_password", {
-			old_password: oldPassword,
-			new_password: newPassword
-		}, true);
-	}
-
-	/**
-	 * 
-	 * @param {string} password 
-	 * @returns {Promise}
-	 */
-	changeForumPassword(password) {
-		return RequestHandler.post("account/update_forum_account", {
-			password
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -303,7 +238,7 @@ export default class User {
 		return RequestHandler.post("moderator/change_email", {
 			u_id: this.id,
 			email
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -316,7 +251,7 @@ export default class User {
 		return RequestHandler.post("admin/change_user_email", {
 			username: this.username,
 			email
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -325,7 +260,7 @@ export default class User {
 	 * @returns {Promise}
 	 */
 	toggleOA() {
-		return RequestHandler.post("moderator/toggle_official_author/" + this.id, true);
+		return RequestHandler.post("moderator/toggle_official_author/" + this.id, true)
 	}
 
 	/**
@@ -336,7 +271,7 @@ export default class User {
 	toggleClassicAuthorAsAdmin() {
 		return RequestHandler.post("admin/toggle_classic_user/", {
 			toggle_classic_uname: this.username
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -349,7 +284,7 @@ export default class User {
 		return RequestHandler.post("admin/add_won_coins", {
 			coins_username: this.username,
 			num_coins: coins | 0
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -364,7 +299,7 @@ export default class User {
 			add_plus_days: days | 0,
 			username: this.username,
 			add_plus_remove: remove | 0
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -375,7 +310,7 @@ export default class User {
 	messagingBan() {
 		return RequestHandler.post("admin/user_ban_messaging", {
 			messaging_ban_uname: this.username
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -386,7 +321,7 @@ export default class User {
 	uploadingBan() {
 		return RequestHandler.post("admin/user_ban_uploading", {
 			uploading_ban_uname: this.username
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -395,10 +330,10 @@ export default class User {
 	 * @returns {Promise<object>}
 	 */
 	ban() {
-		if (this.banned) throw new Error("User is already banned!");
+		if (this.banned) return true;
 		return RequestHandler.post("moderator/ban_user", {
 			u_id: this.id
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -407,10 +342,10 @@ export default class User {
 	 * @returns {Promise<object>}
 	 */
 	unban() {
-		if (!this.banned) throw new Error("User is not banned!");
+		if (!this.banned) return true;
 		return RequestHandler.post("moderator/unban_user", {
 			u_id: this.id
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -425,7 +360,7 @@ export default class User {
 			ban_secs: time | 0,
 			delete_race_stats: Boolean(deleteRaces),
 			username: this.username
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -436,7 +371,7 @@ export default class User {
 	deactivate() {
 		return RequestHandler.post("admin/deactivate_user", {
 			username: this.username
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -446,7 +381,7 @@ export default class User {
 	delete() {
 		return RequestHandler.post("admin/delete_user_account", {
 			username: this.username
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -464,23 +399,15 @@ export default class User {
 		endingTrackId = Math.min(~~endingTrackId, await getCategory("recently-added").then(({ tracks }) => parseInt(tracks[0].slug)));
 		if (isNaN(endingTrackId)) throw new Error("Ending track ID is NaN.");
 		for (let trackId = Math.max(1001, ~~startingTrackId); trackId <= endingTrackId; trackId++) {
-			const race = await getRace(trackId, this.id);
-			race && await RequestHandler.post("moderator/remove_race", {
+			/* const race = await getRace(trackId, this.id);
+			/* race && */ await RequestHandler.post("moderator/remove_race", {
 				t_id: trackId,
 				u_id: this.id
 			}, true);
-			if (typeof arguments[arguments.length - 1] == 'function') {
-				arguments[arguments.length - 1].call(this, trackId);
-			}
-			timeout && await new Promise(resolve => setTimeout(resolve, ~~timeout));
+			typeof arguments[arguments.length - 1] == 'function' && arguments[arguments.length - 1].call(this, trackId);
+			timeout && await new Promise(resolve => setTimeout(resolve, ~~timeout))
 		}
 
-		return `All of ${this.displayName}'s races have been successfully removed!`;
-	}
-
-	static async create(data) {
-		const instance = new this();
-		await instance._update(data);
-		return instance;
+		return `All of ${this.displayName}'s races have been successfully removed!`
 	}
 }

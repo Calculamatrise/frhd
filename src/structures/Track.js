@@ -1,3 +1,4 @@
+import BaseStructure from "./BaseStructure.js";
 import RequestHandler from "../utils/RequestHandler.js";
 import CommentManager from "../managers/CommentManager.js";
 import RaceManager from "../managers/RaceManager.js";
@@ -5,45 +6,39 @@ import Comment from "./Comment.js";
 import Race from "./Race.js";
 import User from "./User.js";
 
-export default class Track {
+export default class Track extends BaseStructure {
 	#cdn = null;
-	id = null;
 	allowedVehicles = new Set();
 	author = new User();
-	defaultVehicle = 'MTB';
+	comments = new CommentManager(this);
+	defaultVehicle = null;
 	featured = false;
-	hidden = false;
+	races = new RaceManager(this);
 	size = null;
 	title = null;
-	comments = new CommentManager(this);
-	races = new RaceManager(this);
 	constructor(data) {
-		typeof data == 'object' && this._update(data);
+		super({
+			hidden: { value: null, writable: true }
+		});
+		data instanceof Object && this._patch(data);
 	}
 
-	/**
-	 * 
-	 * @private
-	 */
-	_update(data) {
-		if (typeof data != 'object') {
+	_patch(data) {
+		if (typeof data != 'object' || data === null) {
 			console.warn("Invalid data type");
 			return;
 		}
 
+		super._patch(...arguments);
 		for (const key in data) {
 			switch(key) {
-			case 'track':
-				this._update(data[key]);
-				break;
 			case 'author':
-				this.author.displayName = String(data[key]);
-				this.author.username = this.author.displayName.toLowerCase();
+				this.author._patch({ d_name: data[key] });
 				break;
 			case 'author_img_small':
 			case 'author_img_medium':
 			case 'author_img_large':
-				this.author.avatarURL = data[key];
+				this.author._patch({ avatar: data[key] });
 				break;
 			case 'campaign':
 				this.isCampaign = data[key];
@@ -55,16 +50,18 @@ export default class Track {
 				this.#cdn = data[key];
 				break;
 			case 'date':
-				// ACCOUNT FOR new Date() ARGUMENT
-				this.uploadDate = new Date(data[key]);
-				break;
-			case 'date_ago':
-				this.uploadDateAgo = data[key];
+				if (this.createdAt !== null) break;
+				Object.defineProperty(this, 'createdAt', { value: new Date(data[key]), writable: false });
+				Object.defineProperty(this, 'createdTimestamp', {
+					value: this.createdAt.getTime(),
+					writable: false
+				});
 				break;
 			case 'descr':
 				this.description = data[key];
 				break;
 			case 'featured':
+			case 'featured_history':
 			case 'id':
 			case 'title':
 				this[key] = data[key];
@@ -76,13 +73,13 @@ export default class Track {
 				this.thumbnailURL = data[key];
 				break;
 			case 'kb_size':
-				this.size = Number(data[key]);
+				this.size = data[key] | 0;
 				break;
 			case 'slug':
 				this.id ??= parseInt(data[key]);
 				break;
-			case 'totd': {
-				this.daily = this.daily ?? {};
+			case 'totd':
+				this.daily ??= {};
 				for (const property in data[key]) {
 					switch (property) {
 					case 'entries':
@@ -99,7 +96,9 @@ export default class Track {
 					}
 				}
 				break;
-			}
+			case 'track':
+				this._patch(data[key]);
+				break;
 			case 'u_id':
 				this.author.id = data[key];
 				break;
@@ -112,13 +111,12 @@ export default class Track {
 				}
 				break;
 			}
-			case 'track_comments': {
+			case 'track_comments':
 				// not sure whether this will be necessary
 				for (const commet of data[key].map(comment => new Comment(Object.assign({}, data, comment)))) {
 					this.comments.cache.set(commet.id, commet);
 				}
 				break;
-			}
 			case 'track_stats':
 				this.stats ||= {};
 				for (const property in data[key]) {
@@ -161,15 +159,11 @@ export default class Track {
 	async getLeaderboard() {
 		return RequestHandler.post("track_api/load_leaderboard", {
 			t_id: this.id
-		}).then(function(response) {
-			if (response.result) {
-				return response.track_leaderboard.map(function(race) {
-					return new Race(race);
-				});
-			}
-
-			return response.msg;
-		});
+		}).then(res => {
+			return res.track_leaderboard.map(data => {
+				return new Race(data)
+			})
+		})
 	}
 
 	/**
@@ -187,7 +181,7 @@ export default class Track {
 			msg: message || '',
 			track_slug: this.id,
 			users
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -199,11 +193,14 @@ export default class Track {
 		return RequestHandler.post("track_api/vote", {
 			t_id: this.id,
 			vote: Number(vote)
-		}, true);
+		}, true).then(res => {
+			this.stats[(vote < 0 ? 'dis' : '') + 'likes'] += vote;
+			return res
+		})
 	}
 
 	flag() {
-		return RequestHandler.get("track_api/flag/" + this.id, true);
+		return RequestHandler.get("track_api/flag/" + this.id, true)
 	}
 
 	/**
@@ -220,7 +217,7 @@ export default class Track {
 			lives,
 			rfll_cst: refillCost,
 			gems
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -235,7 +232,7 @@ export default class Track {
 		return RequestHandler.post("admin/removeTrackOfTheDay", {
 			t_id: this.id,
 			d_ts: Date.now()
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -244,18 +241,10 @@ export default class Track {
 	 * @returns {Boolean}
 	 */
 	feature() {
-		if (this.featured) {
-			throw new Error("This track is already featured!");
-		}
-
-		return RequestHandler.get(`track_api/feature_track/${this.id}/1`, true).then((response) => {
-			if (!response.result) {
-				this.featured &&= !1;
-				throw new Error(response.msg || "Insufficient privileges");
-			}
-
-			return this.featured ||= !0;
-		});
+		if (this.featured) return true;
+		return RequestHandler.get(`track_api/feature_track/${this.id}/1`, true).then(res => {
+			return this.featured = true
+		})
 	}
 
 	/**
@@ -264,18 +253,10 @@ export default class Track {
 	 * @returns {Boolean}
 	 */
 	unfeature() {
-		if (!this.featured) {
-			throw new Error("This track isn't featured!");
-		}
-
-		return RequestHandler.get(`track_api/feature_track/${this.id}/0`, true).then((response) => {
-			if (!response.result) {
-				this.featured ||= !0;
-				throw new Error(response.msg || "Insufficient privileges");
-			}
-
-			return this.featured &&= !1;
-		});
+		if (!this.featured) return true;
+		return RequestHandler.get(`track_api/feature_track/${this.id}/0`, true).then(res => {
+			return this.featured = false, true
+		})
 	}
 
 	/**
@@ -284,7 +265,7 @@ export default class Track {
 	 * @returns {Boolean}
 	 */
 	toggleFeatured() {
-		return this.featured ? this.unfeature() : this.feature();
+		return this.featured ? this.unfeature() : this.feature()
 	}
 
 	/**
@@ -294,12 +275,8 @@ export default class Track {
 	 */
 	async hide() {
 		return RequestHandler.get("moderator/hide_track/" + this.id, true).then(res => {
-			if (!res || res.result !== true) {
-				throw new Error(res.msg || "Insufficient privileges");
-			}
-
-			return this.hidden ||= !0;
-		});
+			return this.hidden ||= !0
+		})
 	}
 
 	/**
@@ -309,12 +286,8 @@ export default class Track {
 	 */
 	async unhide() {
 		return RequestHandler.get("moderator/unhide_track/" + this.id, true).then(res => {
-			if (!res || res.result !== true) {
-				throw new Error(res.msg || "Insufficient privileges");
-			}
-
-			return this.hidden &&= !1;
-		});
+			return this.hidden &&= !1
+		})
 	}
 
 	/**
@@ -325,17 +298,6 @@ export default class Track {
 	hideAsAdmin() {
 		return RequestHandler.post("admin/hide_track", {
 			track_id: this.id
-		}, true);
-	}
-
-	/**
-	 * 
-	 * @param {object} data 
-	 * @returns {Track} 
-	 */
-	static async create(data) {
-		const track = new Track();
-		await track._update(data);
-		return track;
+		}, true)
 	}
 }

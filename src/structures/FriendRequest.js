@@ -6,14 +6,10 @@ export default class FriendRequest {
 	id = null;
 	username = null;
 	constructor(data) {
-		typeof data == 'object' && this._update(data);
+		typeof data == 'object' && this._patch(data)
 	}
 
-	/**
-	 * 
-	 * @private
-	 */
-	_update(data) {
+	_patch(data) {
 		if (typeof data != 'object') {
 			console.warn("Invalid data type");
 			return;
@@ -36,7 +32,7 @@ export default class FriendRequest {
 				this.username = data[key];
 				break;
 			case 'user':
-				this._update(data[key]);
+				this._patch(data[key]);
 				break;
 			default:
 				this.hasOwnProperty(key) && (this[key] = data[key]);

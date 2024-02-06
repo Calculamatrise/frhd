@@ -1,4 +1,4 @@
-import frhd, { Client, Builder, Gamepad, Image, getRace } from "../src/index.js";
+import frhd, { Client, Builder, Gamepad, Image, getRace, getTrack, getComment } from "../src/index.js";
 
 // const client = new Client({
 // 	debug: true,
@@ -6,11 +6,11 @@ import frhd, { Client, Builder, Gamepad, Image, getRace } from "../src/index.js"
 // 	interval: 3e3
 // });
 
-let res = await getRace('1001', 'calculus')
+var res = await getRace('1001', 'calculus')
 console.log(res)
 
 // client.on("ready", async function() {
-// 	console.log("Yas!", this);
+// 	console.log("Yas!", this, this.user.createdAt);
 // 	// console.log(this.user, await this.users.fetch('char'))
 // });
 // // test track challenge

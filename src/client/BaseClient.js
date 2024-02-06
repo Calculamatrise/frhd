@@ -1,6 +1,7 @@
 import EventEmitter from "events";
 import Events from "../utils/Events.js";
 import RequestHandler from "../utils/RequestHandler.js";
+import ClientUser from "../structures/ClientUser.js";
 
 export let token = null;
 
@@ -10,20 +11,12 @@ export let token = null;
  * @type {BaseClient}
  */
 export default class extends EventEmitter {
-	#api = new RequestHandler();
-	#user = null;
 	#options = {
 		interval: 6e4,
 		listen: true
 	}
 
-	get api() {
-		return this.#api;
-	}
-
-	get user() {
-		return this.#user;
-	}
+	user = new ClientUser();
 
 	/**
 	 * 
@@ -40,21 +33,23 @@ export default class extends EventEmitter {
 		super();
 		for (const key in options) {
 			switch(key.toLowerCase()) {
-				case 'debug':
-					this.debug = !!options[key];
-					// this.on(Events.Debug, console.log);
-					break;
-				case 'interval':
-					this.#options.interval = Math.max(1e3, ~~options[key]);
-					break;
-				case 'listen':
-					this.#options.listen = Boolean(options[key]);
+			case 'debug':
+				this.debug = !!options[key];
+				// this.on(Events.Debug, console.log);
+				break;
+			case 'interval':
+				this.#options.interval = Math.max(1e3, ~~options[key]);
+				break;
+			case 'listen':
+				this.#options.listen = Boolean(options[key])
 			}
 		}
+
+		Object.defineProperty(this, 'api', { value: new RequestHandler(), writable: false })
 	}
 
 	async #listen() {
-		const notifications = await this.#api.datapoll().then(({ notification_count }) => notification_count > 0 ? this.#api.notifications(notification_count) : []);
+		const notifications = await this.api.datapoll().then(({ notification_count }) => notification_count > 0 ? this.api.notifications(notification_count) : []);
 		for (const notification of notifications) {
 			this.debug && console.log(notification);
 			this.emit(Events.Raw, notification);
@@ -85,7 +80,7 @@ export default class extends EventEmitter {
 			token = null;
 		}
 
-		return token !== null;
+		return token !== null
 	}
 
 	/**
@@ -102,20 +97,19 @@ export default class extends EventEmitter {
 				asr = await RequestHandler.post("auth/standard_login", {
 					login: asr.login || asr.username,
 					password: asr.password
-				}).then(res => {
-					return res.app_signed_request;
-				});
+				}).then(res => res.app_signed_request);
+			} else {
+				asr = asr.asr || asr.token;
 			}
 		}
 
 		await this.#verifyToken(asr, async user => {
-			this.#user = await this.users.fetch(user.d_name); // maybe create instance of User here instead of re-fetching
-			this.#user._update(user);
+			this.user._patch(user);
+			this.user._patch(await RequestHandler.ajax("u/" + this.user.username));
 			this.emit(Events.ClientReady);
 			this.#options.listen !== false && this.#listen();
 		});
-
-		return this;
+		return this
 	}
 
 	/**
@@ -134,9 +128,9 @@ export default class extends EventEmitter {
 			new_password: password
 		}, true);
 		return this.login({
-			username: this.#user.username,
+			username: this.user.username,
 			password
-		});
+		})
 	}
 
 	/**
@@ -144,9 +138,9 @@ export default class extends EventEmitter {
 	 * @returns {Client}
 	 */
 	logout() {
-		this.#user = null;
+		this.user = null;
 		token = null;
-		return this;
+		return this
 	}
 
 	destroy() {

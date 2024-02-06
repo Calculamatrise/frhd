@@ -1,3 +1,4 @@
+import RequestHandler from "./utils/RequestHandler.js";
 import Comment from "./structures/Comment.js";
 
 /**
@@ -8,11 +9,7 @@ import Comment from "./structures/Comment.js";
  * @returns {Promise<Comment>}
  */
 export default function(trackId, commentId, callback = r => r) {
-	return RequestHandler.post("track_comments/load_more/" + trackId + "/" + commentId).then(function(res) {
-		if (res.result !== true) {
-			throw new Error(res.msg);
-		}
-
-		return new Comment(res);
-	}).then(callback);
+	return RequestHandler.post("track_comments/load_more/" + trackId + "/" + commentId).then(res => {
+		return new Comment(Object.assign(res.track_comments[0], { track: { id: trackId } }))
+	}).then(callback)
 }

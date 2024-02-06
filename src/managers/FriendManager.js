@@ -10,10 +10,7 @@ export default class extends BaseManager {
 	 * @returns {object}
 	 */
 	async fetch(user) {
-		if (isNaN(user)) {
-			user = await getUser(user).then(u => u.id);
-		}
-
+		isNaN(user) && (user = await getUser(user).then(u => u.id));
 		user = this.cache.get(user);
 		if (user) {
 			return getUser(user.username);
@@ -28,7 +25,7 @@ export default class extends BaseManager {
 	async add(username) {
 		return RequestHandler.post("friends/send_friend_request", {
 			u_name: username
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -37,17 +34,14 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	 */
 	async accept(user) {
-		if (isNaN(user)) {
-			user = await getUser(user).then(u => u.id);
-		}
-
+		isNaN(user) && (user = await getUser(user).then(u => u.id));
 		return RequestHandler.post("friends/respond_to_friend_request", {
 			u_id: user,
 			action: 'accept'
 		}, true).then(res => {
 			// this.cache.set(user.id, user);
-			return res;
-		});
+			return res
+		})
 	}
 
 	/**
@@ -56,14 +50,11 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	 */
 	async reject(user) {
-		if (isNaN(user)) {
-			user = await getUser(user).then(u => u.id);
-		}
-
+		isNaN(user) && (user = await getUser(user).then(u => u.id));
 		return RequestHandler.post("friends/respond_to_friend_request", {
 			u_id: user,
 			action: 'reject'
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -72,13 +63,10 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	 */
 	async remove(user) {
-		if (isNaN(user)) {
-			user = await getUser(user).then(u => u.id);
-		}
-
+		isNaN(user) && (user = await getUser(user).then(u => u.id));
 		if (!user) throw new Error("INVALID_USER");
 		return RequestHandler.post("friends/remove_friend", {
 			u_id: user
-		}, true);
+		}, true)
 	}
 }

@@ -3,25 +3,23 @@ import Track from "./Track.js";
 import User from "./User.js";
 
 export default class Race {
-	code = null;
-	placement = null;
 	platform = null;
 	runTicks = 0;
 	runTime = null;
-	track = new Track();
+	trackId = null;
 	user = new User();
-	vehicle = 'MTB';
-	constructor(data, track) {
-		typeof data == 'object' && this._update(data);
-		typeof track == 'object' && this.track._update(track);
+	vehicle = null;
+	constructor(data) {
+		Object.defineProperties(this, {
+			data: { value: null, writable: true },
+			placement: { value: null, writable: true },
+			track: { value: new Track(), writable: false }
+		});
+		data instanceof Object && this._patch(data)
 	}
 
-	/**
-	 * 
-	 * @private
-	 */
-	_update(data) {
-		if (typeof data != 'object') {
+	_patch(data) {
+		if (typeof data != 'object' || data === null) {
 			console.warn("Invalid data type");
 			return;
 		}
@@ -29,35 +27,35 @@ export default class Race {
 		for (const key in data) {
 			switch (key) {
 			case 'code':
-				if (typeof data[key] == 'string') {
-					data[key] = JSON.parse(data[key]);
-				}
+				if (this.data !== null) break;
+				typeof data[key] == 'string' && (data[key] = JSON.parse(data[key]));
+				Object.defineProperty(this, 'data', { value: data[key] });
+				break;
 			case 'vehicle':
 				this[key] = data[key];
 				break;
-			case 'data': {
-				if (typeof data[key] == 'object' && data[key]['track_comments']) {
-					return this._update(data[key]['track_comments'][0]);
+			case 'data':
+				if (typeof data[key] == 'object' && data[key]['race_leaderboard']) {
+					return this._patch(data[key]['race_leaderboard'][0]);
 				}
-
-				return this._update(data[key]);
-			}
+				return this._patch(data[key]);
 			case 'desktop':
 			case 'tablet':
 				this.platform = key;
 				break;
 			case 'place':
-				this.placement = data[key];
+				if (this.placement !== null) break;
+				Object.defineProperty(this, 'placement', { value: data[key], writable: false });
 				break;
 			case 'race':
-				this._update(data[key]);
+				this._patch(data[key]);
 				break;
 			case 'run_ticks':
 				let ticks = parseInt(data[key]);
 				this.runTicks = ticks;
 				if (!this.runTime) {
 					let t = 1e3 * ticks / 30
-						, e = t % 6e4 / 1e3;
+					  , e = t % 6e4 / 1e3;
 					this.runTime = Math.floor(t / 6e4) + ':' + e.toFixed(2).padStart(5, 0);
 				}
 				break;
@@ -65,13 +63,12 @@ export default class Race {
 				this.runTime = data[key];
 				break;
 			case 'track':
-				this.track._update(data[key]);
+				this.track._patch(data[key]);
+				this.trackId = this.track.id;
 				break;
 			case 'u_id':
-				this.user.id = data[key];
-				break;
 			case 'user':
-				this.user._update(data[key]);
+				this.user._patch({ [key]: data[key] });
 				break;
 			case 'user_track_stats':
 				{

@@ -1,19 +1,10 @@
 import BaseManager from "./BaseManager.js";
-import Builder from "../utils/Builder.js";
 import RequestHandler from "../utils/RequestHandler.js";
 
 import getCategory from "../getCategory.js";
 import getTrackLeaderboard from "../getTrackLeaderboard.js";
 
 export default class extends BaseManager {
-	/**
-	 * 
-	 * @returns {Builder} instance of Builder
-	  */
-	build() {
-		return new Builder();
-	}
-
 	/**
 	 * 
 	 * @async
@@ -29,7 +20,7 @@ export default class extends BaseManager {
 
 		const entry = await this.client.api.tracks(id);
 		entry && this.cache.set(id, entry);
-		return entry;
+		return entry
 	}
 
 	/**
@@ -42,7 +33,7 @@ export default class extends BaseManager {
 	 * @param {object} [options.allowedVehicles]
 	 * @param {boolean} [options.allowedVehicles.MTB]
 	 * @param {boolean} [options.allowedVehicles.BMX]
-	 * @returns {Promise}
+	 * @returns {Promise<object?>}
 	  */
 	async post(options) {
 		if (String(title).length < 4 && String(title).length > 30) {
@@ -64,13 +55,20 @@ export default class extends BaseManager {
 				BMX: Boolean(options.allowedVehicles.BMX)
 			},
 			code
-		}, true).then((response) => {
-			if (response.result === false) {
-				throw new Error(response.msg);
-			}
+		}, true)
+	}
 
-			return response;
-		});
+	/**
+	 * Rate a track
+	 * @param {string} trackId
+	 * @param {number|boolean} rating
+	 * @returns {Promise<object?>}
+	 */
+	rate(trackId, rating) {
+		return RequestHandler.post("track_api/vote", {
+			t_id: trackId,
+			vote: Boolean(rating)
+		}, true)
 	}
 
 	/**
@@ -88,7 +86,7 @@ export default class extends BaseManager {
 			lives,
 			rfll_cst: refillCost,
 			gems
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -100,7 +98,7 @@ export default class extends BaseManager {
 	removeTrackOfTheDay(track) {
 		return RequestHandler.post("admin/removeTrackOfTheDay", {
 			t_id: track
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -110,7 +108,7 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	  */
 	feature(id) {
-		return RequestHandler.get(`/track_api/feature_track/${parseInt(id)}/1`, true);
+		return RequestHandler.get(`/track_api/feature_track/${parseInt(id)}/1`, true)
 	}
 
 	/**
@@ -120,7 +118,7 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	  */
 	unfeature(id) {
-		return RequestHandler.get(`/track_api/feature_track/${parseInt(id)}/0`, true);
+		return RequestHandler.get(`/track_api/feature_track/${parseInt(id)}/0`, true)
 	}
 
 	/**
@@ -131,7 +129,7 @@ export default class extends BaseManager {
 	 * @returns {Promise}
 	  */
 	hide(id) {
-		return RequestHandler.get("moderator/hide_track/" + parseInt(id), true);
+		return RequestHandler.get("moderator/hide_track/" + parseInt(id), true)
 	}
 
 	/**
@@ -144,7 +142,7 @@ export default class extends BaseManager {
 	hideAsAdmin(id) {
 		return RequestHandler.post("admin/hide_track", {
 			track_id: parseInt(id)
-		}, true);
+		}, true)
 	}
 
 	/**
@@ -156,7 +154,7 @@ export default class extends BaseManager {
 	 * @param {number|string} [options.startingTrackId]
 	 * @param {number|string} [options.endingTrackId]
 	 * @param {number|string} [options.timeout]
-	 * @returns {string}
+	 * @returns {Promise<string>}
 	  */
 	async rateAll(rating, { startingTrackId, endingTrackId, timeout = 0 } = {}) {
 		endingTrackId = Math.min(~~endingTrackId, await getCategory("recently-added").then(({ tracks }) => parseInt(tracks[0].slug)));
@@ -166,13 +164,11 @@ export default class extends BaseManager {
 				t_id: this.id,
 				vote: Boolean(rating)
 			}, true).then(r => console.log(trackId, r.result || r.msg)).catch(console.error);
-			if (typeof arguments[arguments.length - 1] == 'function') {
-				arguments[arguments.length - 1].call(this, trackId);
-			}
+			typeof arguments[arguments.length - 1] == 'function' && arguments[arguments.length - 1].call(this, trackId);
 			timeout && await new Promise(resolve => setTimeout(resolve, ~~timeout));
 		}
 
-		return `No more ${rating ? 'love' : 'hate'} left to spread!`;
+		return `No more ${rating ? 'love' : 'hate'} left to spread!`
 	}
 
 	/**
@@ -207,13 +203,10 @@ export default class extends BaseManager {
 					}
 				});
 			}
-
-			if (typeof arguments[arguments.length - 1] == 'function') {
-				arguments[arguments.length - 1].call(this, trackId);
-			}
+			typeof arguments[arguments.length - 1] == 'function' && arguments[arguments.length - 1].call(this, trackId);
 			timeout && await new Promise(resolve => setTimeout(resolve, ~~timeout));
 		}
 
-		return "No more cheaters left to exterminate!";
+		return "No more cheaters left to exterminate!"
 	}
 }

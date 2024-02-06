@@ -14,13 +14,7 @@ export default async function(trackId, uid, callback = r => r) {
 	return RequestHandler.post("track_api/load_races", {
 		t_id: trackId,
 		u_ids: uid
-	}).then(res => {
-		if (res.result === false) {
-			throw new Error(res.msg || "Something went wrong! Please try again later.");
-		} else if (!res.data || res.data.length < 1) {
-			throw new Error("Race not found.");
-		}
-
-		return new Race(Object.assign(res.data[0], { track: { id: trackId }}));
-	}).then(callback);
+	}).then(([race]) => {
+		return new Race(Object.assign(race, { track: { id: trackId }}))
+	}).then(callback)
 }

@@ -11,6 +11,8 @@ import User from "../structures/User.js";
 import Race from "../structures/Race.js";
 
 export default new Proxy(class {
+	static host = 'freeriderhd.com';
+
 	/**
 	 * 
 	 * @param {number|string} id 
@@ -192,7 +194,9 @@ export default new Proxy(class {
 				}
 
 				data = parseJSON(data.toString());
-				data?.result === false ? reject(data.msg) : resolve(data);
+				/page\s+not\s+found/i.test(res.app_title) && (data.result = false,
+					data.msg = 'You do not have permission to perform this action.');
+				data?.result === false ? reject(data.msg) : resolve(data.data ?? data);
 			})
 			.once('error', reject)
 			.end(contentType == "application/json" ? JSON.stringify(options.body) : (new URLSearchParams(options.body) || url.searchParams).toString());

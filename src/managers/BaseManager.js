@@ -1,16 +1,14 @@
 import LimitedMap from "../utils/LimitedMap.js";
 
 export default class {
-	#cache = new LimitedMap({ limit: 1e4 });
-	get cache() {
-		return this.#cache;
-	}
-
+	cache = new LimitedMap({ limit: 1e4 });
 	constructor(client) {
 		/**
-		 * 
+		 * The client that instantiated this Manager
+		 * @name BaseManager#client
+		 * @type {Client}
 		 * @readonly
 		 */
-		this.client = client;
+		Object.defineProperty(this, 'client', { value: client })
 	}
 }

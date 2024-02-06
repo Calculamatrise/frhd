@@ -13,22 +13,18 @@ export default class extends BaseManager {
 	async fetch(uid, { force } = {}) {
 		if (typeof uid == 'object') {
 			if (uid.hasOwn('id')) {
-				uid = parseInt(uid['id']);
+				return this.fetch(parseInt(uid.id), uid);
 			} else if (uid.hasOwn('username')) {
-				uid = uid['username'];
-			}
-
-			if (uid.hasOwn('force')) {
-				force = uid.force;
+				return this.fetch(String(uid.username), uid);
 			}
 		}
 
 		if (!force && this.cache.has(uid)) {
 			return this.cache.get(uid);
 		} else if (typeof uid == 'number') {
-			await RequestHandler.post("friends/remove_friend", { u_id: uid }, false).then(res => {
+			await RequestHandler.post("friends/remove_friend", { u_id: uid }, false).catch(err => {
 				// Response: "You are not friends with USERNAME, you cannot remove friendship."
-				const matches = /[\w-]+(?=,)/.exec(res.msg);
+				const matches = /[\w-]+(?=,)/.exec(err.message);
 				if (matches !== null) {
 					uid = matches[0];
 				}
@@ -37,7 +33,7 @@ export default class extends BaseManager {
 
 		const entry = await this.client.api.users(uid);
 		entry && this.cache.set(uid, entry);
-		return entry;
+		return entry
 	}
 
 	/**

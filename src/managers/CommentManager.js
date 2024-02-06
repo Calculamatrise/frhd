@@ -14,11 +14,10 @@ export default class extends BaseManager {
 		if (!force && this.cache.has(id)) {
 			return this.cache.get(id);
 		}
-
 		// use 'show more' to find endpoint
-		const entry = await RequestHandler.post("track_comments/load_more/" + this.client.id).then(res => new Comment(res));
+		const entry = await RequestHandler.post("track_comments/load_more/" + this.client.id).then(res => new Comment(Object.assign({ track: this.client }, res.track_comments[0])));
 		entry && this.cache.set(id, entry);
-		return entry;
+		return entry ?? null
 	}
 
 	/**

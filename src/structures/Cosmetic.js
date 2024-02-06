@@ -13,14 +13,10 @@ export default class Cosmetic {
 	title = null;
 	type = null;
 	constructor(data) {
-		typeof data == 'object' && this._update(data);
+		typeof data == 'object' && this._patch(data);
 	}
 
-	/**
-	 * 
-	 * @private
-	 */
-	_update(data) {
+	_patch(data) {
 		if (typeof data != 'object') {
 			console.warn("Invalid data type");
 			return;
@@ -62,12 +58,6 @@ export default class Cosmetic {
 			}
 		}
 	}
-
-	/**
-	 * 
-	 * @deprecated
-	 */
-	buy() {}
 
 	/**
 	 * 

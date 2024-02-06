@@ -1,40 +1,41 @@
+import BaseStructure from "./BaseStructure.js";
 import RequestHandler from "../utils/RequestHandler.js";
 import Track from "./Track.js";
 import User from "./User.js";
 
-export default class Comment {
-	id = null;
+export default class Comment extends BaseStructure {
 	message = null;
 	timeAgo = null;
 	author = new User();
-	track = new Track();
+	trackId = null;
 	constructor(data) {
-		typeof data == 'object' && this._update(data);
+		super({
+			data: { value: null, writable: true },
+			deletable: { value: null, writable: true },
+			flagged: { value: null, writable: true },
+			track: { value: new Track(), writable: false }
+		});
+		typeof data == 'object' && this._patch(data)
 	}
 
-	/**
-	 * 
-	 * @private
-	 */
-	_update(data) {
-		if (typeof data != 'object') {
+	_patch(data) {
+		if (typeof data != 'object' || data === null) {
 			console.warn("Invalid data type");
 			return;
 		}
 
+		super._patch(...arguments);
 		for (const key in data) {
 			switch(key) {
-			case 'comment':
-				this._update(data[key]);
+			case 'can_delete':
+				if (this.deletable !== null) break;
+				Object.defineProperty(this, 'deletable', { value: data[key], writable: false });
 				break;
-			case 'data': {
-				if (typeof data[key] == 'object' && data[key]['track_comments']) {
-					return this._update(data[key]['track_comments'][0]);
-				}
-
-				return this._update(data[key]);
-			}
-
+			case 'comment':
+				this._patch(data[key]);
+				break;
+			case 'data':
+				return this._patch(data[key]);
 			case 'id':
 				this[key] = data[key];
 				break;
@@ -45,15 +46,11 @@ export default class Comment {
 				this.timeAgo = data[key];
 				break;
 			case 'track':
-				if (typeof data[key] == 'object') {
-					this.track._update(data[key]);
-					break;
-				}
-
-				this.track.id = data[key];
+				this.track._patch(typeof data[key] == 'object' ? data[key] : { id: data[key] });
+				this.trackId = this.track.id;
 				break;
 			case 'user':
-				this.author._update(data[key]);
+				this.author._patch(data[key]);
 				break;
 			default:
 				this.hasOwnProperty(key) && (this[key] = data[key]);
@@ -77,10 +74,10 @@ export default class Comment {
 		return new Promise((resolve, reject) => {
 			setTimeout(() => {
 				RequestHandler.get(`track_comments/delete/${this.track.id}/${this.id}`, true)
-				.then(resolve)
-				.catch(reject);
-			}, ~~timeout);
-		});
+					.then(resolve)
+					.catch(reject)
+			}, ~~timeout)
+		})
 	}
 
 	static create(data) {
@@ -89,7 +86,7 @@ export default class Comment {
 		}
 
 		const comment = new Comment();
-		comment._update(data);
+		comment._patch(data);
 		return comment;
 	}
 }

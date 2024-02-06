@@ -27,7 +27,7 @@ export default class extends BaseClient {
         return RequestHandler.post("admin/community_classic_signup", {
             classic_username: username,
             real_email: email
-        }, true).then(callback);
+        }, true).then(callback)
     }
 
     /**
@@ -44,7 +44,7 @@ export default class extends BaseClient {
             classic_existing_email: email,
             classic_transfer_to_username: username,
             classic_secondary_email: secondaryEmail
-        }, true).then(callback);
+        }, true).then(callback)
     }
 
     /**
@@ -61,7 +61,7 @@ export default class extends BaseClient {
             platform,
             coins,
             gems
-        }, true).then(callback);
+        }, true).then(callback)
     }
 
     /**
@@ -73,6 +73,6 @@ export default class extends BaseClient {
     async redeemCoupon(code, callback = r => r) {
         return RequestHandler.post("store/redeemCouponCode", {
             coupon_code: code
-        }, true).then(callback);
+        }, true).then(callback)
     }
 }
