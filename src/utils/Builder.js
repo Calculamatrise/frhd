@@ -103,8 +103,8 @@ export default class {
 	}
 
 	#cache = {}
-	#physics = new Set();
-	#scenery = new Set();
+	#physics = [];
+	#scenery = [];
 	#powerups = {
 		A: new Set(),
 		B: new Set(),
@@ -121,7 +121,7 @@ export default class {
 			4: new Set()
 		}
 	}
-	#segment = []
+	#segment = [];
 	get #lines() {
 		return this.strokeStyle.match(/(#000|black|rgba?\((0(,(\s+)?)?){3,4}\))+/gi) ? this.#physics : this.#scenery;
 	}
@@ -136,30 +136,30 @@ export default class {
 		}
 
 		value = value.split(/\u0023/g).map(t => t.split(/\u002C+/g).map(t => t.split(/\s+/g)));
-		this.#physics = new Set(value[0] ? value[0].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : []);
-		this.#scenery = new Set(value[1] ? value[1].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : []);
+		this.#physics = Array.from(value[0] ? value[0].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : []);
+		this.#scenery = Array.from(value[1] ? value[1].map(t => t.map(t => parseInt(t, 32)).filter(t => !isNaN(t))) : []);
 		for (const powerup of value[2]) {
 			const [type] = powerup;
 			switch(type) {
-				case 'V':
-					this.#powerups.vehicles[powerup[3]]?.add(powerup.slice(1).map(t => parseInt(t, 32)));
-					break;
-				default:
-					this.#powerups[type]?.add(powerup.slice(1).map(t => parseInt(t, 32)));
+			case 'V':
+				this.#powerups.vehicles[powerup[3]]?.add(powerup.slice(1).map(t => parseInt(t, 32)));
+				break;
+			default:
+				this.#powerups[type]?.add(powerup.slice(1).map(t => parseInt(t, 32)));
 			}
 		}
 	}
 
 	/**
-		* 
-		* @param {number|string} x position x
-		* @param {number|string} y position y
-		* @param {number|string} radius radius of the arc
-		* @param {number|string} startAngle angle in radians
-		* @param {number|string} endAngle angle in radians
-		* @param {boolean} counterClockwise decide the direction at which the arc is drawn
-		* @returns {Builder} instance of Builder.
-		*/
+	 * 
+	 * @param {number|string} x position x
+	 * @param {number|string} y position y
+	 * @param {number|string} radius radius of the arc
+	 * @param {number|string} startAngle angle in radians
+	 * @param {number|string} endAngle angle in radians
+	 * @param {boolean} counterClockwise decide the direction at which the arc is drawn
+	 * @returns {this}
+	 */
 	arc(x, y, radius, startAngle, endAngle, counterClockwise = false) {
 		if (Array.isArray(arguments[0])) {
 			for (const argument of arguments) {
@@ -200,18 +200,18 @@ export default class {
 
 		this.#position.x = this.#translation.x + points.at(-2);
 		this.#position.y = this.#translation.y + points.at(-1);
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @param {number|string} cpx position x of the control point
-		* @param {number|string} cpy position y of the control point
-		* @param {number|string} x position x of the end point
-		* @param {number|string} y position y of the end point
-		* @param {number|string} radius radius of the arc
-		* @returns {Builder} instance of Builder.
-		*/
+	 * 
+	 * @param {number|string} cpx position x of the control point
+	 * @param {number|string} cpy position y of the control point
+	 * @param {number|string} x position x of the end point
+	 * @param {number|string} y position y of the end point
+	 * @param {number|string} radius radius of the arc
+	 * @returns {Builder} instance of Builder.
+	 */
 	arcTo(cpx, cpy, x, y, radius) {
 		if (Array.isArray(arguments[0])) {
 			for (const argument of arguments) {
@@ -232,14 +232,13 @@ export default class {
 				Math.pow((1 - i), 2) * this.#position.y + 2 * (1 - i) * i * parseFloat(cpy) + Math.pow(i, 2) * (y + (parseFloat(cpy) - parseFloat(y)) + parseFloat(radius))
 			]);
 		}
-
-		return this;
+		return this
 	}
 	
 	beginPath() {
 		this.#position.x = this.#translation.x;
 		this.#position.y = this.#translation.y;
-		return this;
+		return this
 	}
 
 	/**
@@ -279,8 +278,7 @@ export default class {
 				((p3.y - this.#position.y - cY - bY) * Math.pow(i, 3)) + (bY * Math.pow(i, 2)) + (cY * i) + this.#position.y
 			);
 		}
-
-		return this;
+		return this
 	}
 
 	clear() {
@@ -295,17 +293,16 @@ export default class {
 				this.#powerups[powerup].clear();
 			}
 		}
-		
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @param {number|string} x rectangle clip position along the x-axis
-		* @param {number|string} y rectangle clip position along the y-axis
-		* @param {number|string} width clip rectangle width
-		* @param {number|string} height clip rectangle height
-		*/
+	 * 
+	 * @param {number|string} x rectangle clip position along the x-axis
+	 * @param {number|string} y rectangle clip position along the y-axis
+	 * @param {number|string} width clip rectangle width
+	 * @param {number|string} height clip rectangle height
+	 */
 	clearRect(x, y, width, height) {
 		if (width < 0 || height < 0) {
 			throw new Error("Width and Height cannot be negative!");
@@ -313,7 +310,7 @@ export default class {
 
 		for (const line of this.#physics) {
 			if (line[0] > x && line[1] > y && line[2] < x + width && line[3] < y + height) {
-				this.#physics.delete(line);
+				this.#physics.delete(line)
 			}
 		}
 	}
@@ -330,25 +327,18 @@ export default class {
 			}
 		}
 
-		this.lineTo(...this.#segment);
-		return this;
+		return this.lineTo(...this.#segment)
 	}
 
 	/**
-		* 
-		* @param {number} width the width to give to the new ImageData object.
-		* @param {number} height the height to give to the new ImageData object.
-		* @returns {object} ImageData object.
-		*/
+	 * 
+	 * @param {number} width the width to give to the new ImageData object.
+	 * @param {number} height the height to give to the new ImageData object.
+	 * @returns {object} ImageData object.
+	 */
 	createImageData(width, height) {
 		if (typeof width == "object" && height === void 0) {
-			return {
-				data: new Uint8ClampedArray(Array.from({
-					length: width.width * width.height * 4
-				}), () => 0),
-				width: width.width,
-				height: width.height
-			}
+			return this.createImageData(width.width, width.height);
 		}
 
 		return {
@@ -361,34 +351,34 @@ export default class {
 	}
 
 	/**
-		* 
-		* @param {Image} image instance of Image constructor
-		* @param {number|string} sx source image position along the x-axis
-		* @param {number|string} sy source image position along the y-axis
-		* @param {number|string} sWidth source image width
-		* @param {number|string} sHeight source image height
-		* @param {number|string} dx image along the x-axis on the canvas
-		* @param {number|string} dy image along the y-axis on the canvas
-		* @param {number|string} dWidth image width on the canvas
-		* @param {number|string} dHeight image height on the canvas
-		* @returns {Builder} instance of Builder
-		*/
-	drawImage(image, sx = 0, sy = 0, sWidth = image.width, sHeight = image.height, dx = 0, dy = 0, dWidth = sWidth, dHeight = sHeight) {
+	 * 
+	 * @param {Image} image instance of Image constructor
+	 * @param {number|string} sx source image position along the x-axis
+	 * @param {number|string} sy source image position along the y-axis
+	 * @param {number|string} [sWidth] source image width
+	 * @param {number|string} [sHeight] source image height
+	 * @param {number|string} [dx] image along the x-axis on the canvas
+	 * @param {number|string} [dy] image along the y-axis on the canvas
+	 * @param {number|string} [dWidth] image width on the canvas
+	 * @param {number|string} [dHeight] image height on the canvas
+	 * @returns {Builder} instance of Builder
+	 */
+	drawImage(image, sx = 0, sy = 0, sWidth, sHeight, dx = 0, dy = 0, dWidth = sWidth, dHeight = sHeight) {
 		if (typeof image != 'object') {
 			throw new TypeError("Invalid Image");
 		}
 
-		let pixels = new Uint8ClampedArray(image.data.map(function(item, index, data) {
+		let pixels = new Uint8ClampedArray((image.data || image).map((item, index, data) => {
 			if (index % 4 === 0) {
 				let average = item * .2 + data[index + 1] * .7 + data[index + 2] * .1;
 				return average <= 85 ? 0 : average <= 170 ? 170 : 255;
 			}
 
-			return false;
+			return false
 		}).filter((_, index) => index % 4 === 0));
 
-		let width = sWidth;
-		let height = sHeight;
+		let width = sWidth || image.width;
+		let height = sHeight || image.height;
 		if (arguments.length > 5) {
 			pixels = pixels.slice(image.width * +sy, image.width * +sHeight);
 			pixels = pixels.filter((item, index) => index % image.width >= +sx && index % image.width < +sWidth);
@@ -415,27 +405,26 @@ export default class {
 					}
 				}
 
-				let type = pixels[e] == 0 ? 'physics' : 'scenery';
-				this['#' + type].add([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
+				let type = pixels[e] == 0 ? this.#physics : this.#scenery;
+				type.push([Math.floor(ix), Math.floor(iy), Math.floor(dxt), Math.floor(iy)]);
 				n = arguments.length > 5 ? (dHeight / height) * 2 : 2;
 				while(n > 0) {
-					this['#' + type].add([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
+					type.push([Math.floor(ix), Math.floor(iy + n), Math.floor(dxt), Math.floor(iy + n)]);
 					n -= 2;
 				}
 			}
 		}
-
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @param {number|string} x 
-		* @param {number|string} y 
-		* @param {number|string} radiusX 
-		* @param {number|string} radiusY 
-		* @param {number|string} rotation 
-		*/
+	 * 
+	 * @param {number|string} x 
+	 * @param {number|string} y 
+	 * @param {number|string} radiusX 
+	 * @param {number|string} radiusY 
+	 * @param {number|string} rotation 
+	 */
 	ellipse(x, y, radiusX, radiusY, rotation) {
 		let old = {};
 		for (let i = 0; i < 360; i += Math.max(360 / Math.sqrt(radiusX ** 2 + radiusY ** 2), 2)) {
@@ -453,23 +442,23 @@ export default class {
 			]);
 		}
 
-		this.lineTo([
+		return this.lineTo([
 			old.x,
 			old.y
-		]);
+		])
 	}
 
 	fill() {
-		return this.#filler.add(...this.#segment.splice(0)), this;
+		return this.#filler.push(...this.#segment.splice(0)), this;
 	}
 
 	/**
-		* 
-		* @param {number|string} x position of the rectangle along the x-axis
-		* @param {number|string} y position of the rectangle along the y-axis
-		* @param {number|string} width width of the rectangle
-		* @param {number|string} height height of the rectangle
-		*/
+	 * 
+	 * @param {number|string} x position of the rectangle along the x-axis
+	 * @param {number|string} y position of the rectangle along the y-axis
+	 * @param {number|string} width width of the rectangle
+	 * @param {number|string} height height of the rectangle
+	 */
 	fillRect(x, y, width, height) {
 		for (const argument of arguments) {
 			if (isNaN(+argument)) {
@@ -478,23 +467,22 @@ export default class {
 		}
 
 		for (let i = y; i < y + height; i++) {
-			this.#filler.add([
+			this.#filler.push([
 				this.#translation.x + x, this.#translation.y + i,
 				this.#translation.x + x + width, this.#translation.y + i
 			]);
 		}
-
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @param {number|string} x 
-		* @param {number|string} y 
-		* @param {number|string} width 
-		* @param {number|string} height 
-		* @returns {string} 
-		*/
+	 * 
+	 * @param {number|string} x 
+	 * @param {number|string} y 
+	 * @param {number|string} width 
+	 * @param {number|string} height 
+	 * @returns {string} 
+	 */
 	getImageData(x, y, width, height) {
 		/* const array = Array.from({ length: width * height * 4 }, () => 255);
 
@@ -550,8 +538,7 @@ export default class {
 		const data = new Uint8ClampedArray(array);
 		console.log(data, Buffer.from(data).toString("base64"))
 		*/
-
-		return this.code;
+		return this.code
 	}
 
 	getLineDash() {
@@ -578,21 +565,21 @@ export default class {
 			}
 		}
 
-		this.#lines.add([
+		this.#lines.push([
 			this.#position.x, this.#position.y,
 			parseFloat(x), parseFloat(y)
 		]);
-		
+
 		this.#position.x = this.#translation.x + parseFloat(x);
 		this.#position.y = this.#translation.y + parseFloat(y);
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @param {string} text 
-		* @returns {object} properties of text.
-		*/
+	 * 
+	 * @param {string} text 
+	 * @returns {object} properties of text.
+	 */
 	measureText(text) {
 		return {
 			width: text.length * parseFloat(this.font),
@@ -603,11 +590,11 @@ export default class {
 	}
 
 	/**
-		* 
-		* @param {number|string} x position x of the starting point
-		* @param {number|string} y position y of the starting point
-		* @returns {Builder} instance of Builder.
-		*/
+	 * 
+	 * @param {number|string} x position x of the starting point
+	 * @param {number|string} y position y of the starting point
+	 * @returns {Builder} instance of Builder.
+	 */
 	moveTo(x, y) {
 		for (const argument of arguments) {
 			if (isNaN(parseFloat(argument))) {
@@ -617,31 +604,31 @@ export default class {
 
 		this.#position.x = this.#translation.x + parseFloat(x);
 		this.#position.y = this.#translation.y + parseFloat(y);
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @param {object} data an ImageData object containing the array of pixel values.
-		* @param {number|string} dx horizontal position (x coordinate) at which to place the image data in the destination canvas.
-		* @param {number|string} dy vertical position (y coordinate) at which to place the image data in the destination canvas.
-		* @param {number|string} dirtyX horizontal position (x coordinate) of the top-left corner from which the image data will be extracted.
-		* @param {number|string} dirtyY vertical position (y coordinate) of the top-left corner from which the image data will be extracted.
-		* @param {number|string} dirtyWidth width of the rectangle to be drawn.
-		* @param {number|string} dirtyHeight height of the rectangle to be drawn.
-		*/
+	 * 
+	 * @param {object} data an ImageData object containing the array of pixel values.
+	 * @param {number|string} dx horizontal position (x coordinate) at which to place the image data in the destination canvas.
+	 * @param {number|string} dy vertical position (y coordinate) at which to place the image data in the destination canvas.
+	 * @param {number|string} dirtyX horizontal position (x coordinate) of the top-left corner from which the image data will be extracted.
+	 * @param {number|string} dirtyY vertical position (y coordinate) of the top-left corner from which the image data will be extracted.
+	 * @param {number|string} dirtyWidth width of the rectangle to be drawn.
+	 * @param {number|string} dirtyHeight height of the rectangle to be drawn.
+	 */
 	putImageData(data, dx = 0, dy = 0, dirtyX = 0, dirtyY = 0, dirtyWidth = data.width, dirtyHeight = data.height) {
 		return this.drawImage(data, dirtyX, dirtyY, dirtyWidth, dirtyHeight, dx, dy);
 	}
 
 	/**
-		* 
-		* @param {string|number} p1x position x of the control point
-		* @param {string|number} p1y position y of the control point
-		* @param {string|number} p2x position x of the end point
-		* @param {string|number} p2y position y of the end point
-		* @returns {Builder} instance of Builder.
-		*/
+	 * 
+	 * @param {string|number} p1x position x of the control point
+	 * @param {string|number} p1y position y of the control point
+	 * @param {string|number} p2x position x of the end point
+	 * @param {string|number} p2y position y of the end point
+	 * @returns {Builder} instance of Builder.
+	 */
 	quadraticCurveTo(p1x, p1y, p2x, p2y) {
 		if (Array.isArray(arguments[0])) {
 			for (const argument of arguments) {
@@ -662,18 +649,17 @@ export default class {
 				Math.pow((1 - i), 2) * this.#position.y + 2 * (1 - i) * i * parseFloat(p1y) + Math.pow(i, 2) * parseFloat(p2y)
 			);
 		}
-
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @param {number|string} x 
-		* @param {number|string} y 
-		* @param {number|string} width 
-		* @param {number|string} height 
-		* @returns {Builder} instance of Builder.
-		*/
+	 * 
+	 * @param {number|string} x 
+	 * @param {number|string} y 
+	 * @param {number|string} width 
+	 * @param {number|string} height 
+	 * @returns {Builder} instance of Builder.
+	 */
 	rect(x, y, width, height) {
 		for (const argument of arguments) {
 			if (isNaN(+argument)) {
@@ -681,15 +667,14 @@ export default class {
 			}
 		}
 
-		this.#lines.add([
+		this.#lines.push([
 			this.#translation.x + x, this.#translation.y + y,
 			this.#translation.x + x + width, this.#translation.y + y,
 			this.#translation.x + x + width, this.#translation.y + y + height,
 			this.#translation.x + x, this.#translation.y + y + height,
 			this.#translation.x + x, this.#translation.y + y
 		]);
-		
-		return this;
+		return this
 	}
 
 	restore() {
@@ -699,10 +684,8 @@ export default class {
 				this.#position.y = this.#cache[property].y
 				continue;
 			}
-			
-			if (this.#cache.hasOwnProperty(property)) {
-				this[property] = this.#cache[property];
-			}
+
+			this.#cache.hasOwnProperty(property) && (this[property] = this.#cache[property]);
 		}
 	}
 
@@ -730,24 +713,23 @@ export default class {
 		for (const t in this.#powerups) {
 			for(const e in this.#powerups[t]) {
 				switch(t) {
-					case 'vehicles':
-						for (const i in this.#powerups[t][e]) {
-							this.#powerups[t][e][i][0] = this.#powerups[t][e][i][0] * Math.cos(x) + this.#powerups[t][e][i][1] * Math.sin(x),
-							this.#powerups[t][e][i][1] = this.#powerups[t][e][i][1] * Math.cos(x) - this.#powerups[t][e][i][0] * Math.sin(x);
-						}
-						break;
-					case 'W':
-						this.#powerups[t][e][2] = this.#powerups[t][e][2] * Math.cos(x) + this.#powerups[t][e][3] * Math.sin(x),
-						this.#powerups[t][e][3] = this.#powerups[t][e][3] * Math.cos(x) - this.#powerups[t][e][2] * Math.sin(x);
-					default:
-						this.#powerups[t][e][0] = this.#powerups[t][e][0] * Math.cos(x) + this.#powerups[t][e][1] * Math.sin(x),
-						this.#powerups[t][e][1] = this.#powerups[t][e][1] * Math.cos(x) - this.#powerups[t][e][0] * Math.sin(x);
-						/^(B|G)$/i.test(t) && (this.#powerups[t][e][2] += rotationFactor);
+				case 'vehicles':
+					for (const i in this.#powerups[t][e]) {
+						this.#powerups[t][e][i][0] = this.#powerups[t][e][i][0] * Math.cos(x) + this.#powerups[t][e][i][1] * Math.sin(x),
+						this.#powerups[t][e][i][1] = this.#powerups[t][e][i][1] * Math.cos(x) - this.#powerups[t][e][i][0] * Math.sin(x);
+					}
+					break;
+				case 'W':
+					this.#powerups[t][e][2] = this.#powerups[t][e][2] * Math.cos(x) + this.#powerups[t][e][3] * Math.sin(x),
+					this.#powerups[t][e][3] = this.#powerups[t][e][3] * Math.cos(x) - this.#powerups[t][e][2] * Math.sin(x);
+				default:
+					this.#powerups[t][e][0] = this.#powerups[t][e][0] * Math.cos(x) + this.#powerups[t][e][1] * Math.sin(x),
+					this.#powerups[t][e][1] = this.#powerups[t][e][1] * Math.cos(x) - this.#powerups[t][e][0] * Math.sin(x);
+					/^(B|G)$/i.test(t) && (this.#powerups[t][e][2] += rotationFactor);
 				}
 			}
 		}
-		
-		return this;
+		return this
 	}
 
 	save() {
@@ -775,38 +757,37 @@ export default class {
 		for (const t in this.#powerups) {
 			for(const e in this.#powerups[t]) {
 				switch(t) {
-					case 'vehicles':
-						for (const i in this.#powerups[t][e]) {
-							this.#powerups[t][e][i][0] += this.#powerups[t][e][i][0] * x;
-							this.#powerups[t][e][i][1] += this.#powerups[t][e][i][1] * y;
-						}
-						break;
-					case 'W':
-						this.#powerups[t][e][2] += this.#powerups[t][e][2] * x;
-						this.#powerups[t][e][3] += this.#powerups[t][e][3] * y;
-					default:
-						this.#powerups[t][e][0] += this.#powerups[t][e][0] * x;
-						this.#powerups[t][e][1] += this.#powerups[t][e][1] * y;
+				case 'vehicles':
+					for (const i in this.#powerups[t][e]) {
+						this.#powerups[t][e][i][0] += this.#powerups[t][e][i][0] * x;
+						this.#powerups[t][e][i][1] += this.#powerups[t][e][i][1] * y;
+					}
+					break;
+				case 'W':
+					this.#powerups[t][e][2] += this.#powerups[t][e][2] * x;
+					this.#powerups[t][e][3] += this.#powerups[t][e][3] * y;
+				default:
+					this.#powerups[t][e][0] += this.#powerups[t][e][0] * x;
+					this.#powerups[t][e][1] += this.#powerups[t][e][1] * y;
 				}
 			}
 		}
-
-		return this;
+		return this
 	}
 
 	setLineDash(...args) {
-		this.lineDash = args.join(" ");
+		this.lineDash = args.join(" ")
 	}
 
 	/**
-		* 
-		* @deprecated this method may be removed in the near future
-		* @param {number|string} x position x of the starting point
-		* @param {number|string} y position y of the starting point
-		* @param {number|string} x2 position x of the end point
-		* @param {number|string} y2 position y of the end point
-		* @returns {Builder} instance of Builder.
-		*/
+	 * 
+	 * @deprecated this method may be removed in the near future
+	 * @param {number|string} x position x of the starting point
+	 * @param {number|string} y position y of the starting point
+	 * @param {number|string} x2 position x of the end point
+	 * @param {number|string} y2 position y of the end point
+	 * @returns {Builder} instance of Builder.
+	 */
 	strokeLine(x, y, x2, y2) {
 		if (Array.isArray(arguments[0])) {
 			for (const argument of arguments) {
@@ -821,22 +802,21 @@ export default class {
 			}
 		}
 
-		this.#lines.add([
+		this.#lines.push([
 			parseFloat(x), parseFloat(y),
 			parseFloat(x2), parseFloat(y2)
 		]);
-
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @param {number|string} x 
-		* @param {number|string} y 
-		* @param {number|string} width 
-		* @param {number|string} height 
-		* @returns {Builder} instance of Builder.
-		*/
+	 * 
+	 * @param {number|string} x 
+	 * @param {number|string} y 
+	 * @param {number|string} width 
+	 * @param {number|string} height 
+	 * @returns {Builder} instance of Builder.
+	 */
 	strokeRect(x, y, width, height) {
 		for (const argument of arguments) {
 			if (isNaN(+argument)) {
@@ -844,27 +824,25 @@ export default class {
 			}
 		}
 
-		this.#lines.add([
+		this.#lines.push([
 			this.#translation.x + x, this.#translation.y + y,
 			this.#translation.x + x + width, this.#translation.y + y,
 			this.#translation.x + x + width, this.#translation.y + y + height,
 			this.#translation.x + x, this.#translation.y + y + height,
 			this.#translation.x + x, this.#translation.y + y
 		]);
-		
-		return this;
+		return this
 	}
 
 	/**
-		* 
-		* @throws this method is incomplete.
-		* @param {string} content 
-		* @param {number|string} x 
-		* @param {number|string} y 
-		*/
+	 * 
+	 * @throws this method is incomplete.
+	 * @param {string} content 
+	 * @param {number|string} x 
+	 * @param {number|string} y 
+	 */
 	strokeText(content, x, y) {
 		content = content.toUpperCase().split(/\n/g);
-
 		this.beginPath();
 		content.forEach((line, offset) => {
 			for (const char in line) {
@@ -873,62 +851,61 @@ export default class {
 				}
 			}
 		});
-
-		return this;
+		return this
 	}
 
 	translate(x = 0, y = 0) {
 		this.#translation.x = ~~x;
 		this.#translation.y = ~~y;
-		return this;
+		return this
 	}
-	
+
 	star(x, y) {
-		return this.#powerups['T'].add([x, y]), this;
+		return this.#powerups['T'].add([x, y]), this
 	}
 
 	boost(x, y, angle) {
-		return this.#powerups['B'].add([x, y, angle]), this;
+		return this.#powerups['B'].add([x, y, angle]), this
 	}
 
 	gravity(x, y, angle) {
-		return this.#powerups['G'].add([x, y, angle]), this;
+		return this.#powerups['G'].add([x, y, angle]), this
 	}
 
 	slowmo(x, y) {
-		return this.#powerups['S'].add([x, y]), this;
+		return this.#powerups['S'].add([x, y]), this
 	}
 
 	bomb(x, y) {
-		return this.#powerups['O'].add([x, y]), this;
+		return this.#powerups['O'].add([x, y]), this
 	}
 
 	checkpoint(x, y) {
-		return this.#powerups['C'].add([x, y]), this;
+		return this.#powerups['C'].add([x, y]), this
 	}
 
 	antigravity(x, y) {
-		return this.#powerups['A'].add([x, y]), this;
+		return this.#powerups['A'].add([x, y]), this
 	}
 
 	teleport(x, y, ex, ey) {
-		return this.#powerups['W'].add([x, y, ex, ey]), this;
+		return this.#powerups['W'].add([x, y, ex, ey]), this
 	}
 
 	heli(x, y, duration = 10) {
-		return this.#powerups.vehicles[1].add([x, y, 1, duration]), this;
+		return this.#powerups.vehicles[1].add([x, y, 1, duration]), this
 	}
 
 	truck(x, y, duration = 10) {
-		return this.#powerups.vehicles[2].add([x, y, 2, duration]), this;
+		return this.#powerups.vehicles[2].add([x, y, 2, duration]), this
 	}
 
 	balloon(x, y, duration = 10) {
-		return this.#powerups.vehicles[3].add([x, y, 3, duration]), this;
+		return this.#powerups.vehicles[3].add([x, y, 3, duration]), this
 	}
 
 	blob(x, y, duration = 10) {
-		return this.#powerups.vehicles[4].add([x, y, 4, duration]), this;
+		return this.#powerups.vehicles[4].add([x, y, 4, duration]), this
 	}
 
 	toString() {
@@ -946,20 +923,19 @@ export default class {
 		parts.push([]);
 		for (const t in this.#powerups) {
 			switch(t) {
-				case 'vehicles':
-					for (const e in this.#powerups[t]) {
-						for (const i of this.#powerups[t][e]) {
-							parts.at(-1).push(`V ${i.map(t => t.toString(32)).join(' ')}`);
-						}
+			case 'vehicles':
+				for (const e in this.#powerups[t]) {
+					for (const i of this.#powerups[t][e]) {
+						parts.at(-1).push(`V ${i.map(t => t.toString(32)).join(' ')}`);
 					}
-					break;
-				default:
-					for (const e of this.#powerups[t]) {
-						parts.at(-1).push(`${t} ${e.map(t => t.toString(32)).join(' ')}`);
-					}
+				}
+				break;
+			default:
+				for (const e of this.#powerups[t]) {
+					parts.at(-1).push(`${t} ${e.map(t => t.toString(32)).join(' ')}`);
+				}
 			}
 		}
-
-		return parts.map(t => t.join(',')).join('#');
+		return parts.map(t => t.join(',')).join('#')
 	}
 }

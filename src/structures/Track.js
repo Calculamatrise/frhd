@@ -8,6 +8,7 @@ import User from "./User.js";
 
 export default class Track extends BaseStructure {
 	#cdn = null;
+	#leaderboard = null;
 	allowedVehicles = new Set();
 	author = new User();
 	comments = new CommentManager(this);
@@ -105,12 +106,11 @@ export default class Track extends BaseStructure {
 			case 'vehicle':
 				this.defaultVehicle = data[key];
 				break;
-			case 'vehicles': {
+			case 'vehicles':
 				for (const vehicle of data[key]) {
 					this.allowedVehicles.add(vehicle);
 				}
 				break;
-			}
 			case 'track_comments':
 				// not sure whether this will be necessary
 				for (const commet of data[key].map(comment => new Comment(Object.assign({}, data, comment)))) {
@@ -145,29 +145,27 @@ export default class Track extends BaseStructure {
 						this.stats.averageRating = data[key][property];
 					}
 				}
-				break;
-			default:
-				this.hasOwnProperty(key) && (this[key] = data[key]);
 			}
 		}
 	}
 
 	/**
-	 * 
-	 * @returns {Promise<Array>}
+	 * Fetch leaderboard
+	 * @returns {Promise<Array<Race>>}
 	 */
-	async getLeaderboard() {
+	async fetchLeaderboard({ force } = {}) {
+		if (!force && this.#leaderboard) {
+			return this.#leaderboard;
+		}
 		return RequestHandler.post("track_api/load_leaderboard", {
 			t_id: this.id
 		}).then(res => {
-			return res.track_leaderboard.map(data => {
-				return new Race(data)
-			})
+			return this.#leaderboard = res.track_leaderboard.map(data => new Race(data))
 		})
 	}
 
 	/**
-	 * 
+	 * Send a track challenge
 	 * @param {Array} users 
 	 * @param {String} message
 	 * @returns {Promise}

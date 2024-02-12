@@ -149,10 +149,7 @@ export default class User extends BaseStructure {
 				break;
 			}
 			case 'user_verify_reminder':
-				this.verifiedEmail = data[key];
-				break;
-			default:
-				this.hasOwnProperty(key) && (this[key] = data[key]);
+				this.verifiedEmail = data[key]
 			}
 		}
 	}

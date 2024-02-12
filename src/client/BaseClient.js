@@ -62,7 +62,7 @@ export default class extends EventEmitter {
 			}
 		}
 
-		setTimeout(this.#listen.bind(this), this.#options.interval);
+		setTimeout(this.#listen.bind(this), this.#options.interval)
 	}
 
 	async #verifyToken(value, callback) {

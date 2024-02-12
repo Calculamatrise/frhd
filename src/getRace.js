@@ -14,7 +14,5 @@ export default async function(trackId, uid, callback = r => r) {
 	return RequestHandler.post("track_api/load_races", {
 		t_id: trackId,
 		u_ids: uid
-	}).then(([race]) => {
-		return new Race(Object.assign(race, { track: { id: trackId }}))
-	}).then(callback)
+	}).then(([race]) => new Race(Object.assign(race, { track: { id: trackId }}))).then(callback)
 }

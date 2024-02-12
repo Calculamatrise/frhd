@@ -50,10 +50,7 @@ export default class Comment extends BaseStructure {
 				this.trackId = this.track.id;
 				break;
 			case 'user':
-				this.author._patch(data[key]);
-				break;
-			default:
-				this.hasOwnProperty(key) && (this[key] = data[key]);
+				this.author._patch(data[key])
 			}
 		}
 	}
@@ -78,15 +75,5 @@ export default class Comment extends BaseStructure {
 					.catch(reject)
 			}, ~~timeout)
 		})
-	}
-
-	static create(data) {
-		if (typeof data != "object") {
-			throw new TypeError("INVALID_DATA_TYPE");
-		}
-
-		const comment = new Comment();
-		comment._patch(data);
-		return comment;
 	}
 }

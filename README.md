@@ -124,7 +124,7 @@ getUser("Guest", /* Callback Option */ data => console.log(data)).then(data => c
 Expected Output:
 
 ```ts
-{
+interface User {
 	admin: boolean | null,
 	classic: boolean,
 	cosmetics: CosmeticManager,
@@ -174,7 +174,7 @@ getTrack(1001, /* Callback Option */ data => console.log(data)).then(data => con
 Expected Output:
 
 ```ts
-{
+interface Track {
 	allowedVehicles: Array<string>,
 	author: User,
 	comments: CommentManager<Comment>,
