@@ -45,7 +45,7 @@ export default class extends EventEmitter {
 			}
 		}
 
-		Object.defineProperty(this, 'api', { value: new RequestHandler(), writable: false })
+		Object.defineProperty(this, 'api', { value: new RequestHandler() })
 	}
 
 	async #listen() {
@@ -65,22 +65,16 @@ export default class extends EventEmitter {
 		setTimeout(this.#listen.bind(this), this.#options.interval)
 	}
 
-	async #verifyToken(value, callback) {
-		if (value !== null) {
-			await RequestHandler.ajax("account/settings?app_signed_request=" + value).then(async res => {
-				if ('user' in res) {
-					token = value;
-					typeof callback == 'function' && await callback(res.user);
-					return true;
-				}
-
+	#verifyToken(value, cb) {
+		return RequestHandler.ajax("account/settings?app_signed_request=" + value).then(({ user }) => {
+			if (!user) {
 				throw new Error("Invalid token!");
-			});
-		} else {
-			token = null;
-		}
+			}
 
-		return token !== null
+			token = value;
+			typeof cb == 'function' && cb(user);
+			return user
+		})
 	}
 
 	/**
@@ -114,7 +108,7 @@ export default class extends EventEmitter {
 
 	/**
 	 * 
-	 * @param {string} password
+	 * @param {string} password "refresh token"
 	 * @returns {Promise<Client>}
 	 */
 	async refreshToken(password) {
@@ -133,17 +127,9 @@ export default class extends EventEmitter {
 		})
 	}
 
-	/**
-	 * 
-	 * @returns {Client}
-	 */
-	logout() {
+	destroy() {
 		this.user = null;
 		token = null;
 		return this
-	}
-
-	destroy() {
-		this.logout()
 	}
 }

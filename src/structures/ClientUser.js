@@ -11,10 +11,6 @@ export default class ClientUser extends User {
 		data instanceof Object && this._patch(data)
 	}
 
-	/**
-	 * 
-	 * @private
-	 */
 	_patch(data) {
 		if (typeof data != 'object' || data === null) {
 			console.warn("Invalid data type");

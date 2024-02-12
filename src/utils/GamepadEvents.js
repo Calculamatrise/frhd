@@ -11,10 +11,10 @@
  * @type {GamepadEvents}
  * @ignore
  */
- export default {
-    Complete: 'complete',
-    KeyDown: 'keyDown',
-    KeyUp: 'keyUp',
-    Restart: 'restart',
-    Tick: 'tick'
+export default {
+	Complete: 'complete',
+	KeyDown: 'keyDown',
+	KeyUp: 'keyUp',
+	Restart: 'restart',
+	Tick: 'tick'
 }

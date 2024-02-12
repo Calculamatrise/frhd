@@ -163,11 +163,9 @@ export default new Proxy(class {
 				if (matches !== null) {
 					return Promise.resolve(`data:${contentType}, ` + body.toString(matches[0]));
 				}
-
-				return Promise.resolve(body);
+				return Promise.resolve(body)
 			}
-
-			return Promise.resolve(parseJSON(body.toString()));
+			return Promise.resolve(parseJSON(body.toString()))
 		}
 
 		return new Promise((resolve, reject) => {
@@ -199,8 +197,8 @@ export default new Proxy(class {
 				data?.result === false ? reject(data.msg) : resolve(data.data ?? data);
 			})
 			.once('error', reject)
-			.end(contentType == "application/json" ? JSON.stringify(options.body) : (new URLSearchParams(options.body) || url.searchParams).toString());
-		});
+			.end(contentType == "application/json" ? JSON.stringify(options.body) : (new URLSearchParams(options.body) || url.searchParams).toString())
+		})
 	}
 }, {
 	get(target, property, receiver) {
@@ -213,15 +211,14 @@ export default new Proxy(class {
 				});
 			}
 		}
-
-		return Reflect.get(...arguments);
+		return Reflect.get(...arguments)
 	}
-});
+})
 
 function parseJSON(string) {
 	try {
 		return JSON.parse(string);
 	} catch {
-		return string;
+		return string
 	}
 }

@@ -11,10 +11,10 @@
  * @type {GamepadKeymap}
  * @ignore
  */
- export default {
-    Down: 'down',
-    Left: 'left',
-    Right: 'right',
-    Up: 'up',
-    Z: 'z'
+export default {
+	Down: 'down',
+	Left: 'left',
+	Right: 'right',
+	Up: 'up',
+	Z: 'z'
 }
